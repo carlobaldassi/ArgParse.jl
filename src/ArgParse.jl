@@ -1,4 +1,5 @@
-require("options.jl", "textwrap.jl")
+require("Options")
+require("TextWrap")
 
 module ArgParse
 using Base
