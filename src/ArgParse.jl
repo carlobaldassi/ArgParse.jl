@@ -247,7 +247,7 @@ function _check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
     elseif _is_command_action(action) && nargs.desc != 'A'
         error("incompatible nargs and action (command action, nargs=$nargs)")
-    elseif (nargs.desc == 'N' && nargs.num == 0)
+    elseif !_is_flag_action(action) && (nargs.desc == 'N' && nargs.num == 0)
         error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
     end
     return true
