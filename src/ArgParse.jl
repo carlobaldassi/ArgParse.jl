@@ -1600,7 +1600,7 @@ end
 
 function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
     if any(map(x->!isa(x,String), args_list))
-        _argparse_error("malformed args_list")
+        error("malformed args_list")
     end
 
     version_added = false
