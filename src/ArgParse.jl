@@ -1592,7 +1592,7 @@ function parse_args(args_list::Vector, settings::ArgParseSettings)
         if isa(err, ArgParseError)
             settings.exc_handler(settings, err)
         else
-            throw(err)
+            rethrow()
         end
     end
     parsed_args
