@@ -2,7 +2,6 @@ require("Options")
 require("TextWrap")
 
 module ArgParse
-using Base
 
 using TextWrap
 using OptionsMod
