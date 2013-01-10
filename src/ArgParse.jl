@@ -512,7 +512,7 @@ function _name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
                 end
                 long_opt_name = n[3:end]
                 _check_long_opt_name(long_opt_name, settings)
-                push(long_opts, long_opt_name)
+                push!(long_opts, long_opt_name)
             else
                 @assert begins_with(n, '-')
                 if n == "-"
@@ -520,7 +520,7 @@ function _name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
                 end
                 short_opt_name = n[2:end]
                 _check_short_opt_name(short_opt_name, settings)
-                push(short_opts, short_opt_name)
+                push!(short_opts, short_opt_name)
             end
         end
     else
@@ -530,14 +530,14 @@ function _name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
             end
             long_opt_name = name[3:end]
             _check_long_opt_name(long_opt_name, settings)
-            push(long_opts, long_opt_name)
+            push!(long_opts, long_opt_name)
         elseif begins_with(name, '-')
             if name == "-"
                 error("illegal option name: -")
             end
             short_opt_name = name[2:end]
             _check_short_opt_name(short_opt_name, settings)
-            push(short_opts, short_opt_name)
+            push!(short_opts, short_opt_name)
         else
             _check_arg_name(name)
             pos_arg = name
@@ -618,10 +618,10 @@ macro add_arg_table(s, x...)
         if isa(y, Expr) && y.head == :block
             # found a begin..end block: expand its contents
             # in-place and restart from the same position
-            del(x, i)
+            delete!(x, i)
             i0 = i
             for z in y.args
-                insert(x, i, z)
+                insert!(x, i, z)
                 i += 1
             end
             i = i0
@@ -653,8 +653,8 @@ macro add_arg_table(s, x...)
             i += 1
         elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=))
             # found an assignment: add it to the current options expression
-            push(exopt, expr(:quote, y.args[1]))
-            push(exopt, esc(y.args[2]))
+            push!(exopt, expr(:quote, y.args[1]))
+            push!(exopt, esc(y.args[2]))
             i += 1
         elseif isa(y, LineNumberNode)
             # a line number node, ignore
@@ -796,7 +796,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
             append!(valid_keys, [:default, :constant, :arg_type, :dest_name])
         elseif action == :store_true || action == :store_false ||
                action == :count_invocations || action == :command_flag
-            push(valid_keys, :dest_name)
+            push!(valid_keys, :dest_name)
         elseif action == :show_help || action == :show_version
         else
             _found_a_bug()
@@ -804,7 +804,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
     elseif is_opt
         append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :metavar])
         if nargs.desc == '?'
-            push(valid_keys, :constant)
+            push!(valid_keys, :constant)
         end
     else
         if action != :command_arg
@@ -943,7 +943,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
     else
         _check_for_duplicates(settings.args_table.fields, new_arg)
     end
-    push(settings.args_table.fields, new_arg)
+    push!(settings.args_table.fields, new_arg)
     if _is_command_action(action)
         _add_command(settings, cmd_name, cmd_prog_hint, force_override)
     end
@@ -997,7 +997,7 @@ function _add_arg_group(settings::ArgParseSettings, desc::String, name::String, 
         end
     end
     if !already_added
-        push(settings.args_groups, ArgParseGroup(name, desc))
+        push!(settings.args_groups, ArgParseGroup(name, desc))
     end
     if set_as_default
         settings.default_group = name
@@ -1032,11 +1032,11 @@ function _override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::
     for ia in 1:length(settings.args_table.fields)
         a = settings.args_table.fields[ia]
         if new_cmd == a.dest_name
-            push(ids0, ia)
+            push!(ids0, ia)
         end
     end
     while !isempty(ids0)
-        del(settings.args_table.fields, pop(ids0))
+        delete!(settings.args_table.fields, pop!(ids0))
     end
 end
 function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField)
@@ -1048,12 +1048,12 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
              (_is_multi_action(a.action) && !_is_multi_action(new_arg.action)) ||
              (!_is_multi_action(a.action) && _is_multi_action(new_arg.action)))
             # unsolvable conflict, mark for deletion
-            push(ids0, ia)
+            push!(ids0, ia)
             continue
         end
         if _is_arg(a) && _is_arg(new_arg) && a.metavar == new_arg.metavar
             # unsolvable conflict, mark for deletion
-            push(ids0, ia)
+            push!(ids0, ia)
             continue
         end
 
@@ -1074,11 +1074,11 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
         for il1 = 1:length(a.long_opt_name), l2 in new_arg.long_opt_name
             l1 = a.long_opt_name[il1]
             if l1 == l2
-                push(ids, il1)
+                push!(ids, il1)
             end
         end
         while !isempty(ids)
-            del(a.long_opt_name, pop(ids))
+            delete!(a.long_opt_name, pop!(ids))
         end
 
         # delete conflicting short options
@@ -1086,23 +1086,23 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
         for is1 in 1:length(a.short_opt_name), s2 in new_arg.short_opt_name
             s1 = a.short_opt_name[is1]
             if s1 == s2
-                push(ids, is1)
+                push!(ids, is1)
             end
         end
         while !isempty(ids)
-            del(a.short_opt_name, pop(ids))
+            delete!(a.short_opt_name, pop!(ids))
         end
 
         # if everything was deleted, remove the field altogether
         # (i.e. mark it for deletion)
         if isempty(a.long_opt_name) && isempty(a.short_opt_name)
-            push(ids0, ia)
+            push!(ids0, ia)
         end
     end
 
     # actually remove the marked fields
     while !isempty(ids0)
-        del(args, pop(ids0))
+        delete!(args, pop!(ids0))
     end
 end
 
@@ -1136,17 +1136,17 @@ function _merge_commands(fields::Vector{ArgParseField}, ofields::Vector{ArgParse
             @assert !_is_arg(oa) # this is ensured by _check_settings_are_compatible
             for l in oa.long_opt_name
                 if !contains(a.long_opt_name, l)
-                    push(a.long_opt_name, l)
+                    push!(a.long_opt_name, l)
                 end
             end
             for s in oa.short_opt_name
                 if !contains(a.short_opt_name, s)
-                    push(a.short_opt_name, s)
+                    push!(a.short_opt_name, s)
                 end
             end
             a.group = oa.group # note: the group may not be present yet, but it will be
                                #       added later
-            push(oids, ioa)
+            push!(oids, ioa)
         end
     end
     # we return the merged ofields indices, since we still need to use them for overriding options
@@ -1181,7 +1181,7 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
         end
     end
     while !isempty(merged_oids)
-        del(ofields, pop(merged_oids))
+        delete!(ofields, pop!(merged_oids))
     end
     append!(fields, ofields)
     for oag in other.args_groups
@@ -1196,7 +1196,7 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
         if skip
             continue
         end
-        push(settings.args_groups, deepcopy(oag))
+        push!(settings.args_groups, deepcopy(oag))
     end
 
     _fix_commands_fields(fields)
@@ -1287,7 +1287,7 @@ const _number_regex =
           (                                           # float mantissa
             [0-9](_?[0-9])*(\.([0-9](_?[0-9])*)?)?  | #   start with digit
             \.[0-9](_?[0-9])*                         #   start with dot
-          )([eE][-+]?[0-9]+)?                         # float optional exp
+          )([eEf][-+]?[0-9]+)?                         # float optional exp
         )
       $"x
 
@@ -1338,7 +1338,7 @@ function usage_string(settings::ArgParseSettings)
             else
                 idstr = f.metavar
             end
-            push(cmd_lst, idstr)
+            push!(cmd_lst, idstr)
         elseif _is_arg(f)
             if !f.required
                 bra_pre = "["
@@ -1358,7 +1358,7 @@ function usage_string(settings::ArgParseSettings)
             else
                 _found_a_bug()
             end
-            push(pos_lst, bra_pre * arg_str * bra_post)
+            push!(pos_lst, bra_pre * arg_str * bra_post)
         else
             if !isempty(f.short_opt_name)
                 opt_str1 = "-" * f.short_opt_name[1]
@@ -1383,7 +1383,7 @@ function usage_string(settings::ArgParseSettings)
                 end
             end
             new_opt = "[" * opt_str1 * opt_str2 * "]"
-            push(opt_lst, new_opt)
+            push!(opt_lst, new_opt)
         end
     end
     if isempty(opt_lst)
@@ -1504,7 +1504,7 @@ function _show_help(settings::ArgParseSettings)
     for f in settings.args_table.fields
         dest_lst = group_lists[f.group]
         if _is_arg(f)
-            push(dest_lst, {f.metavar, _gen_help_text(f, settings)})
+            push!(dest_lst, {f.metavar, _gen_help_text(f, settings)})
             max_lc_len = max(max_lc_len, strlen(f.metavar))
         else
             opt_str1 = join([["-"*x for x in f.short_opt_name], ["--"*x for x in f.long_opt_name]], ", ")
@@ -1526,7 +1526,7 @@ function _show_help(settings::ArgParseSettings)
                 end
             end
             new_opt = {opt_str1 * opt_str2, _gen_help_text(f, settings)}
-            push(dest_lst, new_opt)
+            push!(dest_lst, new_opt)
             max_lc_len = max(max_lc_len, strlen(new_opt[1]))
         end
     end
@@ -1688,11 +1688,11 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
     end
 
     if help_added
-        pop(settings.args_table.fields)
+        pop!(settings.args_table.fields)
         settings.add_help = true
     end
     if version_added
-        pop(settings.args_table.fields)
+        pop!(settings.args_table.fields)
         settings.add_version = true
     end
     return out_dict
@@ -1712,7 +1712,7 @@ function _parse1_flag(settings::ArgParseSettings, f::ArgParseField, has_arg::Boo
     elseif f.action == :store_const
         out_dict[f.dest_name] = f.constant
     elseif f.action == :append_const
-        push(out_dict[f.dest_name], f.constant)
+        push!(out_dict[f.dest_name], f.constant)
     elseif f.action == :count_invocations
         out_dict[f.dest_name] += 1
     elseif f.action == :command_flag
@@ -1755,7 +1755,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
             end
-            push(opt_arg, a)
+            push!(opt_arg, a)
             arg_consumed = true
         end
         for i = (1+corr):num
@@ -1764,7 +1764,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
             end
-            push(opt_arg, a)
+            push!(opt_arg, a)
         end
     elseif f.nargs.desc == 'A'
         if !(rest === nothing)
@@ -1816,7 +1816,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
             end
-            push(opt_arg, a)
+            push!(opt_arg, a)
             arg_consumed = true
             arg_found = true
         end
@@ -1829,7 +1829,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
             end
-            push(opt_arg, a)
+            push!(opt_arg, a)
             arg_found = true
         end
         if f.nargs.desc == '+' && !arg_found
@@ -1842,7 +1842,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
             end
-            push(opt_arg, a)
+            push!(opt_arg, a)
             arg_consumed = true
         end
         while last_ind < length(args_list)
@@ -1851,7 +1851,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
             end
-            push(opt_arg, a)
+            push!(opt_arg, a)
         end
     else
         _found_a_bug()
@@ -1859,7 +1859,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
     if f.action == :store_arg
         out_dict[f.dest_name] = opt_arg
     elseif f.action == :append_arg
-        push(out_dict[f.dest_name], opt_arg)
+        push!(out_dict[f.dest_name], opt_arg)
     elseif f.action == :command_arg
         out_dict[f.dest_name] = opt_arg
         command = opt_arg
