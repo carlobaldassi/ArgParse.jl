@@ -49,7 +49,7 @@ function main(args)
             default = 0
             constant = 42
             help = "provide the answer"
-        "--şİłłÿi"
+        "--şİłłÿ"
             action = :store_true
             help = "an option with a silly name"
             group = "weird"   # this overrides the default group: this option

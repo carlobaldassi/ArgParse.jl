@@ -37,7 +37,7 @@ function main(args)
         "--flag"                   # this will fully override s0's --flag
             action = :store_true
             help = "another child flag"
-        "-?", "--HELP", "--¡ḧëļṕ!"               # (almost) all characters allowed
+        "-?", "--HELP", "--¡ḧëļṕ"                # (almost) all characters allowed
             action = :show_help                  # will invoke the help generator
             help = "this will help you"
         "-v", "--VERSION"
