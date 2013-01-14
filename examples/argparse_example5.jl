@@ -19,8 +19,7 @@ function main(args)
             help = "parent argument"
     end
 
-    s = ArgParseSettings("argparse_example_5.jl",
-                         "Example 5 for argparse.jl: " *
+    s = ArgParseSettings("Example 5 for argparse.jl: " *
                          "importing another parser, " *
                          "manual help and version.")
 

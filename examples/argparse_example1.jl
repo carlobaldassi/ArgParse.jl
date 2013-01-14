@@ -6,7 +6,6 @@ function main(args)
 
     s = ArgParseSettings()
 
-    s.prog = "argparse_example_1.jl"  # program name (for usage & help screen)
     s.description = "Example 1 for argparse.jl: minimal usage." # desciption (for help screen)
 
     @add_arg_table s begin

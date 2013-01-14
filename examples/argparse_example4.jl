@@ -5,8 +5,7 @@ using ArgParse
 
 function main(args)
 
-    s = ArgParseSettings("argparse_example_4.jl",
-                         "Example 4 for argparse.jl: " *
+    s = ArgParseSettings("Example 4 for argparse.jl: " *
                          "more tweaking of the arg fields: " *
                          "dest_name, metvar, range_tested, " *
                          "alternative actions.")

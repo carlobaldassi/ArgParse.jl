@@ -5,8 +5,7 @@ using ArgParse
 
 function main(args)
 
-    s = ArgParseSettings("argparse_example_3.jl",
-                         "Example 3 for argparse.jl: " *
+    s = ArgParseSettings("Example 3 for argparse.jl: " *
                          "version info, default values, " *
                          "options with types, variable " *
                          "number of arguments.")

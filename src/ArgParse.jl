@@ -174,15 +174,15 @@ type ArgParseSettings
     args_table::ArgParseTable
     exc_handler::Function
 
-    function ArgParseSettings(prog::String, desc::String, add_help::Bool)
+    function ArgParseSettings(desc::String, add_help::Bool)
+        prog = basename(Base.source_path())
         this = new(prog, desc, "", "", "Unknown version", add_help, false,
                    true, false, false, true, copy(_std_groups), "",
                    ArgParseTable(), _default_handler)
         return this
     end
 end
-ArgParseSettings(prog::String, desc::String) = ArgParseSettings(prog, desc, true)
-ArgParseSettings(prog::String) = ArgParseSettings(prog, "")
+ArgParseSettings(desc::String) = ArgParseSettings(desc, true)
 ArgParseSettings() = ArgParseSettings("")
 
 typealias ArgName{T<:String} Union(T, Vector{T})

@@ -4,8 +4,7 @@ using ArgParse
 
 function main(args)
 
-    s = ArgParseSettings("argparse_example_6.jl",
-                         "Example 6 for argparse.jl: " *
+    s = ArgParseSettings("Example 6 for argparse.jl: " *
                          "commands and their associated subtables.")
 
     @add_arg_table s begin

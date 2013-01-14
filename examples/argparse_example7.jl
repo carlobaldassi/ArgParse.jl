@@ -4,8 +4,7 @@ using ArgParse
 
 function main(args)
 
-    s = ArgParseSettings("argparse_example_7.jl",
-                         "Example 7 for argparse.jl: " *
+    s = ArgParseSettings("Example 7 for argparse.jl: " *
                          "argument groups.")
 
     add_arg_group(s, "stack options") # add a group and sets it as the default

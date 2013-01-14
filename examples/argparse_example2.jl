@@ -4,8 +4,7 @@ using ArgParse
 
 function main(args)
 
-    s = ArgParseSettings("argparse_example_2.jl",         # prog name
-                         "Example 2 for argparse.jl: " *  # description
+    s = ArgParseSettings("Example 2 for argparse.jl: " *  # description
                          "flags, options help, " *
                          "required arguments.")
 
