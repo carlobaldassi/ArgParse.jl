@@ -268,7 +268,7 @@ function _check_long_opt_name(name::String, settings::ArgParseSettings)
 end
 
 function _check_short_opt_name(name::String, settings::ArgParseSettings)
-    if strlen(name) != 1
+    if length(name) != 1
         error("short options must use a single character")
     elseif name == "="
         error("illegal short option name: $name")
@@ -475,7 +475,7 @@ function _check_range_default_multi2(default, range_tester::Function)
     return true
 end
 function _check_metavar(metavar::String)
-    if strlen(metavar) == 0
+    if isempty(metavar)
         error("empty metavar")
     elseif begins_with(metavar, '-')
         error("metavars cannot begin with -")
@@ -1267,7 +1267,7 @@ _parse_item{T<:String}(it_type::Type{T}, x::String) = convert(T, x)
 function _parse_item(it_type::Type, x::String)
     local r
     try
-        if strlen(x) == 0
+        if isempty(x)
             y = ""
         else
             y = eval(parse(x)[1])
@@ -1408,7 +1408,7 @@ function usage_string(settings::ArgParseSettings)
         cmdl_str = " " * bra_pre * join(cmd_lst, "|") * bra_post
     end
 
-    usage_len = strlen(usage_pre) + 1
+    usage_len = length(usage_pre) + 1
     twopts = @options begin
         break_long_words = false
         break_on_hyphens = false
@@ -1456,7 +1456,7 @@ function _print_group(lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int
     end
     println(desc * ":")
     for l in lst
-        l1len = strlen(l[1])
+        l1len = length(l[1])
         if l1len <= lc_usable_len
             rfill = " " ^ (lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
@@ -1504,7 +1504,7 @@ function _show_help(settings::ArgParseSettings)
         dest_lst = group_lists[f.group]
         if _is_arg(f)
             push!(dest_lst, {f.metavar, _gen_help_text(f, settings)})
-            max_lc_len = max(max_lc_len, strlen(f.metavar))
+            max_lc_len = max(max_lc_len, length(f.metavar))
         else
             opt_str1 = join([["-"*x for x in f.short_opt_name], ["--"*x for x in f.long_opt_name]], ", ")
             if _is_flag(f)
@@ -1526,7 +1526,7 @@ function _show_help(settings::ArgParseSettings)
             end
             new_opt = {opt_str1 * opt_str2, _gen_help_text(f, settings)}
             push!(dest_lst, new_opt)
-            max_lc_len = max(max_lc_len, strlen(new_opt[1]))
+            max_lc_len = max(max_lc_len, length(new_opt[1]))
         end
     end
 
@@ -1541,7 +1541,7 @@ function _show_help(settings::ArgParseSettings)
 
     println(usage_str)
     println()
-    if length(settings.description) > 0
+    if !isempty(settings.description)
         println_wrapped(settings.description, twopts_desc)
         println()
     end
@@ -1551,7 +1551,7 @@ function _show_help(settings::ArgParseSettings)
                      lmargin, rmargin, twopts_block1, twopts_block2)
      end
 
-    if length(settings.epilog) > 0
+     if !isempty(settings.epilog)
         println_wrapped(settings.epilog, twopts_desc)
         println()
     end
@@ -1656,7 +1656,7 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
                 opt_name = arg[3:end]
                 arg_after_eq = nothing
             end
-            if strlen(opt_name) == 0
+            if isempty(opt_name)
                 _argparse_error("illegal option: $arg")
             end
             last_ind, command, out_dict = _parse_long_opt(settings, opt_name, last_ind, arg_after_eq, args_list, out_dict)
