@@ -229,7 +229,7 @@ function _warn_extra_opts(opts::Vector{Symbol}, valid_keys::Vector{Symbol})
             end
         end
         if !found
-            println(stderr_stream, "warning: ignored option: $k")
+            println(STDERR, "warning: ignored option: $k")
         end
     end
     return true
@@ -661,7 +661,7 @@ macro add_arg_table(s, x...)
             continue
         else
             # anything else: ignore, but issue a warning
-            println(stderr_stream, "warning: @add_arg_table: ignoring expression ", y)
+            println(STDERR, "warning: @add_arg_table: ignoring expression ", y)
             i += 1
         end
     end
@@ -1576,8 +1576,8 @@ end
 # parse_args & friends
 #{{{
 function _default_handler(settings::ArgParseSettings, err)
-    println(stderr_stream, err.text)
-    println(stderr_stream, usage_string(settings))
+    println(STDERR, err.text)
+    println(STDERR, usage_string(settings))
     exit(1)
 end
 
