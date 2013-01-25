@@ -1347,7 +1347,7 @@ function usage_string(settings::ArgParseSettings)
                 bra_post = ""
             end
             if f.nargs.desc == 'N'
-                arg_str = strcat(ntuple(f.nargs.num, i->(i==1?f.metavar:(_nbsp * f.metavar)))...)
+                arg_str = string(ntuple(f.nargs.num, i->(i==1?f.metavar:(_nbsp * f.metavar)))...)
             elseif f.nargs.desc == 'A'
                 arg_str = f.metavar
             elseif f.nargs.desc == '?'
@@ -1368,7 +1368,7 @@ function usage_string(settings::ArgParseSettings)
                 opt_str2 = ""
             else
                 if f.nargs.desc == 'N'
-                    opt_str2 = strcat(ntuple(f.nargs.num, i->(_nbsp * f.metavar))...)
+                    opt_str2 = string(ntuple(f.nargs.num, i->(_nbsp * f.metavar))...)
                 elseif f.nargs.desc == 'A'
                     opt_str2 = _nbsp * f.metavar
                 elseif f.nargs.desc == '?'
@@ -1511,7 +1511,7 @@ function _show_help(settings::ArgParseSettings)
                 opt_str2 = ""
             else
                 if f.nargs.desc == 'N'
-                    opt_str2 = strcat(ntuple(f.nargs.num, i->(_nbsp * f.metavar))...)
+                    opt_str2 = string(ntuple(f.nargs.num, i->(_nbsp * f.metavar))...)
                 elseif f.nargs.desc == 'A'
                     opt_str2 = _nbsp * f.metavar
                 elseif f.nargs.desc == '?'
