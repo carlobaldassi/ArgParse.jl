@@ -1670,7 +1670,7 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
             end
         else
             last_ind, last_arg, command, out_dict = _parse_arg(settings, last_ind, last_arg, arg_delim_found, args_list, out_dict)
-            add(found_args, settings.args_table.fields[last_arg].metavar)
+            add!(found_args, settings.args_table.fields[last_arg].metavar)
         end
         if !(command === nothing)
             break
