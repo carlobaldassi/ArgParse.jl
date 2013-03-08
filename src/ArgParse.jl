@@ -635,11 +635,11 @@ macro add_arg_table(s, x...)
             if !(name === nothing)
                 # there was a previous arg field on hold
                 # first, concretely build the options
-                opt = expr(:call, exopt)
+                opt = Expr(:call, exopt)
                 # then, build the _add_arg_field expression
                 exaaf = Any[:_add_arg_field, s, name, opt]
                 # then, call _add_arg_field
-                aaf = expr(:call, exaaf)
+                aaf = Expr(:call, exaaf)
                 # store it in the output expression
                 exret = quote
                     $exret
@@ -652,7 +652,7 @@ macro add_arg_table(s, x...)
             i += 1
         elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=))
             # found an assignment: add it to the current options expression
-            push!(exopt, expr(:quote, y.args[1]))
+            push!(exopt, Expr(:quote, y.args[1]))
             push!(exopt, esc(y.args[2]))
             i += 1
         elseif isa(y, LineNumberNode)
@@ -668,9 +668,9 @@ macro add_arg_table(s, x...)
     if !(name === nothing)
         # there is an arg field on hold
         # same as above
-        opt = expr(:call, exopt)
+        opt = Expr(:call, exopt)
         exaaf = Any[:_add_arg_field, s, name, opt]
-        aaf = expr(:call, exaaf)
+        aaf = Expr(:call, exaaf)
         exret = quote
             $exret
             $aaf
