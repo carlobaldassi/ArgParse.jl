@@ -204,7 +204,7 @@ function _check_name_format(name::ArgName)
             if isempty(n)
                 error("empty name")
             end
-            if !begins_with(n, '-')
+            if !beginswith(n, '-')
                 error("only options can have multiple names")
             end
         end
@@ -477,7 +477,7 @@ end
 function _check_metavar(metavar::String)
     if isempty(metavar)
         error("empty metavar")
-    elseif begins_with(metavar, '-')
+    elseif beginswith(metavar, '-')
         error("metavars cannot begin with -")
     elseif ismatch(r"\s", metavar)
         error("illegal metavar name: $metavar (containes whitespace)")
@@ -490,7 +490,7 @@ end
 function _check_group_name(name::String)
     if isempty(name)
         error("empty group name")
-    elseif begins_with(name, '#')
+    elseif beginswith(name, '#')
         error("invalid group name (starts with #)")
     end
     return true
@@ -505,7 +505,7 @@ function _name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     short_opts = String[]
     if isa(name, Vector)
         for n in name
-            if begins_with(n, "--")
+            if beginswith(n, "--")
                 if n == "--"
                     error("illegal option name: --")
                 end
@@ -513,7 +513,7 @@ function _name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
                 _check_long_opt_name(long_opt_name, settings)
                 push!(long_opts, long_opt_name)
             else
-                @assert begins_with(n, '-')
+                @assert beginswith(n, '-')
                 if n == "-"
                     error("illegal option name: -")
                 end
@@ -523,14 +523,14 @@ function _name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
             end
         end
     else
-        if begins_with(name, "--")
+        if beginswith(name, "--")
             if name == "--"
                 error("illegal option name: --")
             end
             long_opt_name = name[3:end]
             _check_long_opt_name(long_opt_name, settings)
             push!(long_opts, long_opt_name)
-        elseif begins_with(name, '-')
+        elseif beginswith(name, '-')
             if name == "-"
                 error("illegal option name: -")
             end
@@ -749,7 +749,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
         action = symbol(action)
     end
 
-    is_opt = isa(name, Vector) || begins_with(name, '-')
+    is_opt = isa(name, Vector) || beginswith(name, '-')
 
     _check_action_is_valid(action)
 
@@ -1007,7 +1007,7 @@ end
 set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settings, "")
 function set_default_arg_group(settings::ArgParseSettings, name::Union(String,Symbol))
     name = string(name)
-    if begins_with(name, '#')
+    if beginswith(name, '#')
         error("invalid group name: $name (begins with #)")
     end
     if isempty(name)
@@ -1186,8 +1186,8 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
     for oag in other.args_groups
         skip = false
         for ag in settings.args_groups
-            if (!begins_with(oag.name, '#') && oag.name == ag.name) ||
-               (begins_with(ag.name, '#') && oag.desc == ag.desc)
+            if (!beginswith(oag.name, '#') && oag.name == ag.name) ||
+               (beginswith(ag.name, '#') && oag.desc == ag.desc)
                 skip = true
                 break
             end
@@ -1291,9 +1291,9 @@ const _number_regex =
       $"x
 
 function _looks_like_an_option(arg::String, settings::ArgParseSettings)
-    if !begins_with(arg, '-') || arg == "-"
+    if !beginswith(arg, '-') || arg == "-"
         return false
-    elseif begins_with(arg, "--")
+    elseif beginswith(arg, "--")
         return true
     end
     # begins with '-'
@@ -1647,7 +1647,7 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         if arg == "--"
             arg_delim_found = true
             continue
-        elseif !arg_delim_found && begins_with(arg, "--")
+        elseif !arg_delim_found && beginswith(arg, "--")
             eqrng = search(arg, '=')
             i = first(eqrng)
             j = last(eqrng) + 1
@@ -1886,7 +1886,7 @@ function _parse_long_opt(settings::ArgParseSettings, opt_name::String, last_ind:
                 f = g
                 fln = ln
                 break
-            elseif begins_with(ln, opt_name)
+            elseif beginswith(ln, opt_name)
                 nfound += 1
                 f = g
                 fln = ln
