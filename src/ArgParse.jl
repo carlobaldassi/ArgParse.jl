@@ -219,7 +219,7 @@ function _check_type(opt, T::Type, message::String)
     return true
 end
 
-function _warn_extra_opts(opts::Vector{Symbol}, valid_keys::Vector{Symbol})
+function _warn_extra_opts(opts, valid_keys::Vector{Symbol})
     for k in opts
         found = false
         for vk in valid_keys
@@ -257,7 +257,7 @@ function _check_long_opt_name(name::String, settings::ArgParseSettings)
         error("illegal option name: $name (contains '=')")
     elseif ismatch(r"\s", name)
         error("illegal option name: $name (containes whitespace)")
-    elseif contains(name, _nbsp)
+    elseif !isempty(search(name, _nbsp))
         error("illegal option name: $name (containes non-breakable-space)")
     elseif settings.add_help && name == "help"
         error("option --help is reserved in the current settings")
@@ -274,7 +274,7 @@ function _check_short_opt_name(name::String, settings::ArgParseSettings)
         error("illegal short option name: $name")
     elseif ismatch(r"\s", name)
         error("illegal option name: $name (containes whitespace)")
-    elseif contains(name, _nbsp)
+    elseif !isempty(search(name, _nbsp))
         error("illegal option name: $name (containes non-breakable-space)")
     elseif !settings.allow_ambiguous_opts && ismatch(r"[0-9._(]", name)
         error("ambiguous option name: $name (disabled in the current settings)")
@@ -481,7 +481,7 @@ function _check_metavar(metavar::String)
         error("metavars cannot begin with -")
     elseif ismatch(r"\s", metavar)
         error("illegal metavar name: $metavar (containes whitespace)")
-    elseif contains(metavar, _nbsp)
+    elseif !isempty(search(metavar, _nbsp))
         error("illegal metavar name: $metavar (containes non-breakable-space)")
     end
     return true
@@ -1252,7 +1252,7 @@ end
 
 function _test_required_args(settings::ArgParseSettings, found_args::Set{String})
     for f in settings.args_table.fields
-        if _is_arg(f) && f.required && !has(found_args, f.metavar)
+        if _is_arg(f) && f.required && !contains(found_args, f.metavar)
             _argparse_error("required argument $(f.metavar) was not provided")
         end
     end
