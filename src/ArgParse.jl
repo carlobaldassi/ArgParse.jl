@@ -220,7 +220,7 @@ function _check_type(opt, T::Type, message::String)
     return true
 end
 
-function _warn_extra_opts(opts::Vector{Symbol}, valid_keys::Vector{Symbol})
+function _warn_extra_opts(opts, valid_keys::Vector{Symbol})
     for k in opts
         found = false
         for vk in valid_keys
