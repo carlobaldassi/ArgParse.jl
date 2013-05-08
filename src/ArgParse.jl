@@ -1253,7 +1253,7 @@ end
 
 function _test_required_args(settings::ArgParseSettings, found_args::Set{String})
     for f in settings.args_table.fields
-        if _is_arg(f) && f.required && !has(found_args, f.metavar)
+        if _is_arg(f) && f.required && !contains(found_args, f.metavar)
             _argparse_error("required argument $(f.metavar) was not provided")
         end
     end
