@@ -1649,12 +1649,10 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
             arg_delim_found = true
             continue
         elseif !arg_delim_found && beginswith(arg, "--")
-            eqrng = search(arg, '=')
-            i = first(eqrng)
-            j = last(eqrng) + 1
-            if i != 0
-                opt_name = arg[3:i-1]
-                arg_after_eq = arg[j:end]
+            eq = search(arg, '=')
+            if eq != 0
+                opt_name = arg[3:eq-1]
+                arg_after_eq = arg[eq+1:end]
             else
                 opt_name = arg[3:end]
                 arg_after_eq = nothing
