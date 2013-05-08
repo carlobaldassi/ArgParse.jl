@@ -24,7 +24,8 @@ import Base.ref, Base.assign, Base.has
 
 # auxiliary functions/constants
 _found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
-const _nbsp = "\u00a0"
+const _nbspc = '\u00a0'
+const _nbsps = "$_nbspc"
 
 # actions
 #{{{
@@ -257,7 +258,7 @@ function _check_long_opt_name(name::String, settings::ArgParseSettings)
         error("illegal option name: $name (contains '=')")
     elseif ismatch(r"\s", name)
         error("illegal option name: $name (containes whitespace)")
-    elseif contains(name, _nbsp)
+    elseif contains(name, _nbspc)
         error("illegal option name: $name (containes non-breakable-space)")
     elseif settings.add_help && name == "help"
         error("option --help is reserved in the current settings")
@@ -274,7 +275,7 @@ function _check_short_opt_name(name::String, settings::ArgParseSettings)
         error("illegal short option name: $name")
     elseif ismatch(r"\s", name)
         error("illegal option name: $name (containes whitespace)")
-    elseif contains(name, _nbsp)
+    elseif contains(name, _nbspc)
         error("illegal option name: $name (containes non-breakable-space)")
     elseif !settings.allow_ambiguous_opts && ismatch(r"[0-9._(]", name)
         error("ambiguous option name: $name (disabled in the current settings)")
@@ -481,7 +482,7 @@ function _check_metavar(metavar::String)
         error("metavars cannot begin with -")
     elseif ismatch(r"\s", metavar)
         error("illegal metavar name: $metavar (containes whitespace)")
-    elseif contains(metavar, _nbsp)
+    elseif contains(metavar, _nbspc)
         error("illegal metavar name: $metavar (containes non-breakable-space)")
     end
     return true
@@ -1347,7 +1348,7 @@ function usage_string(settings::ArgParseSettings)
                 bra_post = ""
             end
             if f.nargs.desc == 'N'
-                arg_str = string(ntuple(f.nargs.num, i->(i==1?f.metavar:(_nbsp * f.metavar)))...)
+                arg_str = string(ntuple(f.nargs.num, i->(i==1?f.metavar:(_nbsps * f.metavar)))...)
             elseif f.nargs.desc == 'A'
                 arg_str = f.metavar
             elseif f.nargs.desc == '?'
@@ -1368,15 +1369,15 @@ function usage_string(settings::ArgParseSettings)
                 opt_str2 = ""
             else
                 if f.nargs.desc == 'N'
-                    opt_str2 = string(ntuple(f.nargs.num, i->(_nbsp * f.metavar))...)
+                    opt_str2 = string(ntuple(f.nargs.num, i->(_nbsps * f.metavar))...)
                 elseif f.nargs.desc == 'A'
-                    opt_str2 = _nbsp * f.metavar
+                    opt_str2 = _nbsps * f.metavar
                 elseif f.nargs.desc == '?'
-                    opt_str2 = _nbsp * "[" * f.metavar * "]"
+                    opt_str2 = _nbsps * "[" * f.metavar * "]"
                 elseif f.nargs.desc == '*' || f.nargs.desc == 'R'
-                    opt_str2 = _nbsp * "[" * f.metavar * "...]"
+                    opt_str2 = _nbsps * "[" * f.metavar * "...]"
                 elseif f.nargs.desc == '+'
-                    opt_str2 = _nbsp * f.metavar * _nbsp * "[" * f.metavar * "...]"
+                    opt_str2 = _nbsps * f.metavar * _nbsps * "[" * f.metavar * "...]"
                 else
                     _found_a_bug()
                 end
@@ -1418,7 +1419,7 @@ function usage_string(settings::ArgParseSettings)
     str_nonwrapped = usage_pre * optl_str * posl_str * cmdl_str
     str_wrapped = wrap(str_nonwrapped, twopts)
 
-    out_str = replace(str_wrapped, _nbsp, ' ')
+    out_str = replace(str_wrapped, _nbspc, ' ')
     return out_str
 end
 
@@ -1461,7 +1462,7 @@ function _print_group(lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int
             rfill = " " ^ (lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
             ll_wrapped = wrap(ll_nonwrapped, twopts_block1)
-            println(replace(ll_wrapped, _nbsp, ' '))
+            println(replace(ll_wrapped, _nbspc, ' '))
         else
             println(lmargin, l[1])
             println_wrapped(l[2], twopts_block2)
@@ -1511,15 +1512,15 @@ function _show_help(settings::ArgParseSettings)
                 opt_str2 = ""
             else
                 if f.nargs.desc == 'N'
-                    opt_str2 = string(ntuple(f.nargs.num, i->(_nbsp * f.metavar))...)
+                    opt_str2 = string(ntuple(f.nargs.num, i->(_nbsps * f.metavar))...)
                 elseif f.nargs.desc == 'A'
-                    opt_str2 = _nbsp * f.metavar
+                    opt_str2 = _nbsps * f.metavar
                 elseif f.nargs.desc == '?'
-                    opt_str2 = _nbsp * "[" * f.metavar * "]"
+                    opt_str2 = _nbsps * "[" * f.metavar * "]"
                 elseif f.nargs.desc == '*' || f.nargs.desc == 'R'
-                    opt_str2 = _nbsp * "[" * f.metavar * "...]"
+                    opt_str2 = _nbsps * "[" * f.metavar * "...]"
                 elseif f.nargs.desc == '+'
-                    opt_str2 = _nbsp * f.metavar * _nbsp * "[" * f.metavar * "...]"
+                    opt_str2 = _nbsps * f.metavar * _nbsps * "[" * f.metavar * "...]"
                 else
                     _found_a_bug()
                 end
