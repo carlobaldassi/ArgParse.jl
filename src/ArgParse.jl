@@ -20,7 +20,7 @@ export
     usage_string,
     parse_args
 
-import Base.ref, Base.assign, Base.has
+import Base.ref, Base.assign, Base.haskey
 
 # auxiliary functions/constants
 _found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
@@ -189,7 +189,7 @@ ArgParseSettings() = ArgParseSettings("")
 typealias ArgName{T<:String} Union(T, Vector{T})
 
 ref(s::ArgParseSettings, c::String) = s.args_table.subsettings[c]
-has(s::ArgParseSettings, c::String) = has(s.args_table.subsettings, c)
+haskey(s::ArgParseSettings, c::String) = haskey(s.args_table.subsettings, c)
 assign(s::ArgParseSettings, x::ArgParseSettings, c::String) = assign(s.args_table.subsettings, x, c)
 
 #}}}
@@ -951,7 +951,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
 end
 
 function _add_command(settings::ArgParseSettings, command::String, prog_hint::String, force_override::Bool)
-    if has(settings, command)
+    if haskey(settings, command)
         #return settings[command]
         error("command $command already added")
     end
@@ -1121,7 +1121,7 @@ function _check_settings_are_compatible(settings::ArgParseSettings, other::ArgPa
         if settings.error_on_conflict
             _check_conflicts_with_commands(settings, subk)
         end
-        if has(settings, subk)
+        if haskey(settings, subk)
             _check_settings_are_compatible(settings[subk], subs)
         end
     end
@@ -1219,7 +1219,7 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
                 break
             end
         end
-        if !has(settings, subk)
+        if !haskey(settings, subk)
             _add_command(settings, subk, cmd_prog_hint, !settings.error_on_conflict)
         elseif !isempty(cmd_prog_hint)
             settings[subk].prog = "$(settings.prog) $cmd_prog_hint"
@@ -1679,7 +1679,7 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
     end
     _test_required_args(settings, found_args)
     if !(command === nothing)
-        if !has(settings, command)
+        if !haskey(settings, command)
             _argparse_error("unknown command: $command")
         end
         out_dict[command] = parse_args(args_list[last_ind+1:end], settings[command])
