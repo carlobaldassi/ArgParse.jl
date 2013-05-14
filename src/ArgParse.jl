@@ -222,14 +222,7 @@ end
 
 function _warn_extra_opts(opts, valid_keys::Vector{Symbol})
     for k in opts
-        found = false
-        for vk in valid_keys
-            if k == vk
-                found = true
-                break
-            end
-        end
-        if !found
+        if !contains(valid_keys, k)
             println(STDERR, "warning: ignored option: $k")
         end
     end
@@ -816,7 +809,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
     end
 
     if _is_command_action(action)
-        if contains(supplied_opts, :dest_name)
+        if contains(supplied_opts, :dest_name) && contains(valid_keys, :dest_name)
             cmd_name = dest_name
         else
             cmd_name = new_arg.dest_name
@@ -855,6 +848,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
         new_arg.dest_name = _cmd_dest_name
         new_arg.arg_type = String
         new_arg.constant = cmd_name
+        new_arg.metavar = cmd_name
         cmd_prog_hint = _get_cmd_prog_hint(new_arg)
     end
 
@@ -1064,7 +1058,7 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
 
         if _is_cmd(a) && _is_cmd(new_arg) && a.constant == new_arg.constant && !_is_arg(a)
             @assert !_is_arg(new_arg) # this is ensured by _check_settings_are_compatible
-            # two command flags with the same command -> should have already be taken car of,
+            # two command flags with the same command -> should have already been taken care of,
             # by either _check_settings_are_compatible or _merge_commands
             continue
         end
@@ -1627,74 +1621,79 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         help_added = true
     end
 
-    found_args = Set{String}()
     out_dict = (String=>Any)[]
+    try
+        found_args = Set{String}()
 
-    for f in settings.args_table.fields
-        if f.action == :show_help || f.action == :show_version
-            continue
+        for f in settings.args_table.fields
+            if f.action == :show_help || f.action == :show_version
+                continue
+            end
+            out_dict[f.dest_name] = deepcopy(f.default)
         end
-        out_dict[f.dest_name] = deepcopy(f.default)
-    end
 
-    arg_delim_found = false
-    last_ind = 0
-    last_arg = 0
-    command = nothing
-    while last_ind < length(args_list)
-        last_ind += 1
+        arg_delim_found = false
+        last_ind = 0
+        last_arg = 0
+        command = nothing
+        while last_ind < length(args_list)
+            last_ind += 1
 
-        arg = args_list[last_ind]
-        if arg == "--"
-            arg_delim_found = true
-            continue
-        elseif !arg_delim_found && beginswith(arg, "--")
-            eq = search(arg, '=')
-            if eq != 0
-                opt_name = arg[3:eq-1]
-                arg_after_eq = arg[eq+1:end]
+            arg = args_list[last_ind]
+            if arg == "--"
+                arg_delim_found = true
+                continue
+            elseif !arg_delim_found && beginswith(arg, "--")
+                eq = search(arg, '=')
+                if eq != 0
+                    opt_name = arg[3:eq-1]
+                    arg_after_eq = arg[eq+1:end]
+                else
+                    opt_name = arg[3:end]
+                    arg_after_eq = nothing
+                end
+                if isempty(opt_name)
+                    _argparse_error("illegal option: $arg")
+                end
+                last_ind, command, out_dict = _parse_long_opt(settings, opt_name, last_ind, arg_after_eq, args_list, out_dict)
+            elseif !arg_delim_found && _looks_like_an_option(arg, settings)
+                shopts_lst = arg[2:end]
+                last_ind, command, shopts_lst_rest, out_dict = _parse_short_opt(settings, shopts_lst, last_ind, args_list, out_dict)
+                if !(command === nothing) && !(shopts_lst_rest === nothing)
+                    args_list = copy(args_list)
+                    args_list[last_ind] = "-" * shopts_lst_rest
+                    last_ind -= 1
+                end
             else
-                opt_name = arg[3:end]
-                arg_after_eq = nothing
+                last_ind, last_arg, command, out_dict = _parse_arg(settings, last_ind, last_arg, arg_delim_found, args_list, out_dict)
+                add!(found_args, settings.args_table.fields[last_arg].metavar)
             end
-            if isempty(opt_name)
-                _argparse_error("illegal option: $arg")
+            if !(command === nothing)
+                break
             end
-            last_ind, command, out_dict = _parse_long_opt(settings, opt_name, last_ind, arg_after_eq, args_list, out_dict)
-        elseif !arg_delim_found && _looks_like_an_option(arg, settings)
-            shopts_lst = arg[2:end]
-            last_ind, command, shopts_lst_rest, out_dict = _parse_short_opt(settings, shopts_lst, last_ind, args_list, out_dict)
-            if !(command === nothing) && !(shopts_lst_rest === nothing)
-                args_list = copy(args_list)
-                args_list[last_ind] = "-" * shopts_lst_rest
-                last_ind -= 1
-            end
-        else
-            last_ind, last_arg, command, out_dict = _parse_arg(settings, last_ind, last_arg, arg_delim_found, args_list, out_dict)
-            add!(found_args, settings.args_table.fields[last_arg].metavar)
         end
+        _test_required_args(settings, found_args)
         if !(command === nothing)
-            break
+            if !haskey(settings, command)
+                _argparse_error("unknown command: $command")
+            end
+            out_dict[command] = parse_args(args_list[last_ind+1:end], settings[command])
+        elseif settings.commands_are_required && _has_cmd(settings)
+            _argparse_error("No command given")
         end
-    end
-    _test_required_args(settings, found_args)
-    if !(command === nothing)
-        if !haskey(settings, command)
-            _argparse_error("unknown command: $command")
+    catch err
+        rethrow()
+    finally
+        if help_added
+            pop!(settings.args_table.fields)
+            settings.add_help = true
         end
-        out_dict[command] = parse_args(args_list[last_ind+1:end], settings[command])
-    elseif settings.commands_are_required && _has_cmd(settings)
-        _argparse_error("No command given")
+        if version_added
+            pop!(settings.args_table.fields)
+            settings.add_version = true
+        end
     end
 
-    if help_added
-        pop!(settings.args_table.fields)
-        settings.add_help = true
-    end
-    if version_added
-        pop!(settings.args_table.fields)
-        settings.add_version = true
-    end
     return out_dict
 end
 
