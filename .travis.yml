@@ -13,8 +13,7 @@ before_install:
     - git config --global user.email "travis@example.net"
 script:
     - julia -e "Pkg.init()"
-    - julia -e "Pkg.add(\"TextWrap\")"
-    - julia -e "Pkg.add(\"Options\")"
+    - julia -e "Pkg.add(Pkg.VersionSet(\"Options\", [VersionNumber(0,2)]), \"TextWrap\")"
     - mkdir -p ~/.julia/ArgParse
     - cp -R ./* ~/.julia/ArgParse/
     - julia ~/.julia/ArgParse/test/test.jl
