@@ -17,3 +17,6 @@ script:
     - mkdir -p ~/.julia/ArgParse
     - cp -R ./* ~/.julia/ArgParse/
     - julia ~/.julia/ArgParse/test/test.jl
+branches:
+    except:
+        - release-0.1
