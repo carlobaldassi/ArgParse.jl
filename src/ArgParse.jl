@@ -611,13 +611,7 @@ macro add_arg_table(s, x...)
         if isa(y, Expr) && y.head == :block
             # found a begin..end block: expand its contents
             # in-place and restart from the same position
-            delete!(x, i)
-            i0 = i
-            for z in y.args
-                insert!(x, i, z)
-                i += 1
-            end
-            i = i0
+            splice!(x, i, y.args)
             continue
         elseif isa(y, String) || (isa(y, Expr) && (y.head == :vcat || y.head == :tuple))
             # found a string, or a vector expression, or a tuple:
@@ -1030,7 +1024,7 @@ function _override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::
         end
     end
     while !isempty(ids0)
-        delete!(settings.args_table.fields, pop!(ids0))
+        splice!(settings.args_table.fields, pop!(ids0))
     end
 end
 function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField)
@@ -1072,7 +1066,7 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
             end
         end
         while !isempty(ids)
-            delete!(a.long_opt_name, pop!(ids))
+            splice!(a.long_opt_name, pop!(ids))
         end
 
         # delete conflicting short options
@@ -1084,7 +1078,7 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
             end
         end
         while !isempty(ids)
-            delete!(a.short_opt_name, pop!(ids))
+            splice!(a.short_opt_name, pop!(ids))
         end
 
         # if everything was deleted, remove the field altogether
@@ -1096,7 +1090,7 @@ function _override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
 
     # actually remove the marked fields
     while !isempty(ids0)
-        delete!(args, pop!(ids0))
+        splice!(args, pop!(ids0))
     end
 end
 
@@ -1175,7 +1169,7 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
         end
     end
     while !isempty(merged_oids)
-        delete!(ofields, pop!(merged_oids))
+        splice!(ofields, pop!(merged_oids))
     end
     append!(fields, ofields)
     for oag in other.args_groups
