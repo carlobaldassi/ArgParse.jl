@@ -1398,14 +1398,10 @@ function usage_string(settings::ArgParseSettings)
     end
 
     usage_len = length(usage_pre) + 1
-    twopts = @options begin
-        break_long_words = false
-        break_on_hyphens = false
-        subsequent_indent = min(usage_len, lc_len_limit)
-    end
 
     str_nonwrapped = usage_pre * optl_str * posl_str * cmdl_str
-    str_wrapped = wrap(str_nonwrapped, twopts)
+    str_wrapped = wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
+                                       subsequent_indent = min(usage_len, lc_len_limit))
 
     out_str = replace(str_wrapped, _nbspc, ' ')
     return out_str
@@ -1438,8 +1434,7 @@ function _gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
 end
 
 function _print_group(lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int,
-                      lmargin::String, rmargin::String,
-                      twopts_block1::Options, twopts_block2::Options)
+                      lmargin::String, rmargin::String, sindent::String)
     if isempty(lst)
         return
     end
@@ -1449,32 +1444,19 @@ function _print_group(lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int
         if l1len <= lc_usable_len
             rfill = " " ^ (lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
-            ll_wrapped = wrap(ll_nonwrapped, twopts_block1)
+            ll_wrapped = wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
+                              initial_indent = lmargin, subsequent_indent = sindent)
             println(replace(ll_wrapped, _nbspc, ' '))
         else
             println(lmargin, l[1])
-            println_wrapped(l[2], twopts_block2)
+            println_wrapped(l[2], break_long_words = false, break_on_hyphens = false,
+                                  initial_indent = sindent, subsequent_indent = sindent)
         end
     end
     println()
 end
 
 function _show_help(settings::ArgParseSettings)
-
-    twopts_desc = @options begin
-        break_long_words = false
-        break_on_hyphens = false
-    end
-
-    twopts_block1 = @options begin
-        break_long_words = false
-        break_on_hyphens = false
-    end
-
-    twopts_block2 = @options begin
-        break_long_words = false
-        break_on_hyphens = false
-    end
 
     lc_len_limit = 24
     lc_left_indent = 2
@@ -1525,23 +1507,20 @@ function _show_help(settings::ArgParseSettings)
 
     sindent = lmargin * " " ^ lc_len * rmargin
 
-    @set_options(twopts_block1, initial_indent => lmargin, subsequent_indent => sindent)
-    @set_options(twopts_block2, initial_indent => sindent, subsequent_indent => sindent)
-
     println(usage_str)
     println()
     if !isempty(settings.description)
-        println_wrapped(settings.description, twopts_desc)
+        println_wrapped(settings.description, break_long_words = false, break_on_hyphens = false)
         println()
     end
 
     for ag in settings.args_groups
         _print_group(group_lists[ag.name], ag.desc, lc_usable_len, lc_len,
-                     lmargin, rmargin, twopts_block1, twopts_block2)
+                     lmargin, rmargin, sindent)
      end
 
      if !isempty(settings.epilog)
-        println_wrapped(settings.epilog, twopts_desc)
+        println_wrapped(settings.epilog, break_long_words = false, break_on_hyphens = false)
         println()
     end
     exit(0)
