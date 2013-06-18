@@ -20,7 +20,7 @@ export
     usage_string,
     parse_args
 
-import Base.ref, Base.assign, Base.haskey
+import Base.getindex, Base.setindex!, Base.haskey
 
 # auxiliary functions/constants
 _found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
@@ -188,9 +188,9 @@ ArgParseSettings() = ArgParseSettings("")
 
 typealias ArgName{T<:String} Union(T, Vector{T})
 
-ref(s::ArgParseSettings, c::String) = s.args_table.subsettings[c]
+getindex(s::ArgParseSettings, c::String) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::String) = haskey(s.args_table.subsettings, c)
-assign(s::ArgParseSettings, x::ArgParseSettings, c::String) = assign(s.args_table.subsettings, x, c)
+setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.args_table.subsettings, x, c)
 
 #}}}
 
