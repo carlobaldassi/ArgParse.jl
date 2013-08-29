@@ -1,6 +1,7 @@
 # test 4: manual help/version, import another parser
 
 using ArgParse
+using Base.Test
 
 function ap_test4(args)
 
@@ -87,7 +88,7 @@ function ap_test4_fails(args)
     parsed_args = parse_args(args, s)
 end
 
-Test.@test ap_test4([]) == (String=>Any)["parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing]
-Test.@test ap_test4(["-o", "X"]) == (String=>Any)["parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X"]
-Test.@test_fails ap_test4(["-h"])
-Test.@test_fails ap_test4_fails([])
+@test ap_test4([]) == (String=>Any)["parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing]
+@test ap_test4(["-o", "X"]) == (String=>Any)["parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X"]
+@test_throws ap_test4(["-h"])
+@test_throws ap_test4_fails([])

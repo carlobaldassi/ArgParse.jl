@@ -2,6 +2,7 @@
 #         actions
 
 using ArgParse
+using Base.Test
 
 function ap_test3(args)
 
@@ -41,8 +42,8 @@ function ap_test3(args)
     parsed_args = parse_args(args, s)
 end
 
-Test.@test ap_test3([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "awk"=>Vector{Any}[]]
-Test.@test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1"]) ==
+@test ap_test3([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "awk"=>Vector{Any}[]]
+@test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1"]) ==
     (String=>Any)["O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>{{"X", "X"}, {"Y", "X"}}]
-Test.@test_fails ap_test3(["X"])
-Test.@test_fails ap_test3(["--awk", "Z"])
+@test_throws ap_test3(["X"])
+@test_throws ap_test3(["--awk", "Z"])

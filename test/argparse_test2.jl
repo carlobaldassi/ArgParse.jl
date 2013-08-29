@@ -3,6 +3,7 @@
 #         number of arguments
 
 using ArgParse
+using Base.Test
 
 function ap_test2(args)
 
@@ -43,9 +44,9 @@ function ap_test2(args)
     parsed_args = parse_args(args, s)
 end
 
-Test.@test_fails ap_test2([])
-Test.@test ap_test2(["X", "Y"]) == (String=>Any)["opt1"=>0, "flag"=>false, "karma"=>0, "arg1"=>{"X", "Y"}, "arg2"=>{"no_arg_given"}]
-Test.@test ap_test2(["X", "Y", "-k", "-f", "Z", "--karma", "--opt"]) == (String=>Any)["opt1"=>1, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
-Test.@test ap_test2(["--opt", "-3", "X", "Y", "-k", "-f", "Z", "--karma"]) == (String=>Any)["opt1"=>-3, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
-Test.@test_fails ap_test2(["--opt", "1e-2", "X", "Y"])
+@test_throws ap_test2([])
+@test ap_test2(["X", "Y"]) == (String=>Any)["opt1"=>0, "flag"=>false, "karma"=>0, "arg1"=>{"X", "Y"}, "arg2"=>{"no_arg_given"}]
+@test ap_test2(["X", "Y", "-k", "-f", "Z", "--karma", "--opt"]) == (String=>Any)["opt1"=>1, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
+@test ap_test2(["--opt", "-3", "X", "Y", "-k", "-f", "Z", "--karma"]) == (String=>Any)["opt1"=>-3, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
+@test_throws ap_test2(["--opt", "1e-2", "X", "Y"])
 

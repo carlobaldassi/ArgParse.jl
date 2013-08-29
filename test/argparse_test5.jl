@@ -1,6 +1,7 @@
 # test 5: commands & subtables
 
 using ArgParse
+using Base.Test
 
 function ap_test5(args)
 
@@ -121,14 +122,14 @@ function ap_test5b(args)
     parsed_args = parse_args(args, s)
 end
 
-Test.@test_fails ap_test5([])
-Test.@test ap_test5(["run", "--speed", "3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3]]
-Test.@test ap_test5(["jump"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>false, "%COMMAND%"=>nothing]]
-Test.@test ap_test5(["jump", "--higher", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>true, "%COMMAND%"=>"clap-feet", "clap-feet"=>(String=>Any)[]]]
-Test.@test_fails ap_test5(["jump", "--clap", "--higher"])
+@test_throws ap_test5([])
+@test ap_test5(["run", "--speed", "3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3.0]]
+@test ap_test5(["jump"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>false, "%COMMAND%"=>nothing]]
+@test ap_test5(["jump", "--higher", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>true, "%COMMAND%"=>"clap-feet", "clap-feet"=>(String=>Any)[]]]
+@test_throws ap_test5(["jump", "--clap", "--higher"])
 
-Test.@test_fails ap_test5b([])
-Test.@test ap_test5b(["fly"]) == (String=>Any)["%COMMAND%"=>"fly", "fly"=>(String=>Any)["glade"=>false]]
-Test.@test ap_test5b(["jump", "--lower", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["%COMMAND%"=>"clap-feet", "higher"=>false, "clap-feet"=>(String=>Any)["whistle"=>false]]]
-Test.@test ap_test5b(["run", "--speed=3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3.0]]
+@test_throws ap_test5b([])
+@test ap_test5b(["fly"]) == (String=>Any)["%COMMAND%"=>"fly", "fly"=>(String=>Any)["glade"=>false]]
+@test ap_test5b(["jump", "--lower", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["%COMMAND%"=>"clap-feet", "higher"=>false, "clap-feet"=>(String=>Any)["whistle"=>false]]]
+@test ap_test5b(["run", "--speed=3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3.0]]
 
