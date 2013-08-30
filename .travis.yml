@@ -9,14 +9,10 @@ before_install:
     - sudo apt-get update -qq -y
     - sudo apt-get upgrade -y
     - sudo apt-get install julia -y
-    - git config --global user.name "Travis User"
-    - git config --global user.email "travis@example.net"
 script:
-    - julia -e "Pkg.init()"
-    - julia -e "Pkg.add(Pkg.VersionSet(\"Options\", [VersionNumber(0,2)]), \"TextWrap\")"
-    - mkdir -p ~/.julia/ArgParse
-    - cp -R ./* ~/.julia/ArgParse/
-    - julia ~/.julia/ArgParse/test/test.jl
+    - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir())/`); Pkg.resolve()'
+    - julia -e 'using ArgParse; @assert isdefined(:ArgParse); @assert typeof(ArgParse) === Module'
+    - julia test/runtests.jl
 branches:
     except:
         - release-0.1
