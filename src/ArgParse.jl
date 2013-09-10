@@ -39,13 +39,13 @@ const _internal_actions = [:store_arg, :store_true, :store_false, :store_const,
                            :show_help, :show_version]
 
 const _nonflag_actions = [:store_arg, :append_arg, :command_arg]
-_is_flag_action(a::Symbol) = !contains(_nonflag_actions, a)
+_is_flag_action(a::Symbol) = !(a in _nonflag_actions)
 
 const _multi_actions = [:append_arg, :append_const]
-_is_multi_action(a::Symbol) = contains(_multi_actions, a)
+_is_multi_action(a::Symbol) = a in _multi_actions
 
 const _command_actions = [:command_arg, :command_flag]
-_is_command_action(a::Symbol) = contains(_command_actions, a)
+_is_command_action(a::Symbol) = a in _command_actions
 #}}}
 
 # ArgConsumerType
@@ -222,17 +222,13 @@ end
 
 function _warn_extra_opts(opts, valid_keys::Vector{Symbol})
     for k in opts
-        if !contains(valid_keys, k)
-            println(STDERR, "warning: ignored option: $k")
-        end
+        k in valid_keys || warn("ignored option: $k")
     end
     return true
 end
 
 function _check_action_is_valid(action::Symbol)
-    if !contains(_all_actions, action)
-        error("invalid action: $action")
-    end
+    action in _all_actions || error("invalid action: $action")
 end
 
 function _check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
@@ -247,12 +243,12 @@ function _check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
 end
 
 function _check_long_opt_name(name::String, settings::ArgParseSettings)
-    if contains(name, '=')
+    if '=' in name
         error("illegal option name: $name (contains '=')")
     elseif ismatch(r"\s", name)
-        error("illegal option name: $name (containes whitespace)")
-    elseif contains(name, _nbspc)
-        error("illegal option name: $name (containes non-breakable-space)")
+        error("illegal option name: $name (contains whitespace)")
+    elseif _nbspc in name
+        error("illegal option name: $name (contains non-breakable-space)")
     elseif settings.add_help && name == "help"
         error("option --help is reserved in the current settings")
     elseif settings.add_version && name == "version"
@@ -267,9 +263,9 @@ function _check_short_opt_name(name::String, settings::ArgParseSettings)
     elseif name == "="
         error("illegal short option name: $name")
     elseif ismatch(r"\s", name)
-        error("illegal option name: $name (containes whitespace)")
-    elseif contains(name, _nbspc)
-        error("illegal option name: $name (containes non-breakable-space)")
+        error("illegal option name: $name (contains whitespace)")
+    elseif _nbspc in name
+        error("illegal option name: $name (contains non-breakable-space)")
     elseif !settings.allow_ambiguous_opts && ismatch(r"[0-9._(]", name)
         error("ambiguous option name: $name (disabled in the current settings)")
     elseif settings.add_help && name == "h"
@@ -474,9 +470,9 @@ function _check_metavar(metavar::String)
     elseif beginswith(metavar, '-')
         error("metavars cannot begin with -")
     elseif ismatch(r"\s", metavar)
-        error("illegal metavar name: $metavar (containes whitespace)")
-    elseif contains(metavar, _nbspc)
-        error("illegal metavar name: $metavar (containes non-breakable-space)")
+        error("illegal metavar name: $metavar (contains whitespace)")
+    elseif _nbspc in metavar
+        error("illegal metavar name: $metavar (contains non-breakable-space)")
     end
     return true
 end
@@ -649,7 +645,7 @@ macro add_arg_table(s, x...)
             continue
         else
             # anything else: ignore, but issue a warning
-            println(STDERR, "warning: @add_arg_table: ignoring expression ", y)
+            warn("@add_arg_table: ignoring expression ", y)
             i += 1
         end
     end
@@ -767,13 +763,13 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
     new_arg.action = action
 
     group = string(group)
-    if contains(supplied_opts, :group) && !isempty(group)
+    if (:group in supplied_opts) && !isempty(group)
         _check_group_name(group)
     end
     new_arg.group = _get_group_name(group, new_arg, settings)
 
     if (action == :store_const || action == :append_const) &&
-           !contains(supplied_opts, :constant)
+           !(:constant in supplied_opts)
         error("action $action requires the 'constant' field")
     end
 
@@ -803,21 +799,19 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
     end
 
     if _is_command_action(action)
-        if contains(supplied_opts, :dest_name) && contains(valid_keys, :dest_name)
+        if (:dest_name in supplied_opts) && (:dest_name in valid_keys)
             cmd_name = dest_name
         else
             cmd_name = new_arg.dest_name
         end
     end
-    if contains(supplied_opts, :dest_name) &&
-           contains(valid_keys, :dest_name) &&
-           action != :command_flag
+    if (:dest_name in supplied_opts) && (:dest_name in valid_keys) && (action != :command_flag)
         new_arg.dest_name = dest_name
     end
 
     _check_dest_name(dest_name)
 
-    set_if_valid(k, x) = if contains(valid_keys, k) new_arg.(k) = x end
+    set_if_valid(k, x) = if k in valid_keys new_arg.(k) = x end
 
     set_if_valid(:arg_type, arg_type)
     set_if_valid(:default, deepcopy(default))
@@ -859,7 +853,7 @@ function _add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options
             new_arg.arg_type = Int
             new_arg.default = 0
         elseif action == :store_const || action == :append_const
-            if contains(supplied_opts, :arg_type)
+            if :arg_type in supplied_opts
                 _check_default_type(new_arg.default, new_arg.arg_type)
                 _check_default_type(new_arg.constant, new_arg.arg_type)
             else
@@ -1123,12 +1117,12 @@ function _merge_commands(fields::Vector{ArgParseField}, ofields::Vector{ArgParse
         if _is_cmd(a) && _is_cmd(oa) && a.constant == oa.constant && !_is_arg(a)
             @assert !_is_arg(oa) # this is ensured by _check_settings_are_compatible
             for l in oa.long_opt_name
-                if !contains(a.long_opt_name, l)
+                if !(l in a.long_opt_name)
                     push!(a.long_opt_name, l)
                 end
             end
             for s in oa.short_opt_name
-                if !contains(a.short_opt_name, s)
+                if !(s in a.short_opt_name)
                     push!(a.short_opt_name, s)
                 end
             end
@@ -1241,7 +1235,7 @@ end
 
 function _test_required_args(settings::ArgParseSettings, found_args::Set{String})
     for f in settings.args_table.fields
-        if _is_arg(f) && f.required && !contains(found_args, f.metavar)
+        if _is_arg(f) && f.required && !(f.metavar in found_args)
             _argparse_error("required argument $(f.metavar) was not provided")
         end
     end
