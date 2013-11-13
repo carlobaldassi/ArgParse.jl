@@ -22,8 +22,6 @@ First of all, the module needs to be loaded and imported::
 
     using ArgParse
 
-Note that in the second line we imported all names in the current namespace; this should be completely safe in most cases.
-
 There are two main steps for defining a command-line interface: creating an ``ArgParseSettings`` object, and
 populating it with allowed arguments and options using either the macro ``@add_arg_table`` or the function ``add_arg_table``
 (see :ref:`this section <argparse-parse_args>` for the difference between the two)::
@@ -65,7 +63,6 @@ In the above example, it will contain the keys ``"opt1"``, ``"opt2"``, ``"flag1"
 
 Putting all this together in a file, we can see how a basic command-line interface is created::
 
-    require("argparse")
     using ArgParse
 
     function parse_commandline()
@@ -92,8 +89,8 @@ Putting all this together in a file, we can see how a basic command-line interfa
     function main()
         parsed_args = parse_commandline()
         println("Parsed args:")
-        for pa in parsed_args
-            println("  $(pa[1])  =>  $(pa[2])")
+        for (arg,val) in parsed_args
+            println("  $arg  =>  $val")
         end
     end
     
@@ -175,7 +172,7 @@ The ``parse_args`` function
    Arguments are parsed in sequence and matched against the argument table in ``settings`` to determine whether they are
    long options, short options, option arguments or positional arguments:
 
-   * long options begin with a doule dash ``"--"``; if a ``'='`` character is found, the remainder is the option argument;
+   * long options begin with a double dash ``"--"``; if a ``'='`` character is found, the remainder is the option argument;
      therefore, ``["--opt=arg"]`` and ``["--opt", "arg"]`` are equivalent if ``--opt`` takes at least one argument.
      Long options can be abbreviated (e.g. ``--opt`` instead of ``--option``) as long as there is no ambiguity.
    * short options begin with a single dash ``"-"`` and their name consists of a single character; they can be grouped
@@ -225,7 +222,7 @@ This is the list of general settings currently available:
   arguments description.
 * ``usage`` (default = ``""``): the usage line(s) to be displayed in the help screen and when an error is found during parsing.
   If left empty, it will be auto-generated.
-* ``version`` (default = ``""Unknown version"``): version information. It's used by the ``:show_version`` action.
+* ``version`` (default = ``"Unknown version"``): version information. It's used by the ``:show_version`` action.
 * ``add_help`` (default = ``true``): if ``true``, a ``--help, -h`` option (triggering the ``:show_help`` action) is added
   to the argument table.
 * ``add_version`` (default = ``false``): if ``true``, a ``--version`` option (triggering the ``:show_version`` action) is added
@@ -293,7 +290,7 @@ methods to populate it:
                 required = true
         end
 
-    In the above example, the ``table`` is put in a single ``begin...end`` block and the line ``"-opt1", "-o"`` is parsed as a tuple;
+    In the above example, the ``table`` is put in a single ``begin...end`` block and the line ``"--opt1", "-o"`` is parsed as a tuple;
     indentation is used to help readability.
 
 .. function:: add_arg_table(settings, [arg_name [,arg_options]]...)
@@ -316,7 +313,7 @@ methods to populate it:
                 required = true
             end)
 
-    Note that the OptionsMod module (provided by the `Options package <https://github.com/JuliaLang/Options.jl>`) must be imported
+    Note that the OptionsMod module (provided by the `Options package <https://github.com/JuliaLang/Options.jl>`_) must be imported
     in order to use this function.
 
 .. _argparse-argument-table-entries:
@@ -389,7 +386,7 @@ This is the list of all available settings:
   explanation.
 * ``arg_type`` (default = ``Any``): the type of the argument. Makes only sense with non-flag arguments.
 * ``default`` (default = ``nothing``): the default value if the option or positional argument is not parsed. Makes only sense with
-  non-flag arguments, or when the action is ``:store_const`` or ``:append_const``. Unless it's ``nothing``, it must be coherent with
+  non-flag arguments, or when the action is ``:store_const`` or ``:append_const``. Unless it's ``nothing``, it must be consistent with
   ``arg_type`` and ``range_tester``.
 * ``constant`` (default = ``nothing``): this value is used by the ``:store_const`` and ``:append_const`` actions, or when ``nargs = '?'``
   and the option argument is not provided.
@@ -423,14 +420,15 @@ The ``nargs`` setting can be a number or a character; the possible values are:
 
 * ``'A'``: automatic, i.e. inferred from the action (this is the default). In practice, it means ``0`` for flag-like options and ``1``
   for non-flag-like options (but it's different from using an explicit ``1`` because the result is not stored in a ``Vector``).
-* ``0``: this is the only option (besides ``'A'``) for flag-like actions (see below), and it means no extra tokens will be parsed from
+* ``0``: this is the only possibility (besides ``'A'``) for flag-like actions (see below), and it means no extra tokens will be parsed from
   the command line. If ``action`` is not specified, setting ``nargs`` to ``0`` will make ``action`` default to ``:store_true``.
 * a positive integer number ``N``: exactly ``N`` tokens will be parsed from the command-line, and the result stored into a ``Vector``
   of length ``N`` (even for ``N=1``).
 * ``'?'``: optional, i.e. a token will only be parsed if it does not look like an option (see :ref:`this section <argparse-details>`
   for a discussion of how exactly this is established), otherwise the ``constant`` argument entry setting will be used instead.
   This only makes sense with options.
-* ``'*'``: any number, i.e. all subsequent tokens which do not look like an option are stored into a ``Vector``.
+* ``'*'``: any number, i.e. all subsequent tokens are stored into a ``Vector``, up until a token which looks like an option is
+  encountered, or all tokens are consumed.
 * ``'+'``: like ``'*'``, but at least one token is required.
 * ``'R'``: all remainder tokens, i.e. like ``'*'`` but it does not stop at options.
 
@@ -440,7 +438,7 @@ argument (i.e. flags), all others (except ``command``, which is special) are for
 * flag actions are only compatible with ``nargs = 0`` or ``nargs = 'A'``
 * non-flag actions are not compatible with ``nargs = 0``.
 
-This is the list of all available actions (in each examples, suppose we defined ``settings = ArgParseSettings()``):
+This is the list of all available actions (in each example, suppose we defined ``settings = ArgParseSettings()``):
 
 * ``store_arg`` (non-flag): store the argument. This is the default unless ``nargs`` is ``0``. Example::
 
