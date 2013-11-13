@@ -391,20 +391,20 @@ function _check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFie
     return true
 end
 function _check_default_type(default, arg_type::Type)
-    if !(default === nothing) && !isa(default, arg_type)
+    if default !== nothing && !isa(default, arg_type)
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), arg_type=$arg_type)")
     end
     return true
 end
 function _check_default_type_multi(default, arg_type::Type)
-    if !(default === nothing) && !isa(default, Vector{None}) &&
+    if default !== nothing && !isa(default, Vector{None}) &&
             !(isa(default, Vector) && (arg_type <: eltype(default)))
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with T<:$arg_type})")
     end
     return true
 end
 function _check_default_type_multi2(default, arg_type::Type)
-    if !(default === nothing) && !isa(default, Vector{None}) &&
+    if default !== nothing && !isa(default, Vector{None}) &&
             !(isa(default, Vector) && (Vector{arg_type} <: eltype(default)))
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
     end
@@ -616,7 +616,7 @@ macro add_arg_table(s, x...)
                 # transform tuples into vectors
                 y.head = :vcat
             end
-            if !(name === nothing)
+            if name !== nothing
                 # there was a previous arg field on hold
                 # first, concretely build the options
                 opt = Expr(:call, exopt...)
@@ -634,7 +634,7 @@ macro add_arg_table(s, x...)
             name = y
             exopt = Any[:Options]
             i += 1
-        elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=))
+        elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
             # found an assignment: add it to the current options expression
             push!(exopt, Expr(:quote, y.args[1]))
             push!(exopt, esc(y.args[2]))
@@ -645,11 +645,13 @@ macro add_arg_table(s, x...)
             continue
         else
             # anything else: ignore, but issue a warning
-            warn("@add_arg_table: ignoring expression ", y)
+            warn("@add_arg_table: ignoring expression $y")
+            dump(y)
+            println(y.head)
             i += 1
         end
     end
-    if !(name === nothing)
+    if name !== nothing
         # there is an arg field on hold
         # same as above
         opt = Expr(:call, exopt...)
@@ -1411,7 +1413,7 @@ function _gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
             if arg.arg_type != Any
                 type_str = pre * "(type: " * string(arg.arg_type)
             end
-            if !(arg.default === nothing) && !isequal(arg.default, [])
+            if arg.default !== nothing && !isequal(arg.default, [])
                 mid = isempty(type_str) ? " (" : ", "
                 default_str = mid * "default: " * string(arg.default)
             end
@@ -1626,7 +1628,7 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
             elseif !arg_delim_found && _looks_like_an_option(arg, settings)
                 shopts_lst = arg[2:end]
                 last_ind, command, shopts_lst_rest, out_dict = _parse_short_opt(settings, shopts_lst, last_ind, args_list, out_dict)
-                if !(command === nothing) && !(shopts_lst_rest === nothing)
+                if command !== nothing && shopts_lst_rest !== nothing
                     args_list = copy(args_list)
                     args_list[last_ind] = "-" * shopts_lst_rest
                     last_ind -= 1
@@ -1635,12 +1637,12 @@ function _parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
                 last_ind, last_arg, command, out_dict = _parse_arg(settings, last_ind, last_arg, arg_delim_found, args_list, out_dict)
                 push!(found_args, settings.args_table.fields[last_arg].metavar)
             end
-            if !(command === nothing)
+            if command !== nothing
                 break
             end
         end
         _test_required_args(settings, found_args)
-        if !(command === nothing)
+        if command !== nothing
             if !haskey(settings, command)
                 _argparse_error("unknown command: $command")
             end
@@ -1716,7 +1718,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
         if length(args_list) - last_ind + corr < num
             _err_arg_required(name, num, is_opt)
         end
-        if !(rest === nothing)
+        if rest !== nothing
             a = _parse_item(f.arg_type, rest)
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
@@ -1733,7 +1735,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             push!(opt_arg, a)
         end
     elseif f.nargs.desc == 'A'
-        if !(rest === nothing)
+        if rest !== nothing
             a = _parse_item(f.arg_type, rest)
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
@@ -1756,7 +1758,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
         if !is_opt
             _found_a_bug()
         end
-        if !(rest === nothing)
+        if rest !== nothing
             a = _parse_item(f.arg_type, rest)
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
@@ -1777,7 +1779,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
         end
     elseif f.nargs.desc == '*' || f.nargs.desc == '+'
         arg_found = false
-        if !(rest === nothing)
+        if rest !== nothing
             a = _parse_item(f.arg_type, rest)
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
@@ -1803,7 +1805,7 @@ function _parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args
             _argparse_error("option $name requires at least one (not-looking-like-an-option) argument")
         end
     elseif f.nargs.desc == 'R'
-        if !(rest === nothing)
+        if rest !== nothing
             a = _parse_item(f.arg_type, rest)
             if !_test_range(f.range_tester, a)
                 _err_arg_outofrange(name, a, is_opt)
@@ -1870,7 +1872,7 @@ function _parse_long_opt(settings::ArgParseSettings, opt_name::String, last_ind:
     opt_name = fln
 
     if _is_flag(f)
-        out_dict, command = _parse1_flag(settings, f, !(arg_after_eq === nothing), "--"*opt_name, out_dict)
+        out_dict, command = _parse1_flag(settings, f, arg_after_eq !== nothing, "--"*opt_name, out_dict)
     else
         out_dict, last_ind, arg_consumed, command =
                 _parse1_optarg(settings, f, arg_after_eq, args_list, "--"*opt_name,
@@ -1933,7 +1935,7 @@ function _parse_short_opt(settings::ArgParseSettings, shopts_lst::String, last_i
         if arg_consumed
             break
         end
-        if !(command === nothing) && !(rest_as_arg === nothing)
+        if command !== nothing && rest_as_arg !== nothing
             if isempty(rest_as_arg)
                 rest_as_arg = nothing
             end
