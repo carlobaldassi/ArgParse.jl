@@ -13,13 +13,13 @@ function main(args)
     @add_arg_table s begin
         "--opt1"
             action = :append_const   # appends 'constant' to 'dest_name'
-            arg_type = String
+            arg_type = ByteString
             constant = "O1"
             dest_name = "O_stack"    # this changes the destination
             help = "append O1"
         "--opt2"
             action = :append_const
-            arg_type = String
+            arg_type = ByteString
             constant = "O2"
             dest_name = "O_stack"    # same dest_name as opt1, different constant
             help = "append O2"
@@ -32,6 +32,7 @@ function main(args)
             nargs = '+'                         # eats up as many argument as found (at least 1)
             action = :append_arg                # argument chunks are appended when the option is
                                                 # called repeatedly
+            arg_type = ByteString
             dest_name = "awk"
             range_tester = (x->x=="X"||x=="Y")  # each argument must be either "X" or "Y"
             metavar = "XY"
@@ -41,8 +42,8 @@ function main(args)
 
     parsed_args = parse_args(args, s)
     println("Parsed args:")
-    for pa in parsed_args
-        println("  $(pa[1])  =>  $(pa[2])")
+    for (key,val) in parsed_args
+        println("  $key  =>  $(repr(val))")
     end
 end
 

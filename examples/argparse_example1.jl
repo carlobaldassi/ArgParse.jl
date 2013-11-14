@@ -16,8 +16,8 @@ function main(args)
 
     parsed_args = parse_args(s) # the result is a Dict{String,Any}
     println("Parsed args:")
-    for pa in parsed_args
-        println("  $(pa[1])  =>  $(pa[2])")
+    for (key,val) in parsed_args
+        println("  $key  =>  $(repr(val))")
     end
 end
 

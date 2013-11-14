@@ -34,6 +34,7 @@ function main(args)
             nargs = '+'
             action = :append_arg
             dest_name = "awk"
+            arg_type = ByteString
             range_tester = (x->x=="X"||x=="Y")
             metavar = "XY"
             help = "either X or Y; all XY's are " *
@@ -58,8 +59,8 @@ function main(args)
 
     parsed_args = parse_args(args, s)
     println("Parsed args:")
-    for pa in parsed_args
-        println("  $(pa[1])  =>  $(pa[2])")
+    for (key,val) in parsed_args
+        println("  $key  =>  $(repr(val))")
     end
 end
 
