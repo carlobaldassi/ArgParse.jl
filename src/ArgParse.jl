@@ -1432,7 +1432,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
             last_ind += 1
 
             arg = args_list[last_ind]
-            if arg == "--"
+            if !arg_delim_found && arg == "--"
                 arg_delim_found = true
                 continue
             elseif !arg_delim_found && beginswith(arg, "--")
@@ -1444,9 +1444,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
                     opt_name = arg[3:end]
                     arg_after_eq = nothing
                 end
-                if isempty(opt_name)
-                    argparse_error("illegal option: $arg")
-                end
+                isempty(opt_name) && argparse_error("illegal option: $arg")
                 last_ind, command, out_dict = parse_long_opt(settings, opt_name, last_ind, arg_after_eq, args_list, out_dict)
             elseif !arg_delim_found && looks_like_an_option(arg, settings)
                 shopts_lst = arg[2:end]
