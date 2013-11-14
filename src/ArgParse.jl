@@ -9,7 +9,6 @@ export
 # types
     ArgParseSettings,
     ArgParseError,
-    ArgParseField, # it shouldn't be necessary to export this, yet it is for some reason
 
 # functions & macros
     add_arg_table,
