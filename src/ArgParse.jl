@@ -50,28 +50,21 @@ is_command_action(a::Symbol) = a in command_actions
 
 # ArgConsumerType
 #{{{
-type ArgConsumerType
-    num::Int
-    desc::Char
+immutable ArgConsumerType
+    desc::Union(Int,Char)
     function ArgConsumerType(n::Integer)
-        if n < 0
-            error("negative number of arguments")
-        end
-        new(n, 'N')
+        n >= 0 || error("negative number of arguments")
+        new(n)
     end
     function ArgConsumerType(c::Char)
-        if !(c == 'A' || c == '?' || c == '*' || c == '+' || c == 'R')
-            error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
-        end
-        new(0, c)
+        c in ['A', '?', '*', '+', 'R'] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
+        new(c)
     end
 end
 ArgConsumerType() = ArgConsumerType('A')
 
 function show(io::IO, nargs::ArgConsumerType)
-    if nargs.desc == 'N'
-        show(io, nargs.num)
-    elseif nargs.desc == 'A'
+    if nargs.desc == 'A'
         show(io, "Auto")
     elseif nargs.desc == 'R'
         show(io, "Remainder")
@@ -83,20 +76,11 @@ end
 is_multi_nargs(nargs::ArgConsumerType) = (nargs.desc != 'A' && nargs.desc != '?')
 
 function default_action(nargs::Union(Int, Char))
-    if isa(nargs, Int) && nargs == 0
-        return :store_true
-    else
-        return :store_arg
-    end
+    isa(nargs, Int) && nargs == 0 && return :store_true
+    return :store_arg
 end
 
-function default_action(nargs::ArgConsumerType)
-    if nargs.desc == 'N' && nargs.num == 0
-        return :store_true
-    else
-        return :store_arg
-    end
-end
+default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 #}}}
 
 # ArgParseGroup
@@ -232,11 +216,11 @@ function check_action_is_valid(action::Symbol)
 end
 
 function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
-    if is_flag_action(action) && (nargs.num != 0 || (nargs.desc != 'N' && nargs.desc != 'A'))
+    if is_flag_action(action) && nargs.desc != 0 && nargs.desc != 'A'
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
     elseif is_command_action(action) && nargs.desc != 'A'
         error("incompatible nargs and action (command action, nargs=$nargs)")
-    elseif !is_flag_action(action) && (nargs.desc == 'N' && nargs.num == 0)
+    elseif !is_flag_action(action) && nargs.desc == 0
         error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
     end
     return true
@@ -1331,8 +1315,8 @@ function usage_string(settings::ArgParseSettings)
                 bra_pre = ""
                 bra_post = ""
             end
-            if f.nargs.desc == 'N'
-                arg_str = string(ntuple(f.nargs.num, i->(i==1?f.metavar:(nbsps * f.metavar)))...)
+            if isa(f.nargs.desc, Int)
+                arg_str = string(ntuple(f.nargs.desc, i->(i==1?f.metavar:(nbsps * f.metavar)))...)
             elseif f.nargs.desc == 'A'
                 arg_str = f.metavar
             elseif f.nargs.desc == '?'
@@ -1352,8 +1336,8 @@ function usage_string(settings::ArgParseSettings)
             if is_flag(f)
                 opt_str2 = ""
             else
-                if f.nargs.desc == 'N'
-                    opt_str2 = string(ntuple(f.nargs.num, i->(nbsps * f.metavar))...)
+                if isa(f.nargs.desc, Int)
+                    opt_str2 = string(ntuple(f.nargs.desc, i->(nbsps * f.metavar))...)
                 elseif f.nargs.desc == 'A'
                     opt_str2 = nbsps * f.metavar
                 elseif f.nargs.desc == '?'
@@ -1477,8 +1461,8 @@ function show_help(settings::ArgParseSettings)
             if is_flag(f)
                 opt_str2 = ""
             else
-                if f.nargs.desc == 'N'
-                    opt_str2 = string(ntuple(f.nargs.num, i->(nbsps * f.metavar))...)
+                if isa(f.nargs.desc, Int)
+                    opt_str2 = string(ntuple(f.nargs.desc, i->(nbsps * f.metavar))...)
                 elseif f.nargs.desc == 'A'
                     opt_str2 = nbsps * f.metavar
                 elseif f.nargs.desc == '?'
@@ -1711,8 +1695,8 @@ function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_
     if is_multi_nargs(f.nargs)
         opt_arg = Array(f.arg_type, 0)
     end
-    if f.nargs.desc == 'N'
-        num = f.nargs.num
+    if isa(f.nargs.desc, Int)
+        num::Int = f.nargs.desc
         @assert num > 0
         corr = (rest === nothing) ? 0 : 1
         if length(args_list) - last_ind + corr < num
