@@ -1068,15 +1068,14 @@ argparse_error(x) = throw(ArgParseError(x))
 
 # parsing checks
 #{{{
-function test_range(range_tester::Function, arg, name::String, is_opt::Bool)
+function test_range(range_tester::Function, arg, name::String)
     local rng_chk::Bool
     try
         rng_chk = range_tester(arg)
     catch
         rng_chk = false
     end
-    rng_chk || argparse_error("out of range " *
-                              (is_opt ? "argument to option" : "input to argument") *
+    rng_chk || argparse_error("out of range input for " *
                               " $name: $a")
     return
 end
@@ -1386,6 +1385,43 @@ function parse_args(args_list::Vector, settings::ArgParseSettings)
     parsed_args
 end
 
+function parse_tokens(args_list::Vector, settings::ArgParseSettings)
+    arg_delim_found = false
+    args_list = deepcopy(args_list)
+    while !isempty(args_list)
+        token = {:args_list=>args_list, :delim_found=>arg_delim_found}
+
+        arg = strip(shift!(args_list))
+        if !arg_delim_found && arg == "--"
+            arg_delim_found = true
+            continue
+        elseif !arg_delim_found && beginswith(arg, "--")
+            eq = search(arg, '=')
+            if eq != 0
+                opt_name = arg[3:eq-1]
+                arg_after_eq = arg[eq+1:end]
+            else
+                opt_name = arg[3:end]
+                arg_after_eq = nothing
+            end
+            isempty(opt_name) && argparse_error("illegal option: $arg")
+            token[:tag] = :long_option
+            token[:name] = opt_name
+            token[:arg] = arg_after_eq
+            produce(token)
+        elseif !arg_delim_found && looks_like_an_option(arg, settings)
+            shopts_lst = arg[2:end]
+            token[:tag] = :short_option_list
+            token[:list] = shopts_lst
+            produce(token)
+        else
+            token[:tag] = :pos_arg
+            token[:arg] = arg
+            produce(token)
+        end
+    end
+end
+
 function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
     any(x->!isa(x,String), args_list) && error("malformed args_list")
 
@@ -1413,6 +1449,8 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         help_added = true
     end
 
+    tokens = Task(()->parse_tokens(args_list, settings))
+
     out_dict = (String=>Any)[]
     try
         found_args = Set{String}()
@@ -1422,46 +1460,36 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
             out_dict[f.dest_name] = deepcopy(f.default)
         end
 
-        arg_delim_found = false
-        last_ind = 0
         last_arg = 0
         command = nothing
-        while last_ind < length(args_list)
-            last_ind += 1
-
-            arg = args_list[last_ind]
-            if !arg_delim_found && arg == "--"
-                arg_delim_found = true
-                continue
-            elseif !arg_delim_found && beginswith(arg, "--")
-                eq = search(arg, '=')
-                if eq != 0
-                    opt_name = arg[3:eq-1]
-                    arg_after_eq = arg[eq+1:end]
-                else
-                    opt_name = arg[3:end]
-                    arg_after_eq = nothing
-                end
-                isempty(opt_name) && argparse_error("illegal option: $arg")
-                last_ind, command, out_dict = parse_long_opt(settings, opt_name, last_ind, arg_after_eq, args_list, out_dict)
-            elseif !arg_delim_found && looks_like_an_option(arg, settings)
-                shopts_lst = arg[2:end]
-                last_ind, command, shopts_lst_rest, out_dict = parse_short_opt(settings, shopts_lst, last_ind, args_list, out_dict)
+        for token in tokens
+            tag = token[:tag]
+            args_list = token[:args_list]
+            if tag == :long_option
+                opt_name = token[:name]
+                arg_after_eq = token[:arg]
+                command = parse_long_opt(settings, opt_name, arg_after_eq, args_list, out_dict)
+            elseif tag == :short_option_list
+                shopts_lst = token[:list]
+                command, shopts_lst_rest = parse_short_opt(settings, shopts_lst, args_list, out_dict)
                 if command !== nothing && shopts_lst_rest !== nothing
-                    args_list = copy(args_list)
-                    args_list[last_ind] = "-" * shopts_lst_rest
-                    last_ind -= 1
+                    unshift!(args_list, "-" * shopts_lst_rest) # TODO: this may mess up with "looks_like_an_option" heuristic
                 end
-            else
-                last_ind, last_arg, command, out_dict = parse_arg(settings, last_ind, last_arg, arg_delim_found, args_list, out_dict)
+            elseif tag == :pos_arg
+                arg_delim_found = token[:delim_found]
+                arg = token[:arg]
+                unshift!(args_list, arg)
+                command, last_arg = parse_arg(settings, last_arg, arg_delim_found, args_list, out_dict)
                 push!(found_args, settings.args_table.fields[last_arg].metavar)
+            else
+                found_a_bug()
             end
             command === nothing || break
         end
         test_required_args(settings, found_args)
         if command !== nothing
             haskey(settings, command) || argparse_error("unknown command: $command")
-            out_dict[command] = parse_args(args_list[last_ind+1:end], settings[command])
+            out_dict[command] = parse_args(args_list, settings[command])
         elseif settings.commands_are_required && has_cmd(settings)
             argparse_error("No command given")
         end
@@ -1504,16 +1532,15 @@ function parse1_flag(settings::ArgParseSettings, f::ArgParseField, has_arg::Bool
     elseif f.action == :show_version
         show_version(settings)
     end
-    return out_dict, command
+    return command
 end
 
-function err_arg_required(name::String, num::Int, is_opt::Bool)
-    argparse_error((is_opt?"option":"argument")*" $name requires $num argument(s)")
+function err_arg_required(name::String, num::Int)
+    argparse_error("$name requires $num argument(s)")
 end
 
 function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_list, name::String,
-                        is_opt::Bool, arg_delim_found::Bool,
-                        out_dict::Dict, last_ind::Int)
+                       arg_delim_found::Bool, out_dict::Dict)
     arg_consumed = false
     command = nothing
     is_multi_nargs(f.nargs) && (opt_arg = Array(f.arg_type, 0))
@@ -1521,51 +1548,46 @@ function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_
         num::Int = f.nargs.desc
         num > 0 || found_a_bug()
         corr = (rest === nothing) ? 0 : 1
-        if length(args_list) - last_ind + corr < num
-            err_arg_required(name, num, is_opt)
+        if length(args_list) + corr < num
+            err_arg_required(name, num)
         end
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
-            test_range(f.range_tester, a, name, is_opt)
+            test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_consumed = true
         end
         for i = (1+corr):num
-            last_ind += 1
-            a = parse_item(f.arg_type, args_list[last_ind])
-            test_range(f.range_tester, a, name, is_opt)
+            a = parse_item(f.arg_type, shift!(args_list))
+            test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
     elseif f.nargs.desc == 'A'
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
-            test_range(f.range_tester, a, name, is_opt)
+            test_range(f.range_tester, a, name)
             opt_arg = a
             arg_consumed = true
         else
-            if length(args_list) - last_ind < 1
-                @assert is_opt
+            if isempty(args_list)
                 argparse_error("option $name requires an argument")
             end
-            last_ind += 1
-            a = parse_item(f.arg_type, args_list[last_ind])
-            test_range(f.range_tester, a, name, is_opt)
+            a = parse_item(f.arg_type, shift!(args_list))
+            test_range(f.range_tester, a, name)
             opt_arg = a
         end
     elseif f.nargs.desc == '?'
-        is_opt || found_a_bug()
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
-            test_range(f.range_tester, a, name, is_opt)
+            test_range(f.range_tester, a, name)
             opt_arg = a
             arg_consumed = true
         else
-            if length(args_list) - last_ind < 1
+            if isempty(args_list)
                 opt_arg = deepcopy(f.constant)
             else
-                last_ind += 1
-                a = parse_item(f.arg_type, args_list[last_ind])
-                test_range(f.range_tester, a, name, is_opt)
+                a = parse_item(f.arg_type, shift!(args_list))
+                test_range(f.range_tester, a, name)
                 opt_arg = a
             end
         end
@@ -1573,36 +1595,33 @@ function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_
         arg_found = false
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
-            test_range(f.range_tester, a, name, is_opt)
+            test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_consumed = true
             arg_found = true
         end
-        while last_ind < length(args_list)
-            if !arg_delim_found && looks_like_an_option(args_list[last_ind+1], settings)
+        while !isempty(args_list)
+            if !arg_delim_found && looks_like_an_option(args_list[1], settings)
                 break
             end
-            last_ind += 1
-            a = parse_item(f.arg_type, args_list[last_ind])
-            test_range(f.range_tester, a, name, is_opt)
+            a = parse_item(f.arg_type, shift!(args_list))
+            test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_found = true
         end
         if f.nargs.desc == '+' && !arg_found
-            is_opt || found_a_bug()
             argparse_error("option $name requires at least one (not-looking-like-an-option) argument")
         end
     elseif f.nargs.desc == 'R'
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
-            test_range(f.range_tester, a, name, is_opt)
+            test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_consumed = true
         end
-        while last_ind < length(args_list)
-            last_ind += 1
-            a = parse_item(f.arg_type, args_list[last_ind])
-            test_range(f.range_tester, a, name, is_opt)
+        while !isempty(args_list)
+            a = parse_item(f.arg_type, shift!(args_list))
+            test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
     else
@@ -1618,13 +1637,13 @@ function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_
     else
         found_a_bug()
     end
-    return out_dict, last_ind, arg_consumed, command
+    return arg_consumed, command
 end
 #}}}
 
 # parse long opts
 #{{{
-function parse_long_opt(settings::ArgParseSettings, opt_name::String, last_ind::Int, arg_after_eq::Union(String,Nothing), args_list::Vector, out_dict::Dict)
+function parse_long_opt(settings::ArgParseSettings, opt_name::String, arg_after_eq::Union(String,Nothing), args_list::Vector, out_dict::Dict)
     local f::ArgParseField
     local fln::String
     exact_match = false
@@ -1651,20 +1670,18 @@ function parse_long_opt(settings::ArgParseSettings, opt_name::String, last_ind::
     opt_name = fln
 
     if is_flag(f)
-        out_dict, command = parse1_flag(settings, f, arg_after_eq !== nothing, "--"*opt_name, out_dict)
+        command = parse1_flag(settings, f, arg_after_eq !== nothing, "--"*opt_name, out_dict)
     else
-        out_dict, last_ind, arg_consumed, command =
-                parse1_optarg(settings, f, arg_after_eq, args_list, "--"*opt_name,
-                               true, false,
-                               out_dict, last_ind)
+        arg_consumed, command = parse1_optarg(settings, f, arg_after_eq, args_list, "--"*opt_name,
+                                              false, out_dict)
     end
-    return last_ind, command, out_dict
+    return command
 end
 #}}}
 
 # parse short opts
 #{{{
-function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, last_ind::Int, args_list::Vector, out_dict::Dict)
+function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, args_list::Vector, out_dict::Dict)
     command = nothing
     rest_as_arg = nothing
     sind = start(shopts_lst)
@@ -1695,12 +1712,10 @@ function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, last_in
         end
         found || argparse_error("unrecognized option -$opt_name")
         if is_flag(f)
-            out_dict, command = parse1_flag(settings, f, next_is_eq, "-"*opt_name, out_dict)
+            command = parse1_flag(settings, f, next_is_eq, "-"*opt_name, out_dict)
         else
-            out_dict, last_ind, arg_consumed, command =
-                    parse1_optarg(settings, f, rest_as_arg, args_list, "-"*opt_name,
-                                   true, false,
-                                   out_dict, last_ind)
+            arg_consumed, command = parse1_optarg(settings, f, rest_as_arg, args_list, "-"*opt_name,
+                                                  false, out_dict)
         end
         arg_consumed && break
         if command !== nothing && rest_as_arg !== nothing
@@ -1709,13 +1724,13 @@ function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, last_in
         end
         sind = next_sind
     end
-    return last_ind, command, rest_as_arg, out_dict
+    return command, rest_as_arg
 end
 #}}}
 
-# parse args
+# parse arg
 #{{{
-function parse_arg(settings::ArgParseSettings, last_ind::Int, last_arg::Int, arg_delim_found::Bool, args_list::Vector, out_dict::Dict)
+function parse_arg(settings::ArgParseSettings, last_arg::Int, arg_delim_found::Bool, args_list::Vector, out_dict::Dict)
     local new_arg_ind
     found = false
     local f::ArgParseField
@@ -1728,12 +1743,9 @@ function parse_arg(settings::ArgParseSettings, last_ind::Int, last_arg::Int, arg
     end
     found || argparse_error("too many arguments")
 
-    out_dict, last_ind, arg_consumed, command =
-            parse1_optarg(settings, f, nothing, args_list, f.dest_name,
-                           false, arg_delim_found,
-                           out_dict, last_ind-1)
+    arg_consumed, command = parse1_optarg(settings, f, nothing, args_list, f.dest_name, arg_delim_found, out_dict)
 
-    return last_ind, new_arg_ind, command, out_dict
+    return command, new_arg_ind
 end
 #}}}
 #}}}
