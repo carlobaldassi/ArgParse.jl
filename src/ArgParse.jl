@@ -1385,17 +1385,44 @@ function parse_args(args_list::Vector, settings::ArgParseSettings)
     parsed_args
 end
 
-function parse_tokens(args_list::Vector, settings::ArgParseSettings)
-    arg_delim_found = false
-    args_list = deepcopy(args_list)
-    while !isempty(args_list)
-        token = {:args_list=>args_list, :delim_found=>arg_delim_found}
+type ParserState
+    args_list::Vector
+    arg_delim_found::Bool
+    token::Union(String,Nothing)
+    token_arg::Union(String,Nothing)
+    arg_consumed::Bool
+    last_arg::Int
+    found_args::Set{String}
+    command::Union(String,Nothing)
+    out_dict::Dict{String,Any}
+    function ParserState(args_list::Vector, settings::ArgParseSettings)
+        out_dict = (String=>Any)[]
+        for f in settings.args_table.fields
+            (f.action == :show_help || f.action == :show_version) && continue
+            out_dict[f.dest_name] = deepcopy(f.default)
+        end
+        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{String}(), nothing, out_dict)
+    end
+end
 
-        arg = strip(shift!(args_list))
-        if !arg_delim_found && arg == "--"
-            arg_delim_found = true
+found_command(state::ParserState) = state.command !== nothing
+function parse_command_args(state::ParserState, settings::ArgParseSettings)
+    haskey(settings, state.command) || argparse_error("unknown command: $(state.command)")
+    state.out_dict[state.command] = parse_args(state.args_list, settings[state.command])
+end
+
+function parse_tokens(state::ParserState, settings::ArgParseSettings)
+    args_list = state.args_list
+    while !isempty(args_list)
+        state.arg_delim_found && (produce(:pos_arg); continue)
+        arg = args_list[1]
+        if arg == "--"
+            state.arg_delim_found = true
+            state.token = nothing
+            state.token_arg = nothing
+            shift!(args_list)
             continue
-        elseif !arg_delim_found && beginswith(arg, "--")
+        elseif beginswith(arg, "--")
             eq = search(arg, '=')
             if eq != 0
                 opt_name = arg[3:eq-1]
@@ -1405,19 +1432,20 @@ function parse_tokens(args_list::Vector, settings::ArgParseSettings)
                 arg_after_eq = nothing
             end
             isempty(opt_name) && argparse_error("illegal option: $arg")
-            token[:tag] = :long_option
-            token[:name] = opt_name
-            token[:arg] = arg_after_eq
-            produce(token)
-        elseif !arg_delim_found && looks_like_an_option(arg, settings)
+            shift!(args_list)
+            state.token = opt_name
+            state.token_arg = arg_after_eq
+            produce(:long_option)
+        elseif looks_like_an_option(arg, settings)
             shopts_lst = arg[2:end]
-            token[:tag] = :short_option_list
-            token[:list] = shopts_lst
-            produce(token)
+            shift!(args_list)
+            state.token = shopts_lst
+            state.token_arg = nothing
+            produce(:short_option_list)
         else
-            token[:tag] = :pos_arg
-            token[:arg] = arg
-            produce(token)
+            state.token = nothing
+            state.token_arg = nothing
+            produce(:pos_arg)
         end
     end
 end
@@ -1449,47 +1477,25 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         help_added = true
     end
 
-    tokens = Task(()->parse_tokens(args_list, settings))
+    state = ParserState(args_list, settings)
+    parser = Task(()->parse_tokens(state, settings))
 
-    out_dict = (String=>Any)[]
     try
-        found_args = Set{String}()
-
-        for f in settings.args_table.fields
-            (f.action == :show_help || f.action == :show_version) && continue
-            out_dict[f.dest_name] = deepcopy(f.default)
-        end
-
-        last_arg = 0
-        command = nothing
-        for token in tokens
-            tag = token[:tag]
-            args_list = token[:args_list]
+        for tag in parser
             if tag == :long_option
-                opt_name = token[:name]
-                arg_after_eq = token[:arg]
-                command = parse_long_opt(settings, opt_name, arg_after_eq, args_list, out_dict)
+                parse_long_opt(state, settings)
             elseif tag == :short_option_list
-                shopts_lst = token[:list]
-                command, shopts_lst_rest = parse_short_opt(settings, shopts_lst, args_list, out_dict)
-                if command !== nothing && shopts_lst_rest !== nothing
-                    unshift!(args_list, "-" * shopts_lst_rest) # TODO: this may mess up with "looks_like_an_option" heuristic
-                end
+                parse_short_opt(state, settings)
             elseif tag == :pos_arg
-                arg_delim_found = token[:delim_found]
-                arg = token[:arg]
-                unshift!(args_list, arg)
-                command, last_arg = parse_arg(settings, last_arg, arg_delim_found, args_list, out_dict)
-                push!(found_args, settings.args_table.fields[last_arg].metavar)
+                parse_arg(state, settings)
             else
                 found_a_bug()
             end
-            command === nothing || break
+            found_command(state) && break
         end
-        test_required_args(settings, found_args)
-        if command !== nothing
-            haskey(settings, command) || argparse_error("unknown command: $command")
-            out_dict[command] = parse_args(args_list, settings[command])
+        test_required_args(settings, state.found_args)
+        if found_command(state)
+            parse_command_args(state, settings)
         elseif settings.commands_are_required && has_cmd(settings)
             argparse_error("No command given")
         end
@@ -1506,14 +1512,15 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         end
     end
 
-    return out_dict
+    return state.out_dict
 end
 
 # common parse functions
 #{{{
-function parse1_flag(settings::ArgParseSettings, f::ArgParseField, has_arg::Bool, opt_name::String, out_dict::Dict)
+function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField, has_arg::Bool, opt_name::String)
     has_arg && argparse_error("option $opt_name takes no arguments")
     command = nothing
+    out_dict = state.out_dict
     if f.action == :store_true
         out_dict[f.dest_name] = true
     elseif f.action == :store_false
@@ -1532,15 +1539,19 @@ function parse1_flag(settings::ArgParseSettings, f::ArgParseField, has_arg::Bool
     elseif f.action == :show_version
         show_version(settings)
     end
-    return command
+    state.command = command
+    return
 end
 
 function err_arg_required(name::String, num::Int)
     argparse_error("$name requires $num argument(s)")
 end
 
-function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_list, name::String,
-                       arg_delim_found::Bool, out_dict::Dict)
+function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField, rest, name::String)
+    args_list = state.args_list
+    arg_delim_found = state.arg_delim_found
+    out_dict = state.out_dict
+
     arg_consumed = false
     command = nothing
     is_multi_nargs(f.nargs) && (opt_arg = Array(f.arg_type, 0))
@@ -1637,13 +1648,17 @@ function parse1_optarg(settings::ArgParseSettings, f::ArgParseField, rest, args_
     else
         found_a_bug()
     end
-    return arg_consumed, command
+    state.arg_consumed = arg_consumed
+    state.command = command
+    return
 end
 #}}}
 
 # parse long opts
 #{{{
-function parse_long_opt(settings::ArgParseSettings, opt_name::String, arg_after_eq::Union(String,Nothing), args_list::Vector, out_dict::Dict)
+function parse_long_opt(state::ParserState, settings::ArgParseSettings)
+    opt_name = state.token
+    arg_after_eq = state.token_arg
     local f::ArgParseField
     local fln::String
     exact_match = false
@@ -1670,19 +1685,18 @@ function parse_long_opt(settings::ArgParseSettings, opt_name::String, arg_after_
     opt_name = fln
 
     if is_flag(f)
-        command = parse1_flag(settings, f, arg_after_eq !== nothing, "--"*opt_name, out_dict)
+        parse1_flag(state, settings, f, arg_after_eq !== nothing, "--"*opt_name)
     else
-        arg_consumed, command = parse1_optarg(settings, f, arg_after_eq, args_list, "--"*opt_name,
-                                              false, out_dict)
+        parse1_optarg(state, settings, f, arg_after_eq, "--"*opt_name)
     end
-    return command
+    return
 end
 #}}}
 
 # parse short opts
 #{{{
-function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, args_list::Vector, out_dict::Dict)
-    command = nothing
+function parse_short_opt(state::ParserState, settings::ArgParseSettings)
+    shopts_lst = state.token
     rest_as_arg = nothing
     sind = start(shopts_lst)
     while !done(shopts_lst, sind)
@@ -1702,7 +1716,6 @@ function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, args_li
         end
 
         opt_name = string(opt_char)
-        arg_consumed = false
 
         local f::ArgParseField
         found = false
@@ -1712,40 +1725,41 @@ function parse_short_opt(settings::ArgParseSettings, shopts_lst::String, args_li
         end
         found || argparse_error("unrecognized option -$opt_name")
         if is_flag(f)
-            command = parse1_flag(settings, f, next_is_eq, "-"*opt_name, out_dict)
+            parse1_flag(state, settings, f, next_is_eq, "-"*opt_name)
         else
-            arg_consumed, command = parse1_optarg(settings, f, rest_as_arg, args_list, "-"*opt_name,
-                                                  false, out_dict)
+            parse1_optarg(state, settings, f, rest_as_arg, "-"*opt_name)
         end
-        arg_consumed && break
-        if command !== nothing && rest_as_arg !== nothing
-            isempty(rest_as_arg) && (rest_as_arg = nothing)
-            break
+        state.arg_consumed && break
+        if found_command(state)
+            if rest_as_arg !== nothing && !isempty(rest_as_arg)
+                unshift!(state.args_list, "-" * rest_as_arg) # TODO: this may mess up with "looks_like_an_option" heuristic
+            end
+            return
         end
         sind = next_sind
     end
-    return command, rest_as_arg
 end
 #}}}
 
 # parse arg
 #{{{
-function parse_arg(settings::ArgParseSettings, last_arg::Int, arg_delim_found::Bool, args_list::Vector, out_dict::Dict)
-    local new_arg_ind
+function parse_arg(state::ParserState, settings::ArgParseSettings)
     found = false
     local f::ArgParseField
-    for new_arg_ind = last_arg+1:length(settings.args_table.fields)
+    for new_arg_ind = state.last_arg+1:length(settings.args_table.fields)
         f = settings.args_table.fields[new_arg_ind]
         if is_arg(f) && !f.fake
             found = true
+            state.last_arg = new_arg_ind
             break
         end
     end
     found || argparse_error("too many arguments")
 
-    arg_consumed, command = parse1_optarg(settings, f, nothing, args_list, f.dest_name, arg_delim_found, out_dict)
+    parse1_optarg(state, settings, f, nothing, f.dest_name)
 
-    return command, new_arg_ind
+    push!(state.found_args, settings.args_table.fields[state.last_arg].metavar)
+    return
 end
 #}}}
 #}}}
