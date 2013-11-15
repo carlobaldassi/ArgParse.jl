@@ -557,8 +557,6 @@ macro add_arg_table(s, x...)
         else
             # anything else: ignore, but issue a warning
             warn("@add_arg_table: ignoring expression $y")
-            dump(y)
-            println(y.head)
             i += 1
         end
     end
