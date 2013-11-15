@@ -1112,10 +1112,12 @@ const number_regex =
     r"^[+-]?                                          # optional sign
         (
           0x[0-9a-fA-F](_?[0-9a-fA-F])*             | # hex
+          0o[0-7](_?[0-7])*                         | # oct
+          0b[01](_?[01])*                           | # bin
           (                                           # float mantissa
             [0-9](_?[0-9])*(\.([0-9](_?[0-9])*)?)?  | #   start with digit
             \.[0-9](_?[0-9])*                         #   start with dot
-          )([eEf][-+]?[0-9]+)?                         # float optional exp
+          )([eEf][-+]?[0-9]+)?                        # float optional exp
         )
       $"x
 
