@@ -50,34 +50,37 @@ is_command_action(a::Symbol) = a in command_actions
 # ArgConsumerType
 #{{{
 immutable ArgConsumerType
-    desc::Union(Int,Char)
+    desc::Union(Int,Symbol)
     function ArgConsumerType(n::Integer)
         n >= 0 || error("nargs can't be negative")
         new(n)
     end
-    function ArgConsumerType(c::Char)
-        c in ['A', '?', '*', '+', 'R'] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
-        new(c)
+    function ArgConsumerType(s::Symbol)
+        s in [:A, :?, :*, :+, :R] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
+        new(s)
     end
 end
-ArgConsumerType() = ArgConsumerType('A')
+ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
+ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
-    if nargs.desc == 'A'
+    if nargs.desc == :A
         show(io, "Auto")
-    elseif nargs.desc == 'R'
+    elseif nargs.desc == :R
         show(io, "Remainder")
     else
-        show(io, nargs.desc)
+        show(io, string(nargs.desc))
     end
 end
 
-is_multi_nargs(nargs::ArgConsumerType) = (nargs.desc != 'A' && nargs.desc != '?')
+is_multi_nargs(nargs::ArgConsumerType) = (nargs.desc != 0 && nargs.desc != :A && nargs.desc != :?)
 
-function default_action(nargs::Union(Int, Char))
-    isa(nargs, Int) && nargs == 0 && return :store_true
+function default_action(nargs::Integer)
+    nargs == 0 && return :store_true
     return :store_arg
 end
+default_action(nargs::Char) = :store_arg
+default_action(nargs::Symbol) = :store_arg
 
 default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 #}}}
@@ -206,9 +209,9 @@ function check_action_is_valid(action::Symbol)
 end
 
 function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
-    is_flag_action(action) && nargs.desc != 0 && nargs.desc != 'A' &&
+    is_flag_action(action) && nargs.desc != 0 && nargs.desc != :A &&
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
-    is_command_action(action) && nargs.desc != 'A' &&
+    is_command_action(action) && nargs.desc != :A &&
         error("incompatible nargs and action (command action, nargs=$nargs)")
     !is_flag_action(action) && nargs.desc == 0 &&
         error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
@@ -627,7 +630,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
 
     if !is_opt
         is_flag && error("error: invalid action for positional argument: $action")
-        nargs.desc == '?' && error("error: invalid 'nargs' for positional argument: ?")
+        nargs.desc == :? && error("error: invalid 'nargs' for positional argument: '?'")
     end
 
     pos_arg, long_opts, short_opts = name_to_fieldnames(name, settings)
@@ -663,7 +666,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
         end
     elseif is_opt
         append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :metavar])
-        nargs.desc == '?' && push!(valid_keys, :constant)
+        nargs.desc == :? && push!(valid_keys, :constant)
     elseif action != :command_arg
         append!(valid_keys, [:arg_type, :default, :range_tester, :required, :metavar])
     end
@@ -765,7 +768,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
             new_arg.default = Array(arg_type, 0)
         end
 
-        if is_opt && nargs.desc == '?'
+        if is_opt && nargs.desc == :?
             constant = new_arg.constant
             if !is_multi_nargs(new_arg.nargs)
                 check_default_type(constant, arg_type)
@@ -1145,11 +1148,11 @@ function usage_string(settings::ArgParseSettings)
             end
             if isa(f.nargs.desc, Int)
                 arg_str = string(ntuple(f.nargs.desc, i->(i==1?f.metavar:(nbsps * f.metavar)))...)
-            elseif f.nargs.desc == 'A'
+            elseif f.nargs.desc == :A
                 arg_str = f.metavar
-            elseif f.nargs.desc == '?'
+            elseif f.nargs.desc == :?
                 found_a_bug()
-            elseif f.nargs.desc == '*' || f.nargs.desc == 'R' || f.nargs.desc == '+'
+            elseif f.nargs.desc == :* || f.nargs.desc == :R || f.nargs.desc == :+
                 arg_str = f.metavar * "..."
             else
                 found_a_bug()
@@ -1166,13 +1169,13 @@ function usage_string(settings::ArgParseSettings)
             else
                 if isa(f.nargs.desc, Int)
                     opt_str2 = string(ntuple(f.nargs.desc, i->(nbsps * f.metavar))...)
-                elseif f.nargs.desc == 'A'
+                elseif f.nargs.desc == :A
                     opt_str2 = nbsps * f.metavar
-                elseif f.nargs.desc == '?'
+                elseif f.nargs.desc == :?
                     opt_str2 = nbsps * "[" * f.metavar * "]"
-                elseif f.nargs.desc == '*' || f.nargs.desc == 'R'
+                elseif f.nargs.desc == :* || f.nargs.desc == :R
                     opt_str2 = nbsps * "[" * f.metavar * "...]"
-                elseif f.nargs.desc == '+'
+                elseif f.nargs.desc == :+
                     opt_str2 = nbsps * f.metavar * nbsps * "[" * f.metavar * "...]"
                 else
                     found_a_bug()
@@ -1231,7 +1234,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
             mid = isempty(type_str) ? " (" : ", "
             default_str = mid * "default: " * string(arg.default)
         end
-        if arg.nargs.desc == '?'
+        if arg.nargs.desc == :?
             mid = isempty(type_str) && isempty(default_str) ? " (" : ", "
             const_str = mid * "without arg: " * string(arg.constant)
         end
@@ -1288,13 +1291,13 @@ function show_help(settings::ArgParseSettings)
             else
                 if isa(f.nargs.desc, Int)
                     opt_str2 = string(ntuple(f.nargs.desc, i->(nbsps * f.metavar))...)
-                elseif f.nargs.desc == 'A'
+                elseif f.nargs.desc == :A
                     opt_str2 = nbsps * f.metavar
-                elseif f.nargs.desc == '?'
+                elseif f.nargs.desc == :?
                     opt_str2 = nbsps * "[" * f.metavar * "]"
-                elseif f.nargs.desc == '*' || f.nargs.desc == 'R'
+                elseif f.nargs.desc == :* || f.nargs.desc == :R
                     opt_str2 = nbsps * "[" * f.metavar * "...]"
-                elseif f.nargs.desc == '+'
+                elseif f.nargs.desc == :+
                     opt_str2 = nbsps * f.metavar * nbsps * "[" * f.metavar * "...]"
                 else
                     found_a_bug()
@@ -1549,7 +1552,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
-    elseif f.nargs.desc == 'A'
+    elseif f.nargs.desc == :A
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
             test_range(f.range_tester, a, name)
@@ -1563,7 +1566,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             test_range(f.range_tester, a, name)
             opt_arg = a
         end
-    elseif f.nargs.desc == '?'
+    elseif f.nargs.desc == :?
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
             test_range(f.range_tester, a, name)
@@ -1578,7 +1581,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
                 opt_arg = a
             end
         end
-    elseif f.nargs.desc == '*' || f.nargs.desc == '+'
+    elseif f.nargs.desc == :* || f.nargs.desc == :+
         arg_found = false
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
@@ -1596,10 +1599,10 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             push!(opt_arg, a)
             arg_found = true
         end
-        if f.nargs.desc == '+' && !arg_found
+        if f.nargs.desc == :+ && !arg_found
             argparse_error("option $name requires at least one (not-looking-like-an-option) argument")
         end
-    elseif f.nargs.desc == 'R'
+    elseif f.nargs.desc == :R
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
             test_range(f.range_tester, a, name)
