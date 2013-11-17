@@ -19,7 +19,7 @@ export
     usage_string,
     parse_args
 
-import Base.getindex, Base.setindex!, Base.haskey
+import Base: show, getindex, setindex!, haskey
 
 # auxiliary functions/constants
 found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
@@ -64,13 +64,7 @@ ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
-    if nargs.desc == :A
-        show(io, "Auto")
-    elseif nargs.desc == :R
-        show(io, "Remainder")
-    else
-        show(io, string(nargs.desc))
-    end
+    print(io, isa(nargs.desc, Int) ? nargs.desc : "'"*string(nargs.desc)*"'")
 end
 
 is_multi_nargs(nargs::ArgConsumerType) = (nargs.desc != 0 && nargs.desc != :A && nargs.desc != :?)
