@@ -443,8 +443,8 @@ end
 
 function auto_dest_name(pos_arg::String, long_opts::Vector{String}, short_opts::Vector{String})
     isempty(pos_arg) || return pos_arg
-    @assert !isempty(long_opts) || !isempty(short_opts)
     isempty(long_opts) || return long_opts[1]
+    @assert !isempty(short_opts)
     return short_opts[1]
 end
 
@@ -458,7 +458,7 @@ end
 function add_arg_table(settings::ArgParseSettings, table::Union(ArgName, Options)...)
     has_name = false
     for i = 1:length(table)
-        (!has_name && isa(table[i], Options)) && error("option field must be preceded by the arg name")
+        !has_name && isa(table[i], Options) && error("option field must be preceded by the arg name")
         has_name = isa(table[i], ArgName)
     end
     i = 1
@@ -507,10 +507,8 @@ macro add_arg_table(s, x...)
                 # there was a previous arg field on hold
                 # first, concretely build the options
                 opt = Expr(:call, exopt...)
-                # then, build the add_arg_field expression
-                exaaf = Any[:add_arg_field, s, name, opt]
                 # then, call add_arg_field
-                aaf = Expr(:call, exaaf...)
+                aaf = Expr(:call, :add_arg_field, s, name, opt)
                 # store it in the output expression
                 exret = quote
                     $exret
@@ -540,8 +538,7 @@ macro add_arg_table(s, x...)
         # there is an arg field on hold
         # same as above
         opt = Expr(:call, exopt...)
-        exaaf = Any[:add_arg_field, s, name, opt]
-        aaf = Expr(:call, exaaf...)
+        aaf = Expr(:call, :add_arg_field, s, name, opt)
         exret = quote
             $exret
             $aaf
