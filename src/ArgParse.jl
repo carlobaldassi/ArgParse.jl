@@ -52,7 +52,7 @@ is_command_action(a::Symbol) = a in command_actions
 immutable ArgConsumerType
     desc::Union(Int,Char)
     function ArgConsumerType(n::Integer)
-        n >= 0 || error("negative number of arguments")
+        n >= 0 || error("nargs can't be negative")
         new(n)
     end
     function ArgConsumerType(c::Char)
@@ -180,14 +180,11 @@ setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.arg
 # fields declarations sanity checks
 #{{{
 function check_name_format(name::ArgName)
-    if isempty(name)
-        error("empty name")
-    end
-    if isa(name, Vector)
-        for n in name
-            isempty(n) && error("empty name")
-            beginswith(n, '-') || error("only options can have multiple names")
-        end
+    isempty(name) && error("empty name")
+    isa(name, Vector) || return true
+    for n in name
+        isempty(n)         && error("empty name")
+        beginswith(n, '-') || error("only options can have multiple names")
     end
     return true
 end
@@ -209,45 +206,34 @@ function check_action_is_valid(action::Symbol)
 end
 
 function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
-    if is_flag_action(action) && nargs.desc != 0 && nargs.desc != 'A'
+    is_flag_action(action) && nargs.desc != 0 && nargs.desc != 'A' &&
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
-    elseif is_command_action(action) && nargs.desc != 'A'
+    is_command_action(action) && nargs.desc != 'A' &&
         error("incompatible nargs and action (command action, nargs=$nargs)")
-    elseif !is_flag_action(action) && nargs.desc == 0
+    !is_flag_action(action) && nargs.desc == 0 &&
         error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
-    end
     return true
 end
 
 function check_long_opt_name(name::String, settings::ArgParseSettings)
-    if '=' in name
-        error("illegal option name: $name (contains '=')")
-    elseif ismatch(r"\s", name)
-        error("illegal option name: $name (contains whitespace)")
-    elseif nbspc in name
-        error("illegal option name: $name (contains non-breakable-space)")
-    elseif settings.add_help && name == "help"
-        error("option --help is reserved in the current settings")
-    elseif settings.add_version && name == "version"
-        error("option --version is reserved in the current settings")
-    end
+    '=' in name           && error("illegal option name: $name (contains '=')")
+    ismatch(r"\s", name)  && error("illegal option name: $name (contains whitespace)")
+    nbspc in name         && error("illegal option name: $name (contains non-breakable-space)")
+    settings.add_help     &&
+        name == "help"    && error("option --help is reserved in the current settings")
+    settings.add_version  &&
+        name == "version" && error("option --version is reserved in the current settings")
     return true
 end
 
 function check_short_opt_name(name::String, settings::ArgParseSettings)
-    if length(name) != 1
-        error("short options must use a single character")
-    elseif name == "="
-        error("illegal short option name: $name")
-    elseif ismatch(r"\s", name)
-        error("illegal option name: $name (contains whitespace)")
-    elseif nbspc in name
-        error("illegal option name: $name (contains non-breakable-space)")
-    elseif !settings.allow_ambiguous_opts && ismatch(r"[0-9.(]", name)
-        error("ambiguous option name: $name (disabled in the current settings)")
-    elseif settings.add_help && name == "h"
-        error("option -h is reserved for help in the current settings")
-    end
+    length(name) != 1                && error("short options must use a single character")
+    name == "="                      && error("illegal short option name: $name")
+    ismatch(r"\s", name)             && error("illegal option name: $name (contains whitespace)")
+    nbspc in name                    && error("illegal option name: $name (contains non-breakable-space)")
+    !settings.allow_ambiguous_opts   &&
+        ismatch(r"[0-9.(]", name)    && error("ambiguous option name: $name (disabled in the current settings)")
+    settings.add_help && name == "h" && error("option -h is reserved for help in the current settings")
     return true
 end
 
@@ -321,16 +307,17 @@ end
 function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField)
     for a in args
         for l1 in a.long_opt_name, l2 in new_arg.long_opt_name
-            l1 == l2 && error("duplicate long opt name $(l1)")
+            l1 == l2 && error("duplicate long opt name $l1")
         end
         for s1 in a.short_opt_name, s2 in new_arg.short_opt_name
-            s1 == s2 && error("duplicate short opt name $(s1)")
+            s1 == s2 && error("duplicate short opt name $s1")
         end
         if is_arg(a) && is_arg(new_arg) && a.metavar == new_arg.metavar
             error("two arguments have the same metavar: $(a.metavar)")
         end
         if a.dest_name == new_arg.dest_name
-            a.arg_type == new_arg.arg_type || error("$(idstring(a)) and $(idstring(new_arg)) have the same destination but different arg types")
+            a.arg_type == new_arg.arg_type ||
+                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination but different arg types")
             if (is_multi_action(a.action) && !is_multi_action(new_arg.action)) ||
                (!is_multi_action(a.action) && is_multi_action(new_arg.action))
                 error("$(idstring(a)) and $(idstring(new_arg)) have the same destination but incompatible actions")
@@ -349,14 +336,14 @@ end
 check_default_type_multi(default::Nothing, arg_type::Type) = true
 check_default_type_multi(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi(default, arg_type::Type)
-    (isa(default, Vector) && (arg_type <: eltype(default))) && return true
+    isa(default, Vector) && (arg_type <: eltype(default)) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with T<:$arg_type})")
 end
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
 check_default_type_multi2(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
-    (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) && return true
+    isa(default, Vector) && (Vector{arg_type} <: eltype(default)) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
 end
 
@@ -403,24 +390,16 @@ function check_range_default_multi2{T}(default::Vector{Vector{T}}, range_tester:
 end
 
 function check_metavar(metavar::String)
-    if isempty(metavar)
-        error("empty metavar")
-    elseif beginswith(metavar, '-')
-        error("metavars cannot begin with -")
-    elseif ismatch(r"\s", metavar)
-        error("illegal metavar name: $metavar (contains whitespace)")
-    elseif nbspc in metavar
-        error("illegal metavar name: $metavar (contains non-breakable-space)")
-    end
+    isempty(metavar)         && error("empty metavar")
+    beginswith(metavar, '-') && error("metavars cannot begin with -")
+    ismatch(r"\s", metavar)  && error("illegal metavar name: $metavar (contains whitespace)")
+    nbspc in metavar         && error("illegal metavar name: $metavar (contains non-breakable-space)")
     return true
 end
 
 function check_group_name(name::String)
-    if isempty(name)
-        error("empty group name")
-    elseif beginswith(name, '#')
-        error("invalid group name (starts with #)")
-    end
+    isempty(name)         && error("empty group name")
+    beginswith(name, '#') && error("invalid group name (starts with #)")
     return true
 end
 #}}}
@@ -1063,7 +1042,7 @@ type ArgParseError <: Exception
     text::String
 end
 
-argparse_error(x) = throw(ArgParseError(x))
+argparse_error(x...) = throw(ArgParseError(string(x...)))
 #}}}
 
 # parsing checks
@@ -1075,8 +1054,7 @@ function test_range(range_tester::Function, arg, name::String)
     catch
         rng_chk = false
     end
-    rng_chk || argparse_error("out of range input for " *
-                              " $name: $a")
+    rng_chk || argparse_error("out of range input for $name: $a")
     return
 end
 
@@ -1413,7 +1391,7 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     state.out_dict[state.command] = parse_args(state.args_list, settings[state.command])
 end
 
-function parse_tokens(state::ParserState, settings::ArgParseSettings)
+function preparse(state::ParserState, settings::ArgParseSettings)
     args_list = state.args_list
     while !isempty(args_list)
         state.arg_delim_found && (produce(:pos_arg); continue)
@@ -1480,10 +1458,10 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
     end
 
     state = ParserState(args_list, settings)
-    parser = Task(()->parse_tokens(state, settings))
+    preparser = Task(()->preparse(state, settings))
 
     try
-        for tag in parser
+        for tag in preparser
             if tag == :long_option
                 parse_long_opt(state, settings)
             elseif tag == :short_option_list
@@ -1499,7 +1477,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         if found_command(state)
             parse_command_args(state, settings)
         elseif settings.commands_are_required && has_cmd(settings)
-            argparse_error("No command given")
+            argparse_error("no command given")
         end
     catch err
         rethrow()
@@ -1545,10 +1523,6 @@ function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParse
     return
 end
 
-function err_arg_required(name::String, num::Int)
-    argparse_error("$name requires $num argument(s)")
-end
-
 function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField, rest, name::String)
     args_list = state.args_list
     arg_delim_found = state.arg_delim_found
@@ -1562,7 +1536,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
         num > 0 || found_a_bug()
         corr = (rest === nothing) ? 0 : 1
         if length(args_list) + corr < num
-            err_arg_required(name, num)
+            argparse_error("$name requires $num argument", num > 1 ? "s" : "")
         end
         if rest !== nothing
             a = parse_item(f.arg_type, rest)
