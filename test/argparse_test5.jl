@@ -5,9 +5,8 @@ using Base.Test
 
 function ap_test5(args)
 
-    s = ArgParseSettings("Test 5 for ArgParse.jl")
-
-    s.exc_handler = (settings, err)->error(err.text)
+    s = ArgParseSettings("Test 5 for ArgParse.jl",
+                         exc_handler = (settings, err)->error(err.text))
 
     @add_arg_table s begin
         "run"
@@ -49,10 +48,8 @@ function ap_test5b(args)
 
     s0 = ArgParseSettings()
 
-    s = ArgParseSettings()
-
-    s.exc_handler = (settings, err)->error(err.text)
-    s.error_on_conflict = false
+    s = ArgParseSettings(exc_handler = (settings, err)->error(err.text),
+                         error_on_conflict = false)
 
     @add_arg_table s0 begin
         "run"

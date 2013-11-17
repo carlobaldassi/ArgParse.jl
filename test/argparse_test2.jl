@@ -7,10 +7,9 @@ using Base.Test
 
 function ap_test2(args)
 
-    s = ArgParseSettings("Test 2 for ArgParse.jl")
-
-    s.version = "Version 1.0" # version info
-    s.add_version = true      # audo-add version option
+    s = ArgParseSettings(description = "Test 2 for ArgParse.jl",
+                         version = "Version 1.0", # version info
+                         add_version = true)      # audo-add version option
 
     @add_arg_table s begin
         "--opt1"

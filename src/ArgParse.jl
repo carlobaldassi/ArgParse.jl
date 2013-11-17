@@ -155,16 +155,29 @@ type ArgParseSettings
     args_table::ArgParseTable
     exc_handler::Function
 
-    function ArgParseSettings(desc::String, add_help::Bool)
-        prog = basename(Base.source_path())
-        this = new(prog, desc, "", "", "Unknown version", add_help, false,
-                   true, false, false, true, copy(std_groups), "",
-                   ArgParseTable(), default_handler)
+    function ArgParseSettings(;prog::String = basename(Base.source_path()),
+                               description::String = "",
+                               epilog::String = "",
+                               usage::String = "",
+                               version::String = "Unspecified version",
+                               add_help::Bool = true,
+                               add_version::Bool = false,
+                               error_on_conflict::Bool = true,
+                               suppress_warnings::Bool = false,
+                               allow_ambiguous_opts::Bool = false,
+                               commands_are_required::Bool = true,
+                               exc_handler::Function = default_handler
+                               )
+        this = new(prog, description, epilog, usage, version, add_help, add_version,
+                   error_on_conflict, suppress_warnings, allow_ambiguous_opts,
+                   commands_are_required, copy(std_groups), "",
+                   ArgParseTable(), exc_handler)
         return this
     end
 end
-ArgParseSettings(desc::String) = ArgParseSettings(desc, true)
-ArgParseSettings() = ArgParseSettings("")
+
+# the "add_help" is kept for backward compatibility and is now undocumented
+ArgParseSettings(desc::String, add_help = true; kw...) = ArgParseSettings(;{(:description, desc), (:add_help, add_help), kw...}...)
 
 typealias ArgName{T<:String} Union(T, Vector{T})
 

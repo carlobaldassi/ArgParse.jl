@@ -4,9 +4,8 @@ using ArgParse
 
 function main(args)
 
-    s = ArgParseSettings()
-
-    s.description = "Example 1 for argparse.jl: minimal usage." # desciption (for help screen)
+    # initialize the settings (the description is for the help screen)
+    s = ArgParseSettings(description = "Example 1 for argparse.jl: minimal usage.")
 
     @add_arg_table s begin
         "--opt1"               # an option (will take an argument)

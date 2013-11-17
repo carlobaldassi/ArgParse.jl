@@ -8,10 +8,9 @@ function main(args)
     s = ArgParseSettings("Example 3 for argparse.jl: " *
                          "version info, default values, " *
                          "options with types, variable " *
-                         "number of arguments.")
-
-    s.version = "Version 1.0" # version info
-    s.add_version = true      # audo-add version option
+                         "number of arguments.",
+                         version = "Version 1.0", # version info
+                         add_version = true)      # audo-add version option
 
     @add_arg_table s begin
         "--opt1"
