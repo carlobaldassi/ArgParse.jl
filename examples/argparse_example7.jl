@@ -12,13 +12,13 @@ function main(args)
                                       # will be assigned to the newly added group
         "--opt1"
             action = :append_const
-            arg_type = String
+            arg_type = ByteString
             constant = "O1"
             dest_name = "O_stack"
             help = "append O1 to the stack"
         "--opt2"
             action = :append_const
-            arg_type = String
+            arg_type = ByteString
             constant = "O2"
             dest_name = "O_stack"
             help = "append O2 to the stack"

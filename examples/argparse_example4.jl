@@ -13,7 +13,7 @@ function main(args)
     @add_arg_table s begin
         "--opt1"
             action = :append_const   # appends 'constant' to 'dest_name'
-            arg_type = ByteString
+            arg_type = ByteString    # the only utility of this is restricting the dest array type
             constant = "O1"
             dest_name = "O_stack"    # this changes the destination
             help = "append O1"

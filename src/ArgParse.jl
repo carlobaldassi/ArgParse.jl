@@ -1242,9 +1242,8 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     default_str = ""
     const_str = ""
     if !is_command_action(arg.action)
-        if arg.arg_type != Any
+        if arg.arg_type != Any && !(arg.arg_type <: String)
             type_str = pre * "(type: " * string(arg.arg_type)
-
         end
         if arg.default !== nothing && !isequal(arg.default, [])
             mid = isempty(type_str) ? " (" : ", "
