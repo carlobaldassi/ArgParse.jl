@@ -829,7 +829,7 @@ function add_command(settings::ArgParseSettings, command::String, prog_hint::Str
     end
     settings[command] = ArgParseSettings()
     ss = settings[command]
-    ss.prog = "$(settings.prog) $prog_hint"
+    ss.prog = "$(isempty(settings.prog) ? "<PROGRAM>" : settings.prog) $prog_hint"
     ss.description = ""
     ss.epilog = ""
     ss.usage = ""
@@ -1139,7 +1139,7 @@ end
 function usage_string(settings::ArgParseSettings)
     isempty(settings.usage) || return settings.usage
 
-    usage_pre = "usage: " * settings.prog
+    usage_pre = "usage: " * (isempty(settings.prog) ? "<PROGRAM>" : settings.prog)
 
     lc_len_limit = 24
 
