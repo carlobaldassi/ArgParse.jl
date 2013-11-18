@@ -227,6 +227,10 @@ This is the list of general settings currently available:
   to the argument table.
 * ``add_version`` (default = ``false``): if ``true``, a ``--version`` option (triggering the ``:show_version`` action) is added
   to the argument table.
+* ``autofix_names`` (default = ``false``): if ``true``, will try to automatically fix the uses of dashes (``-``) and underscores (``_``)
+  in option names and destinations: all underscores will be converted to dashes in long option names; also, associated destination names, if
+  auto-generated (see :ref:`this_section <argparse-argument-names>`), will have dashes replaced with underscores, both for long options and for
+  positional arguments. For example, an option declared as ``"--my-opt"`` will be associated with the key ``"my_opt"`` by default.
 * ``error_on_conflict`` (default = ``true``): if ``true``, throw an error in case conflicting entries are added to the argument table;
   if ``false``, later entries will silently take precedence.
   See :ref:`this section <argparse-conflicts>` for a detailed description of what conflicts are and what is the exact behavior
@@ -380,6 +384,9 @@ either the first long option name in the list or the first short option name if 
 +--------------------------------+---------------------------+
 | ``"-s", "-x"``                 | ``"s"``                   |
 +--------------------------------+---------------------------+
+
+In case the ``autofix_names`` setting is ``true`` (it is ``false`` by default), dashes in the names of arguments and long options will be
+converted to underscores: for example, ``"--my-opt"`` will yield ``"my_opt"`` as the default ``dest_name``.
 
 The argument name is also used to generate a default metavar in case ``metavar`` is not explicitly set in the table entry. The rules
 are the same used to determine the default ``dest_name``, but for options the result will be uppercased (e.g. ``"--long"`` will

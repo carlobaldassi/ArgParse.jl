@@ -146,6 +146,7 @@ type ArgParseSettings
     version::String
     add_help::Bool
     add_version::Bool
+    autofix_names::Bool
     error_on_conflict::Bool
     suppress_warnings::Bool
     allow_ambiguous_opts::Bool
@@ -162,6 +163,7 @@ type ArgParseSettings
                                version::String = "Unspecified version",
                                add_help::Bool = true,
                                add_version::Bool = false,
+                               autofix_names::Bool = false,
                                error_on_conflict::Bool = true,
                                suppress_warnings::Bool = false,
                                allow_ambiguous_opts::Bool = false,
@@ -169,7 +171,7 @@ type ArgParseSettings
                                exc_handler::Function = default_handler
                                )
         return new(prog, description, epilog, usage, version, add_help, add_version,
-                   error_on_conflict, suppress_warnings, allow_ambiguous_opts,
+                   autofix_names, error_on_conflict, suppress_warnings, allow_ambiguous_opts,
                    commands_are_required, copy(std_groups), "",
                    ArgParseTable(), exc_handler)
     end
@@ -430,11 +432,12 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     pos_arg = ""
     long_opts = String[]
     short_opts = String[]
+    r(n) = settings.autofix_names ? replace(n, '_', '-') : n
     if isa(name, Vector)
         for n in name
             if beginswith(n, "--")
                 n == "--" && error("illegal option name: --")
-                long_opt_name = n[3:end]
+                long_opt_name = r(n[3:end])
                 check_long_opt_name(long_opt_name, settings)
                 push!(long_opts, long_opt_name)
             else
@@ -448,7 +451,7 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     else
         if beginswith(name, "--")
             name == "--" && error("illegal option name: --")
-            long_opt_name = name[3:end]
+            long_opt_name = r(name[3:end])
             check_long_opt_name(long_opt_name, settings)
             push!(long_opts, long_opt_name)
         elseif beginswith(name, '-')
@@ -464,9 +467,10 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     return pos_arg, long_opts, short_opts
 end
 
-function auto_dest_name(pos_arg::String, long_opts::Vector{String}, short_opts::Vector{String})
-    isempty(pos_arg) || return pos_arg
-    isempty(long_opts) || return long_opts[1]
+function auto_dest_name(pos_arg::String, long_opts::Vector{String}, short_opts::Vector{String}, autofix_names::Bool)
+    r(n) = autofix_names ? replace(n, '-', '_') : n
+    isempty(pos_arg) || return r(pos_arg)
+    isempty(long_opts) || return r(long_opts[1])
     @assert !isempty(short_opts)
     return short_opts[1]
 end
@@ -655,7 +659,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
 
     pos_arg, long_opts, short_opts = name_to_fieldnames(name, settings)
 
-    new_arg.dest_name = auto_dest_name(pos_arg, long_opts, short_opts)
+    new_arg.dest_name = auto_dest_name(pos_arg, long_opts, short_opts, settings.autofix_names)
 
     new_arg.long_opt_name = long_opts
     new_arg.short_opt_name = short_opts
