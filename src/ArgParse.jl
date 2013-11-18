@@ -1126,7 +1126,7 @@ function looks_like_an_option(arg::String, settings::ArgParseSettings)
     # check if it's a number:
     ismatch(number_regex, arg) || return true
     # looks like a number; but is it overridden by an option?
-    d = arg[2]
+    d = arg[2:2]
     for a in settings.args_table.fields, s in a.short_opt_name
         s == d && return true
     end
