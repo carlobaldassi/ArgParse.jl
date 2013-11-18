@@ -23,25 +23,30 @@ function main(args)
             help = "running speed, in Å/month"
     end
 
+    s["jump"].description = "Jump mode for example 6"  # this is how settings are tweaked
+                                                       # for commands
+    s["jump"].commands_are_required = false            # this makes the sub-commands optional
+    s["jump"].autofix_names = true                     # this uses dashes in long options, underscores
+                                                       # in auto-generated dest_names
+
     @add_arg_table s["jump"] begin
         "--higher"
             action = :store_true
             help = "enhance jumping"
         "--somersault"
-            action = :command        # this adds a sub-command (read from an option instead)
+            action = :command        # this adds a sub-command (passed via an option instead)
             dest_name = "som"        # flag commands can set a dest_name
             help = "somersault jumping mode"
-        "--clap-feet"
+        "--clap-feet"                # dest_name will be "clap_feet" (see the "autofix_names" settings")
             action = :command
             help = "clap feet jumping mode"
     end
 
-    s["jump"].description = "Jump mode for example 6"  # this is how settings are tweaked
-                                                       # for commands
-    s["jump"].commands_are_required = false            # this makes the sub-commands optional
-
     s["jump"]["som"].description = "Somersault jump " *  # this is how settings are tweaked
                                    "mode for example 6"  # for sub-commands
+
+    s["jump"]["clap_feet"].description = "Clap-feet jump " *  # notice the underscore in the name
+                                         "mode for example 6"
 
     parsed_args = parse_args(args, s)
     println("Parsed args:")

@@ -274,8 +274,8 @@ As a shorthand, the ``description`` field can be passed without keyword, which m
                                 version = "1.0",
                                 add_version = true)
 
-Most settings won't take effect until ``parse_args`` is invoked, but a few will have immediate effects: ``error_on_conflict``,
-``suppress_warnings``, ``allow_ambiguous_opts``.
+Most settings won't take effect until ``parse_args`` is invoked, but a few will have immediate effects: ``autofix_names``,
+``error_on_conflict``, ``suppress_warnings``, ``allow_ambiguous_opts``.
 
 .. _argparse-argument-table-basics:
 

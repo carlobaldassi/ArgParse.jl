@@ -24,6 +24,10 @@ function ap_test5(args)
             help = "running speed, in Å/month"
     end
 
+    s["jump"].description = "Jump mode"
+    s["jump"].commands_are_required = false
+    s["jump"].autofix_names = true
+
     @add_arg_table s["jump"] begin
         "--higher"
             action = :store_true
@@ -37,8 +41,6 @@ function ap_test5(args)
             help = "clap feet jumping mode"
     end
 
-    s["jump"].description = "Jump mode"
-    s["jump"].commands_are_required = false
     s["jump"]["som"].description = "Somersault jump mode"
 
     parsed_args = parse_args(args, s)
@@ -67,6 +69,10 @@ function ap_test5b(args)
             help = "running speed, in Å/month"
     end
 
+    s0["jump"].description = "Jump mode"
+    s0["jump"].commands_are_required = false
+    s0["jump"].autofix_names = true
+
     @add_arg_table s0["jump"] begin
         "--higher"
             action = :store_true
@@ -80,8 +86,6 @@ function ap_test5b(args)
             help = "clap feet jumping mode"
     end
 
-    s0["jump"].description = "Jump mode"
-    s0["jump"].commands_are_required = false
     s0["jump"]["som"].description = "Somersault jump mode"
 
     @add_arg_table s begin
@@ -92,6 +96,8 @@ function ap_test5b(args)
             action = :command
             help = "start flying mode"
     end
+
+    s["jump"].autofix_names = true
 
     @add_arg_table s["jump"] begin
         "--lower"
@@ -109,7 +115,7 @@ function ap_test5b(args)
             help = "glade mode"
     end
 
-    @add_arg_table s["jump"]["clap-feet"] begin
+    @add_arg_table s["jump"]["clap_feet"] begin
         "--whistle"
             action = :store_true
     end
@@ -122,11 +128,11 @@ end
 @test_throws ap_test5([])
 @test ap_test5(["run", "--speed", "3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3.0]]
 @test ap_test5(["jump"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>false, "%COMMAND%"=>nothing]]
-@test ap_test5(["jump", "--higher", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>true, "%COMMAND%"=>"clap-feet", "clap-feet"=>(String=>Any)[]]]
+@test ap_test5(["jump", "--higher", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>(String=>Any)[]]]
 @test_throws ap_test5(["jump", "--clap", "--higher"])
 
 @test_throws ap_test5b([])
 @test ap_test5b(["fly"]) == (String=>Any)["%COMMAND%"=>"fly", "fly"=>(String=>Any)["glade"=>false]]
-@test ap_test5b(["jump", "--lower", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["%COMMAND%"=>"clap-feet", "higher"=>false, "clap-feet"=>(String=>Any)["whistle"=>false]]]
+@test ap_test5b(["jump", "--lower", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>(String=>Any)["whistle"=>false]]]
 @test ap_test5b(["run", "--speed=3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3.0]]
 
