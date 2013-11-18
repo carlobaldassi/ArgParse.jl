@@ -1362,10 +1362,14 @@ end
 
 # parse_args & friends
 #{{{
-function default_handler(settings::ArgParseSettings, err)
+function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
     println(STDERR, err.text)
     println(STDERR, usage_string(settings))
-    exit(1)
+    exit(err_code)
+end
+
+function debug_handler(settings::ArgParseSettings, err)
+    rethrow(err)
 end
 
 parse_args(settings::ArgParseSettings) = parse_args(ARGS, settings)

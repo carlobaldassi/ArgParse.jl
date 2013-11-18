@@ -235,9 +235,18 @@ This is the list of general settings currently available:
 * ``allow_ambiguous_opts`` (default = ``false``): if ``true``, ambiguous options such as ``-1`` will be accepted.
 * ``commands_are_required`` (default = ``true``): if ``true``, commands will be mandatory. See :ref:`this section <argparse-commands>`
   for more information on commands.
-* ``exc_handler``: this is a function which is invoked when an error is detected during parsing (e.g. an option is not
-  recognized, a required argument is not passed etc.). It takes two arguments: the ``settings::ArgParseSettings`` object and the
-  ``err::ArgParseError`` exception. The default handler prints the error text and the usage screen on standard error and exits.
+* ``exc_handler`` (default = ``ArgParse.default_handler``): this is a function which is invoked when an error is detected
+  during parsing (e.g. an option is not recognized, a required argument is not passed etc.). It takes two arguments:
+  the ``settings::ArgParseSettings`` object and the ``err::ArgParseError`` exception. The default handler prints the error text
+  and the usage screen on standard error and exits with error code 1::
+  
+    function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
+        println(STDERR, err.text)
+        println(STDERR, usage_string(settings))
+        exit(err_code)
+    end
+
+  The module also provides a function ``ArgParse.debug_handler`` (not exported) which will just rethrow the error.
 
 Here is a usage example::
 
