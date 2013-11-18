@@ -168,16 +168,28 @@ type ArgParseSettings
                                commands_are_required::Bool = true,
                                exc_handler::Function = default_handler
                                )
-        this = new(prog, description, epilog, usage, version, add_help, add_version,
+        return new(prog, description, epilog, usage, version, add_help, add_version,
                    error_on_conflict, suppress_warnings, allow_ambiguous_opts,
                    commands_are_required, copy(std_groups), "",
                    ArgParseTable(), exc_handler)
-        return this
     end
 end
 
-# the "add_help" is kept for backward compatibility and is now undocumented
+# the "add_help" is kept for backwards compatibility and is now undocumented
 ArgParseSettings(desc::String, add_help = true; kw...) = ArgParseSettings(;{(:description, desc), (:add_help, add_help), kw...}...)
+
+function show(io::IO, s::ArgParseSettings)
+    p(x) = "  $x=$(s.(x))\n"
+    str = "ArgParseSettings(\n"
+    for f in [:prog, :description, :epilog, :usage, :version,
+              :add_help, :add_version, :error_on_conflict, :suppress_warnings,
+              :allow_ambiguous_opts, :commands_are_required, :exc_handler]
+        str *= p(f)
+    end
+    str *= "  > " * usage_string(s) * "\n"
+    str *= "  )"
+    print(io, str)
+end
 
 typealias ArgName{T<:String} Union(T, Vector{T})
 
@@ -1338,10 +1350,7 @@ function show_help(settings::ArgParseSettings)
     exit(0)
 end
 
-function show_version(settings::ArgParseSettings)
-    println(settings.version)
-    exit(0)
-end
+show_version(settings::ArgParseSettings) = (println(settings.version); exit(0))
 
 function has_cmd(settings::ArgParseSettings)
     for a in settings.args_table.fields
