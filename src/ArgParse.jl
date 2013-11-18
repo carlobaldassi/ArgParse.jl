@@ -181,13 +181,10 @@ ArgParseSettings(desc::String, add_help = true; kw...) = ArgParseSettings(;{(:de
 function show(io::IO, s::ArgParseSettings)
     p(x) = "  $x=$(s.(x))\n"
     str = "ArgParseSettings(\n"
-    for f in [:prog, :description, :epilog, :usage, :version,
-              :add_help, :add_version, :error_on_conflict, :suppress_warnings,
-              :allow_ambiguous_opts, :commands_are_required, :default_group,
-              :exc_handler]
+    for f in setdiff(names(ArgParseSettings), [:args_groups, :args_table])
         str *= p(f)
     end
-    str *= "  > " * usage_string(s) * "\n"
+    str *= "  >> " * usage_string(s) * "\n"
     str *= "  )"
     print(io, str)
 end
