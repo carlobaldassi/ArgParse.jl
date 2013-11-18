@@ -183,7 +183,8 @@ function show(io::IO, s::ArgParseSettings)
     str = "ArgParseSettings(\n"
     for f in [:prog, :description, :epilog, :usage, :version,
               :add_help, :add_version, :error_on_conflict, :suppress_warnings,
-              :allow_ambiguous_opts, :commands_are_required, :exc_handler]
+              :allow_ambiguous_opts, :commands_are_required, :default_group,
+              :exc_handler]
         str *= p(f)
     end
     str *= "  > " * usage_string(s) * "\n"
@@ -1389,21 +1390,31 @@ type ParserState
     last_arg::Int
     found_args::Set{String}
     command::Union(String,Nothing)
+    truncated_shopts::Bool
     out_dict::Dict{String,Any}
-    function ParserState(args_list::Vector, settings::ArgParseSettings)
+    function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
         out_dict = (String=>Any)[]
         for f in settings.args_table.fields
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
-        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{String}(), nothing, out_dict)
+        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{String}(), nothing, truncated_shopts, out_dict)
     end
 end
 
 found_command(state::ParserState) = state.command !== nothing
 function parse_command_args(state::ParserState, settings::ArgParseSettings)
-    haskey(settings, state.command) || argparse_error("unknown command: $(state.command)")
-    state.out_dict[state.command] = parse_args(state.args_list, settings[state.command])
+    cmd = state.command
+    haskey(settings, cmd) || argparse_error("unknown command: $cmd")
+    #state.out_dict[cmd] = parse_args(state.args_list, settings[cmd])
+    try
+        state.out_dict[cmd] = parse_args_unhandled(state.args_list, settings[cmd], state.truncated_shopts)
+    catch err
+        isa(err, ArgParseError) || rethrow()
+        settings[cmd].exc_handler(settings[cmd], err)
+    finally
+        state.truncated_shopts = false
+    end
 end
 
 function preparse(state::ParserState, settings::ArgParseSettings)
@@ -1411,6 +1422,11 @@ function preparse(state::ParserState, settings::ArgParseSettings)
     while !isempty(args_list)
         state.arg_delim_found && (produce(:pos_arg); continue)
         arg = args_list[1]
+        if state.truncated_shopts
+            @assert arg[1] == '-'
+            looks_like_an_option(arg, settings) || argparse_error("illegal short options sequence after command: $arg")
+            state.truncated_shopts = false
+        end
         if arg == "--"
             state.arg_delim_found = true
             state.token = nothing
@@ -1445,7 +1461,7 @@ function preparse(state::ParserState, settings::ArgParseSettings)
     end
 end
 
-function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
+function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool=false)
     any(x->!isa(x,String), args_list) && error("malformed args_list")
 
     version_added = false
@@ -1472,7 +1488,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings)
         help_added = true
     end
 
-    state = ParserState(args_list, settings)
+    state = ParserState(args_list, settings, truncated_shopts)
     preparser = Task(()->preparse(state, settings))
 
     try
@@ -1723,7 +1739,9 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         state.arg_consumed && break
         if found_command(state)
             if rest_as_arg !== nothing && !isempty(rest_as_arg)
-                unshift!(state.args_list, "-" * rest_as_arg) # TODO: this may mess up with "looks_like_an_option" heuristic
+                beginswith(rest_as_arg, '-') && argparse_error("illegal short options sequence after command $(state.command): $rest_as_arg")
+                unshift!(state.args_list, "-" * rest_as_arg)
+                state.truncated_shopts = true
             end
             return
         end
