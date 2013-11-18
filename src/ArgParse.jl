@@ -474,6 +474,12 @@ function auto_dest_name(pos_arg::String, long_opts::Vector{String}, short_opts::
     return short_opts[1]
 end
 
+function auto_metavar(dest_name::String, is_opt::Bool)
+    is_opt || return dest_name
+    prefix = ismatch(r"^[[:alpha:]_]", dest_name) ? "" : "_"
+    return prefix * uppercase(dest_name)
+end
+
 function get_cmd_prog_hint(arg::ArgParseField)
     isempty(arg.short_opt_name) || return "-" * arg.short_opt_name[1]
     isempty(arg.long_opt_name) || return "--" * arg.long_opt_name[1]
@@ -713,13 +719,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
     set_if_valid(:metavar, metavar)
 
     if !is_flag
-        if isempty(new_arg.metavar)
-            if is_opt
-                new_arg.metavar = uppercase(new_arg.dest_name)
-            else
-                new_arg.metavar = new_arg.dest_name
-            end
-        end
+        isempty(new_arg.metavar) && (new_arg.metavar = auto_metavar(new_arg.dest_name, is_opt))
         check_metavar(new_arg.metavar)
     end
 
