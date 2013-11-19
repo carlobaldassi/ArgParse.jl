@@ -20,14 +20,12 @@ function ap_test4(args)
             help = "parent argument"
     end
 
-    s = ArgParseSettings("Test 4 for ArgParse.jl")
-
-    s.add_help = false           # disable auto-add of --help option
-    s.version = "Version 1.0"    # we set the version info, but --version won't be added
+    s = ArgParseSettings("Test 4 for ArgParse.jl",
+                         add_help = false,           # disable auto-add of --help option
+                         version = "Version 1.0",    # we set the version info, but --version won't be added
+                         error_on_conflict = false)  # do not error-out when trying to override an option
 
     import_settings(s, s0)       # now s has all of s0 arguments (except help/version)
-
-    s.error_on_conflict = false  # do not error-out when trying to override an option
 
     @add_arg_table s begin
         "-o"                       # this will partially override s0's --parent-flag
@@ -67,10 +65,9 @@ function ap_test4_fails(args)
             help = "parent argument"
     end
 
-    s = ArgParseSettings("Test 4 for ArgParse.jl")
-
-    s.add_help = false           # disable auto-add of --help option
-    s.version = "Version 1.0"    # we set the version info, but --version won't be added
+    s = ArgParseSettings("Test 4 for ArgParse.jl",
+                         add_help = false,
+                         version = "Version 1.0")
 
     import_settings(s, s0)       # now s has all of s0 arguments (except help/version)
 

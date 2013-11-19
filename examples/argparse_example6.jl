@@ -5,7 +5,7 @@ using ArgParse
 function main(args)
 
     s = ArgParseSettings("Example 6 for argparse.jl: " *
-                         "commands and their associated subtables.")
+                         "commands and their associated sub-tables.")
 
     @add_arg_table s begin
         "run"
@@ -45,8 +45,8 @@ function main(args)
 
     parsed_args = parse_args(args, s)
     println("Parsed args:")
-    for pa in parsed_args
-        println("  $(pa[1])  =>  $(pa[2])")
+    for (key,val) in parsed_args
+        println("  $key  =>  $(repr(val))")
     end
     println()
 
@@ -57,8 +57,8 @@ function main(args)
     # thus, the command args are in parsed_args[parsed_args["%COMMAND%]]
     println("Parsed command args:")
     command_args = parsed_args[parsed_args["%COMMAND%"]]
-    for pa in command_args
-        println("  $(pa[1])  =>  $(pa[2])")
+    for (key,val) in command_args
+        println("  $key  =>  $(repr(val))")
     end
 end
 

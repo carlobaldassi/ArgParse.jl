@@ -21,10 +21,9 @@ function main(args)
 
     s = ArgParseSettings("Example 5 for argparse.jl: " *
                          "importing another parser, " *
-                         "manual help and version.")
-
-    s.add_help = false           # disable auto-add of --help option
-    s.version = "Version 1.0"    # we set the version info, but --version won't be added
+                         "manual help and version.",
+                         add_help = false,           # disable auto-add of --help option
+                         version = "Version 1.0")    # we set the version info, but --version won't be added
 
     import_settings(s, s0)       # now s has all of s0 arguments (except help/version)
 
@@ -48,8 +47,8 @@ function main(args)
 
     parsed_args = parse_args(args, s)
     println("Parsed args:")
-    for pa in parsed_args
-        println("  $(pa[1])  =>  $(pa[2])")
+    for (key,val) in parsed_args
+        println("  $key  =>  $(repr(val))")
     end
 end
 

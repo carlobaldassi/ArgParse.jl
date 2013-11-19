@@ -203,8 +203,8 @@ Settings overview
 The ``ArgParseSettings`` object contains all the settings to be used during argument parsing. Settings are divided
 in two groups: general settings and argument-table-related settings.
 While the argument table requires specialized functions such as ``add_arg_table`` to be defined and manipulated,
-general settings are simply object fields (most of them are ``Bool`` or ``String``) and can be set directly at any
-time.
+general settings are simply object fields (most of them are ``Bool`` or ``String``) and can be passed to the
+constructor as keyword arguments, or directly set at any time.
 
 .. _argparse-general-settings:
 
@@ -241,14 +241,25 @@ This is the list of general settings currently available:
 
 Here is a usage example::
 
-    settings = ArgParseSettings()
-    settings.prog = "myprogram"
-    settings.description = "This program does something."
-    settings.add_version = true
-    settings.allow_ambiguous_opts = true
+    settings = ArgParseSettings(description = "This program does something",
+                                commands_are_required = false,
+                                version = "1.0",
+                                add_version = true)
 
-As a shorthand for most common settings, the ``ArgParseSettings`` contructor accepts two optional fields, ``description`` and
-``add_help``.
+which is also equivalent to::
+
+    settings = ArgParseSettings()
+    settings.description = "This program does something."
+    settings.commands_are_required = false
+    settings.version = "1.0"
+    settings.add_version = true
+
+As a shorthand, the ``description`` field can be passed without keyword, which makes this equivalent to the above::
+
+    settings = ArgParseSettings("This program does something",
+                                commands_are_required = false,
+                                version = "1.0",
+                                add_version = true)
 
 Most settings won't take effect until ``parse_args`` is invoked, but a few will have immediate effects: ``error_on_conflict``,
 ``suppress_warnings``, ``allow_ambiguous_opts``.
@@ -556,7 +567,7 @@ a file called ``cmd_example.jl``::
     using ArgParse
 
     function parse_commandline()
-        s = ArgParseSettings("cmd_example.jl")
+        s = ArgParseSettings()
 
         @add_arg_table s begin
             "cmd1"
