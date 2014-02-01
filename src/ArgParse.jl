@@ -358,14 +358,14 @@ end
 check_default_type_multi(default::Nothing, arg_type::Type) = true
 check_default_type_multi(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi(default, arg_type::Type)
-    isa(default, Vector) && (arg_type <: eltype(default)) && return true
+    isa(default, Vector) && (eltype(default) <: arg_type) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with T<:$arg_type})")
 end
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
 check_default_type_multi2(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
-    isa(default, Vector) && (Vector{arg_type} <: eltype(default)) && return true
+    isa(default, Vector) && (eltype(default) <: Vector{arg_type}) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
 end
 
