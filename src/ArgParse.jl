@@ -358,15 +358,19 @@ end
 check_default_type_multi(default::Nothing, arg_type::Type) = true
 check_default_type_multi(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi(default, arg_type::Type)
-    isa(default, Vector) && (arg_type <: eltype(default)) && return true
-    error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with T<:$arg_type})")
+    (isa(default, Vector) && (arg_type <: eltype(default))) ||
+        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T")
+    all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type)")
+    return true
 end
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
 check_default_type_multi2(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
-    isa(default, Vector) && (Vector{arg_type} <: eltype(default)) && return true
-    error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
+    (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
+        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T")
+    all(y->all(x->isa(x, arg_type), y), default) || error("all elements of the default value must be of type $arg_type)")
+    return true
 end
 
 check_range_default(default::Nothing, range_tester::Function) = true
@@ -396,7 +400,7 @@ function check_range_default_multi(default::Vector, range_tester::Function)
 end
 
 check_range_default_multi2(default::Nothing, range_tester::Function) = true
-function check_range_default_multi2{T}(default::Vector{Vector{T}}, range_tester::Function)
+function check_range_default_multi2(default::Vector, range_tester::Function)
     for dl in default
         for d in dl
             local res::Bool
