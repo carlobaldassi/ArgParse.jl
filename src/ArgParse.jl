@@ -351,25 +351,34 @@ end
 
 check_default_type(default::Nothing, arg_type::Type) = true
 function check_default_type(default, arg_type::Type)
-    typeof(default) <: arg_type && return true
+    isa(default, arg_type) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), arg_type=$arg_type)")
 end
 
-check_default_type_multi(default::Nothing, arg_type::Type) = true
-check_default_type_multi(default::Vector{None}, arg_type::Type) = true
-function check_default_type_multi(default, arg_type::Type)
+check_default_type_multi_action(default::Nothing, arg_type::Type) = true
+check_default_type_multi_action(default::Vector{None}, arg_type::Type) = true
+function check_default_type_multi_action(default, arg_type::Type)
     (isa(default, Vector) && (arg_type <: eltype(default))) ||
-        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T")
+        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T)")
     all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type)")
     return true
 end
+
+check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
+check_default_type_multi_nargs(default::Vector{None}, arg_type::Type) = true
+function check_default_type_multi_nargs(default::Vector, arg_type::Type)
+    all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type")
+    return true
+end
+check_default_type_multi_nargs(default, arg_type::Type) =
+    error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector)")
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
 check_default_type_multi2(default::Vector{None}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
     (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
-        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T")
-    all(y->all(x->isa(x, arg_type), y), default) || error("all elements of the default value must be of type $arg_type)")
+        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
+    all(y->all(x->isa(x, arg_type), y), default) || error("all elements of the default value must be of type $arg_type")
     return true
 end
 
@@ -777,8 +786,11 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
         if !is_multi_action(new_arg.action) && !is_multi_nargs(new_arg.nargs)
             check_default_type(default, arg_type)
             check_range_default(default, range_tester)
-        elseif !is_multi_action(new_arg.action) || !is_multi_nargs(new_arg.nargs)
-            check_default_type_multi(default, arg_type)
+        elseif !is_multi_action(new_arg.action)
+            check_default_type_multi_nargs(default, arg_type)
+            check_range_default_multi(default, range_tester)
+        elseif !is_multi_nargs(new_arg.nargs)
+            check_default_type_multi_action(default, arg_type)
             check_range_default_multi(default, range_tester)
         else
             check_default_type_multi2(default, arg_type)
@@ -792,13 +804,8 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
 
         if is_opt && nargs.desc == :?
             constant = new_arg.constant
-            if !is_multi_nargs(new_arg.nargs)
-                check_default_type(constant, arg_type)
-                check_range_default(constant, range_tester)
-            else
-                check_default_type_multi(constant, arg_type)
-                check_range_default_multi(constant, range_tester)
-            end
+            check_default_type(constant, arg_type)
+            check_range_default(constant, range_tester)
         end
     end
 
