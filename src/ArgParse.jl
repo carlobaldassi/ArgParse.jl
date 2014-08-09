@@ -1271,10 +1271,10 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     return arg.help * type_str * default_str * const_str * post
 end
 
-function print_group(lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int,
-                      lmargin::String, rmargin::String, sindent::String)
+function print_group(io::IO, lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int,
+                     lmargin::String, rmargin::String, sindent::String)
     isempty(lst) && return
-    println(desc * ":")
+    println(io, desc, ":")
     for l in lst
         l1len = length(l[1])
         if l1len <= lc_usable_len
@@ -1282,17 +1282,19 @@ function print_group(lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int,
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
             ll_wrapped = wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
                               initial_indent = lmargin, subsequent_indent = sindent)
-            println(replace(ll_wrapped, nbspc, ' '))
+            println(io, replace(ll_wrapped, nbspc, ' '))
         else
-            println(lmargin, l[1])
-            println_wrapped(l[2], break_long_words = false, break_on_hyphens = false,
-                                  initial_indent = sindent, subsequent_indent = sindent)
+            println(io, lmargin, l[1])
+            println_wrapped(io, l[2], break_long_words = false, break_on_hyphens = false,
+                                      initial_indent = sindent, subsequent_indent = sindent)
         end
     end
-    println()
+    println(io)
 end
 
-function show_help(settings::ArgParseSettings)
+show_help(settings::ArgParseSettings; kw...) = show_help(STDOUT, settings; kw...)
+
+function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
 
     lc_len_limit = 24
     lc_left_indent = 2
@@ -1343,26 +1345,33 @@ function show_help(settings::ArgParseSettings)
 
     sindent = lmargin * " " ^ lc_len * rmargin
 
-    println(usage_str)
-    println()
+    println(io, usage_str)
+    println(io)
     if !isempty(settings.description)
-        println_wrapped(settings.description, break_long_words = false, break_on_hyphens = false)
-        println()
+        println_wrapped(io, settings.description, break_long_words = false, break_on_hyphens = false)
+        println(io)
     end
 
     for ag in settings.args_groups
-        print_group(group_lists[ag.name], ag.desc, lc_usable_len, lc_len,
-                     lmargin, rmargin, sindent)
-     end
-
-     if !isempty(settings.epilog)
-        println_wrapped(settings.epilog, break_long_words = false, break_on_hyphens = false)
-        println()
+        print_group(io, group_lists[ag.name], ag.desc, lc_usable_len, lc_len,
+                    lmargin, rmargin, sindent)
     end
-    exit(0)
+
+    if !isempty(settings.epilog)
+        println_wrapped(io, settings.epilog, break_long_words = false, break_on_hyphens = false)
+        println(io)
+    end
+    exit_when_done && exit(0)
+    return
 end
 
-show_version(settings::ArgParseSettings) = (println(settings.version); exit(0))
+show_version(settings::ArgParseSettings; kw...) = show_version(STDOUT, settings; kw...)
+
+function show_version(io::IO, settings::ArgParseSettings; exit_when_done = true)
+    println(io, settings.version)
+    exit_when_done && exit(0)
+    return
+end
 
 function has_cmd(settings::ArgParseSettings)
     for a in settings.args_table.fields
