@@ -1,4 +1,4 @@
-require("Options")
+isdefined(:OptionsMod) || require("Options")
 
 module ArgParse
 
