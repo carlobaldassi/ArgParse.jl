@@ -156,7 +156,7 @@ type ArgParseSettings
     args_table::ArgParseTable
     exc_handler::Function
 
-    function ArgParseSettings(;prog::String = basename(Base.source_path()),
+    function ArgParseSettings(;prog::String = Base.source_path() != nothing ? basename(Base.source_path()) : "",
                                description::String = "",
                                epilog::String = "",
                                usage::String = "",
@@ -1086,7 +1086,7 @@ function test_range(range_tester::Function, arg, name::String)
     catch
         rng_chk = false
     end
-    rng_chk || argparse_error("out of range input for $name: $a")
+    rng_chk || argparse_error("out of range input for $name: $arg")
     return
 end
 
