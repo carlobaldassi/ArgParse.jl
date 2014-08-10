@@ -1,10 +1,7 @@
 # test 3: dest_name, metavar, range_tester, alternative
 #         actions
 
-using ArgParse
-using Base.Test
-
-function ap_test3(args)
+function ap_settings3()
 
     s = ArgParseSettings("Test 3 for ArgParse.jl")
 
@@ -37,13 +34,32 @@ function ap_test3(args)
                    "stored in chunks"
     end
 
-    s.exc_handler = (settings, err)->error(err.text)
+    s.exc_handler = (settings, err)->throw(err)
 
-    parsed_args = parse_args(args, s)
+    return s
 end
 
-@test ap_test3([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "awk"=>Vector{Any}[]]
-@test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1"]) ==
-    (String=>Any)["O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>{{"X", "X"}, {"Y", "X"}}]
-@test_throws ap_test3(["X"])
-@test_throws ap_test3(["--awk", "Z"])
+let s = ap_settings3()
+    ap_test3(args) = parse_args(args, s)
+
+    @test stringhelp(s) == """
+        usage: $(basename(Base.source_path())) [--opt1] [--opt2] [-k]
+                                [--awkward-option XY [XY...]]
+
+        Test 3 for ArgParse.jl
+
+        optional arguments:
+          --opt1                append O1
+          --opt2                append O2
+          -k                    provide the answer
+          --awkward-option XY [XY...]
+                                either X or Y; all XY's are stored in chunks
+
+        """
+
+    @test ap_test3([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "awk"=>Vector{Any}[]]
+    @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1"]) ==
+        (String=>Any)["O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>{{"X", "X"}, {"Y", "X"}}]
+    @ap_test_throws ap_test3(["X"])
+    @ap_test_throws ap_test3(["--awk", "Z"])
+end

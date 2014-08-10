@@ -1,9 +1,6 @@
 # test 4: manual help/version, import another parser
 
-using ArgParse
-using Base.Test
-
-function ap_test4(args)
+function ap_settings4()
 
     s0 = ArgParseSettings()  # a "parent" structure e.g. one with some useful set of rules
                              # which we want to extend
@@ -43,10 +40,40 @@ function ap_test4(args)
                    "and exit"
     end
 
-    s.exc_handler = (settings, err)->error(err.text)
+    s.exc_handler = (settings, err)->throw(err)
 
-    parsed_args = parse_args(args, s)
+    return s
 end
+
+
+let s = ap_settings4()
+    ap_test4(args) = parse_args(args, s)
+
+    @test stringhelp(s) == """
+        usage: $(basename(Base.source_path())) [--parent-flag] [-o] [--flag] [-?] [-v]
+                                [parent-argument]
+
+        Test 4 for ArgParse.jl
+
+        positional arguments:
+          parent-argument      parent argument
+
+        optional arguments:
+          --parent-flag        parent flag
+          -o                   child flag
+          --flag               another child flag
+          -?, --HELP, --¡ḧëļṕ  this will help you
+          -v, --VERSION        show version informationand exit
+
+        """
+
+    @test stringversion(s) == "Version 1.0\n"
+
+    @test ap_test4([]) == (String=>Any)["parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing]
+    @test ap_test4(["-o", "X"]) == (String=>Any)["parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X"]
+    @ap_test_throws ap_test4(["-h"])
+end
+
 
 function ap_test4_fails(args)
 
@@ -80,12 +107,9 @@ function ap_test4_fails(args)
             help = "another child flag"
     end
 
-    s.exc_handler = (settings, err)->error(err.text)
+    s.exc_handler = (settings, err)->throw(err)
 
     parsed_args = parse_args(args, s)
 end
 
-@test ap_test4([]) == (String=>Any)["parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing]
-@test ap_test4(["-o", "X"]) == (String=>Any)["parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X"]
-@test_throws ap_test4(["-h"])
-@test_throws ap_test4_fails([])
+@test_throws_02 ErrorException ap_test4_fails([])

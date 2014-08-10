@@ -1,3 +1,7 @@
+module ArgParseTests
+
+include("common.jl")
+
 for i = 1:5
     print("\rRunning argparse_test$i")
     try
@@ -8,3 +12,5 @@ for i = 1:5
     end
 end
 println()
+
+end

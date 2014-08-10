@@ -2,10 +2,7 @@
 #         options with types, optional arguments, variable
 #         number of arguments
 
-using ArgParse
-using Base.Test
-
-function ap_test2(args)
+function ap_settings2()
 
     s = ArgParseSettings(description = "Test 2 for ArgParse.jl",
                          version = "Version 1.0", # version info
@@ -38,14 +35,36 @@ function ap_test2(args)
                    "before an option"
     end
 
-    s.exc_handler = (settings, err)->error(err.text)
+    s.exc_handler = (settings, err)->throw(err)
 
-    parsed_args = parse_args(args, s)
+    return s
 end
 
-@test_throws ap_test2([])
-@test ap_test2(["X", "Y"]) == (String=>Any)["opt1"=>0, "flag"=>false, "karma"=>0, "arg1"=>{"X", "Y"}, "arg2"=>{"no_arg_given"}]
-@test ap_test2(["X", "Y", "-k", "-f", "Z", "--karma", "--opt"]) == (String=>Any)["opt1"=>1, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
-@test ap_test2(["--opt", "-3", "X", "Y", "-k", "-f", "Z", "--karma"]) == (String=>Any)["opt1"=>-3, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
-@test_throws ap_test2(["--opt", "1e-2", "X", "Y"])
+let s = ap_settings2()
+    ap_test2(args) = parse_args(args, s)
 
+    @test stringhelp(s) == """
+        usage: $(basename(Base.source_path())) [--opt1 [OPT1]] [-f] [-k] arg1 arg1 [arg2...]
+
+        Test 2 for ArgParse.jl
+
+        positional arguments:
+          arg1           first argument, two entries at once
+          arg2           second argument, eats up as many items as possible
+                         before an option (default: {"no_arg_given"})
+
+        optional arguments:
+          --opt1 [OPT1]  an option (type: Int64, default: 0, without arg: 1)
+          -f, --flag     a flag
+          -k, --karma    increase karma
+
+        """
+
+    @test stringversion(s) == "Version 1.0\n"
+
+    @ap_test_throws ap_test2([])
+    @test ap_test2(["X", "Y"]) == (String=>Any)["opt1"=>0, "flag"=>false, "karma"=>0, "arg1"=>{"X", "Y"}, "arg2"=>{"no_arg_given"}]
+    @test ap_test2(["X", "Y", "-k", "-f", "Z", "--karma", "--opt"]) == (String=>Any)["opt1"=>1, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
+    @test ap_test2(["--opt", "-3", "X", "Y", "-k", "-f", "Z", "--karma"]) == (String=>Any)["opt1"=>-3, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
+    @ap_test_throws ap_test2(["--opt", "1e-2", "X", "Y"])
+end
