@@ -1247,6 +1247,8 @@ function usage_string(settings::ArgParseSettings)
     return out_str
 end
 
+string_compact(x...) = (io = IOBuffer(); showcompact(io, x...); takebuf_string(io))
+
 function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     is_flag(arg) && return arg.help
 
@@ -1260,11 +1262,11 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
         end
         if arg.default !== nothing && !isequal(arg.default, [])
             mid = isempty(type_str) ? " (" : ", "
-            default_str = mid * "default: " * string(arg.default)
+            default_str = mid * "default: " * string_compact(arg.default)
         end
         if arg.nargs.desc == :?
             mid = isempty(type_str) && isempty(default_str) ? " (" : ", "
-            const_str = mid * "without arg: " * string(arg.constant)
+            const_str = mid * "without arg: " * string_compact(arg.constant)
         end
     end
     post = (isempty(type_str) && isempty(default_str) && isempty(const_str)) ? "" : ")"
