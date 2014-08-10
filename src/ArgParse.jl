@@ -410,16 +410,14 @@ end
 
 check_range_default_multi2(default::Nothing, range_tester::Function) = true
 function check_range_default_multi2(default::Vector, range_tester::Function)
-    for dl in default
-        for d in dl
-            local res::Bool
-            try
-                res = range_tester(d)
-            catch err
-                error("the range_tester function must be a defined for all the default values and return a Bool")
-            end
-            res || error("all of the default values must pass the range_tester function")
+    for dl in default, d in dl
+        local res::Bool
+        try
+            res = range_tester(d)
+        catch err
+            error("the range_tester function must be a defined for all the default values and return a Bool")
         end
+        res || error("all of the default values must pass the range_tester function")
     end
     return true
 end
