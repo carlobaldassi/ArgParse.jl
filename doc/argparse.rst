@@ -12,6 +12,10 @@ and usage messages.
 Users familiar with Python's argparse module will find many similarities, but some important differences
 as well.
 
+This package can be installed using the Julia package manager from the Julia command line::
+
+    julia> Pkg.add("ArgParse")
+
 .. _argparse-overview:
 
 -----------------------------------
@@ -60,6 +64,10 @@ When the settings are in place, the actual argument parsing is performed via the
 The parameter ``ARGS`` can be omitted. In case no errors are found, the result will be a ``Dict{String,Any}`` object.
 In the above example, it will contain the keys ``"opt1"``, ``"opt2"``, ``"flag1"`` and ``"arg1"``, so that e.g.
 ``parsed_args["arg1"]`` will yield the value associated with the positional argument.
+
+(The ``parse_args`` function also accepts an optional ``as_symbols`` keyword argument: when set to ``true``, the
+result of the parsing will be a ``Dict{Symbol,Any}``, which can be useful e.g. for passing it as the keywords to a Julia
+function.)
 
 Putting all this together in a file, we can see how a basic command-line interface is created::
 
@@ -159,15 +167,17 @@ From these examples, a number of things can be noticed:
 The ``parse_args`` function
 ---------------------------
 
-.. function:: parse_args([args,] settings)
+.. function:: parse_args([args,] settings; as_symbols::Bool = false)
 
    This is the central function of the ``ArgParse`` module. It takes a ``Vector`` of arguments and an ``ArgParseSettings``
    objects (see :ref:`this section <argparse-settings-overview>`), and returns a ``Dict{String,Any}``.
    If ``args`` is not provided, the global variable ``ARGS`` will be used.
 
+   When the keyword argument ``as_symbols`` is ``true``, the function will return a ``Dict{Symbol,Any}`` instead.
+
    The returned ``Dict`` keys are defined (possibly implicitly) in ``settings``, and their associated values are parsed
    from ``args``. Special keys are used for more advanced purposes; at the moment, one such key exists: ``%COMMAND%``
-   (see :ref:`this section <argparse-commands>`).
+   (``_COMMAND_`` when using ``as_symbols=true``; see :ref:`this section <argparse-commands>`).
 
    Arguments are parsed in sequence and matched against the argument table in ``settings`` to determine whether they are
    long options, short options, option arguments or positional arguments:
@@ -231,6 +241,7 @@ This is the list of general settings currently available:
   in option names and destinations: all underscores will be converted to dashes in long option names; also, associated destination names, if
   auto-generated (see :ref:`this_section <argparse-argument-names>`), will have dashes replaced with underscores, both for long options and for
   positional arguments. For example, an option declared as ``"--my-opt"`` will be associated with the key ``"my_opt"`` by default.
+  It is especially advisable to turn this option on then parsing with the ``as_symbols=true`` argument to ``parse_args``.
 * ``error_on_conflict`` (default = ``true``): if ``true``, throw an error in case conflicting entries are added to the argument table;
   if ``false``, later entries will silently take precedence.
   See :ref:`this section <argparse-conflicts>` for a detailed description of what conflicts are and what is the exact behavior
@@ -618,6 +629,9 @@ fill it with the invoked command (or ``nothing`` if no command was given)::
     $ julia cmd_example.jl cmd1
     {"%COMMAND%"=>"cmd1", "cmd1"=>{}}
 
+This is unless ``parse_args`` is invoked with ``as_symbols=true``, in which case the special key becomes ``:_COMMAND_``. (In that case,
+no other argument is allowed to use ``_COMMAND_`` as its ``dest_name``, or an error will be raised.)
+
 Since commands introduce sub-parsing sessions, an additional key will be added for the called command (``"cmd1"`` in this case) whose
 associated value is another ``Dict{String, Any}`` containing the result of the sub-parsing (in the above case it's empty). In fact,
 with the default settings, commands have their own help screens::
@@ -831,7 +845,7 @@ when short option groups are being parsed. For example, if the option in questio
 ``-y -x=-2 4 -y`` and ``-yx-2 4 -y`` will parse ``"-2"`` and ``"4"`` as the arguments of ``-x``.
 
 Finally, since expressions may be evaluated during parsing, note that there is no safeguard against passing
-things like ``run(`rm -fr ~`)`` and seeing your data evaporate. Be careful.
+things like ``run(`rm -fr ~`)`` and seeing your data evaporate (don't try that!). Be careful.
 
 .. _argparse-table-styles:
 
@@ -877,8 +891,5 @@ Here are some examples of styles for the ``@add_arg_table`` marco and ``add_arg_
 
 The restrictions are:
 
-* when using the function-like notation for macros (i.e. passing arguments in a comma-separated list
-  between parentheses), assignments can only use ``=>`` or ``:=``. In the examples above, this can be seen
-  both when using ``@add_arg_table`` and ``@options``
 * groups introduced by ``begin...end`` blocks or semicolon-separated list between parentheses cannot introduce
   argument names unless the first item in the block is an argument name.

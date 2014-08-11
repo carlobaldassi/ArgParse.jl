@@ -120,6 +120,9 @@ let s = ap_settings5()
     @ap_test_throws ap_test5(["jump", "-sb-"])
     @ap_test_throws ap_test5(["jump", "-s-b"])
 
+    @test parse_args(["jump", "-sbt2"], s, as_symbols = true) ==
+        (Symbol=>Any)[:_COMMAND_=>:jump, :jump=>(Symbol=>Any)[:higher=>false, :_COMMAND_=>:som, :som=>(Symbol=>Any)[:t=>2, :b=>true]]]
+
     # argument after command
     @ee_test_throws @add_arg_table(s, "arg_after_command")
     # same name as command
@@ -129,6 +132,9 @@ let s = ap_settings5()
     # same dest_name as command
     @ee_test_throws @add_arg_table(s["jump"], "--som")
     @ee_test_throws @add_arg_table(s["jump"], "-s", dest_name = "som")
+
+    @add_arg_table(s, "--COMMAND", dest_name="_COMMAND_")
+    @ee_test_throws parse_args(["run", "--speed", "3"], s, as_symbols = true)
 end
 
 function ap_settings5b()

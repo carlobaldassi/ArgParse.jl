@@ -125,6 +125,7 @@ is_arg(arg::ArgParseField) = isempty(arg.long_opt_name) && isempty(arg.short_opt
 is_cmd(arg::ArgParseField) = is_command_action(arg.action)
 
 const cmd_dest_name = "%COMMAND%"
+const scmd_dest_name = :_COMMAND_
 
 function show(io::IO, s::ArgParseField)
     p(x) = "  $x=$(s.(x))\n"
@@ -1105,6 +1106,23 @@ function test_required_args(settings::ArgParseSettings, found_args::Set{String})
     end
     return true
 end
+
+function check_settings_can_use_symbols(settings::ArgParseSettings)
+    args_table = settings.args_table
+    if !isempty(args_table.subsettings)
+        for f in args_table.fields
+            f.dest_name == string(scmd_dest_name) && error("the dest_name $(string(scmd_dest_name)) cannot be used with the as_symbols option")
+        end
+        for subs in values(args_table.subsettings)
+            check_settings_can_use_symbols(subs)
+        end
+    end
+    settings.suppress_warnings && return true
+    for f in args_table.fields
+        '-' in f.dest_name && warn("dest_name=$(f.dest_name) contains an hyphen; use the autofix_names=true setting to have it converted to an underscore")
+    end
+    return true
+end
 #}}}
 
 # parsing aux functions
@@ -1403,9 +1421,10 @@ function debug_handler(settings::ArgParseSettings, err)
     rethrow(err)
 end
 
-parse_args(settings::ArgParseSettings) = parse_args(ARGS, settings)
+parse_args(settings::ArgParseSettings; kw...) = parse_args(ARGS, settings; kw...)
 
-function parse_args(args_list::Vector, settings::ArgParseSettings)
+function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::Bool = false)
+    as_symbols && check_settings_can_use_symbols(settings)
     local parsed_args
     try
         parsed_args = parse_args_unhandled(args_list, settings)
@@ -1413,7 +1432,8 @@ function parse_args(args_list::Vector, settings::ArgParseSettings)
         isa(err, ArgParseError) || rethrow()
         settings.exc_handler(settings, err)
     end
-    parsed_args
+    as_symbols && (parsed_args = convert_to_symbols(parsed_args))
+    return parsed_args
 end
 
 type ParserState
@@ -1804,6 +1824,25 @@ function parse_arg(state::ParserState, settings::ArgParseSettings)
 
     push!(state.found_args, settings.args_table.fields[state.last_arg].metavar)
     return
+end
+#}}}
+
+# convert_to_symbols
+#{{{
+function convert_to_symbols(parsed_args::Dict{String,Any})
+    new_parsed_args = (Symbol=>Any)[]
+    cmd = nothing
+    if haskey(parsed_args, cmd_dest_name)
+        cmd = parsed_args[cmd_dest_name]
+        scmd = symbol(cmd)
+        new_parsed_args[scmd] = convert_to_symbols(parsed_args[cmd])
+        new_parsed_args[scmd_dest_name] = scmd
+    end
+    for (k,v) in parsed_args
+        (k == cmd_dest_name || k === cmd) && continue
+        new_parsed_args[symbol(k)] = v
+    end
+    return new_parsed_args
 end
 #}}}
 #}}}
