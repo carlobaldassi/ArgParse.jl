@@ -14,6 +14,10 @@ macro ap_test_throws(args)
     :(@test_throws_02 ArgParseError $(esc(args)))
 end
 
+macro ee_test_throws(args)
+    :(@test_throws_02 ErrorException $(esc(args)))
+end
+
 macro tostring(ex)
     @assert ex.head == :call
     f = esc(ex.args[1])

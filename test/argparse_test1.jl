@@ -51,7 +51,10 @@ for s = [ap_settings1(), ap_settings1b()]
     @ap_test_throws ap_test1(["--opt1", "X", "-o=5", "-arg"])
     @test ap_test1(["--opt1=", "--opt2=5"]) == (String=>Any)["opt1"=>"", "opt2"=>"5", "arg1"=>nothing]
     @test ap_test1(["-o", "-2"]) == (String=>Any)["opt1"=>nothing, "opt2"=>"-2", "arg1"=>nothing]
+    @ap_test_throws ap_test1(["--opt", "3"]) # ambiguous
+    @ap_test_throws ap_test1(["-o"])
+    @ap_test_throws ap_test1(["--opt1"])
 
-    @test_throws_02 ErrorException @add_arg_table(s, "--opt1") # long option already added
-    @test_throws_02 ErrorException @add_arg_table(s, "-o") # short option already added
+    @ee_test_throws @add_arg_table(s, "--opt1") # long option already added
+    @ee_test_throws @add_arg_table(s, "-o") # short option already added
 end

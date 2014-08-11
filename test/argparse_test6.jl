@@ -93,17 +93,20 @@ let s = ap_settings6()
         """
 
     @test ap_test6([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "awk"=>Vector{Any}[], "şİłłÿ"=>{}, "rest"=>{}]
-    @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
+    @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł=-1", "-2", "-3"]) ==
         (String=>Any)["O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>{{"X", "X"}, {"Y", "X"}}, "şİłłÿ"=>{"-1", "-2", "-3"}, "rest"=>{}]
     @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
         (String=>Any)["O_stack"=>String["O1", "O2", "O2"], "k"=>0, "awk"=>{{"X", "X"}}, "şİłłÿ"=>{}, "rest"=>{"-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"}]
+    @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r=-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
+        (String=>Any)["O_stack"=>String["O1", "O2", "O2"], "k"=>0, "awk"=>{{"X", "X"}}, "şİłłÿ"=>{}, "rest"=>{"-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"}]
     @ap_test_throws ap_test6(["X"])
+    @ap_test_throws ap_test6(["--awk"])
     @ap_test_throws ap_test6(["--awk", "Z"])
     @ap_test_throws ap_test6(["--şİł", "-1", "-2"])
     @ap_test_throws ap_test6(["--şİł", "-1", "-2", "-3", "-4"])
 
     # invalid groups
-    @test_throws_02 ErrorException add_arg_group(s, "invalid commands", "")
-    @test_throws_02 ErrorException add_arg_group(s, "invalid commands", "#invalid")
-    @test_throws_02 ErrorException @add_arg_table(s, "--opt", action = :store_true, group = "none")
+    @ee_test_throws add_arg_group(s, "invalid commands", "")
+    @ee_test_throws add_arg_group(s, "invalid commands", "#invalid")
+    @ee_test_throws @add_arg_table(s, "--opt", action = :store_true, group = "none")
 end

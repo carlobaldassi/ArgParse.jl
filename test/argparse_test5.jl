@@ -1,4 +1,4 @@
-# test 5: commands & subtables
+ # test 5: commands & subtables
 
 function ap_settings5()
 
@@ -120,11 +120,15 @@ let s = ap_settings5()
     @ap_test_throws ap_test5(["jump", "-sb-"])
     @ap_test_throws ap_test5(["jump", "-s-b"])
 
-    @test_throws_02 ErrorException @add_arg_table(s, "arg_after_command")
-    @test_throws_02 ErrorException @add_arg_table(s, "run") # arg with same name as command
-    @test_throws_02 ErrorException @add_arg_table(s["jump"], "-c") # short option with same name as command
-    @test_throws_02 ErrorException @add_arg_table(s["jump"], "--somersault") # long option with same name as command
-    @test_throws_02 ErrorException @add_arg_table(s["jump"], "--som") # long option with same dest_name as command
+    # argument after command
+    @ee_test_throws @add_arg_table(s, "arg_after_command")
+    # same name as command
+    @ee_test_throws @add_arg_table(s, "run")
+    @ee_test_throws @add_arg_table(s["jump"], "-c")
+    @ee_test_throws @add_arg_table(s["jump"], "--somersault")
+    # same dest_name as command
+    @ee_test_throws @add_arg_table(s["jump"], "--som")
+    @ee_test_throws @add_arg_table(s["jump"], "-s", dest_name = "som")
 end
 
 function ap_settings5b()
@@ -141,6 +145,12 @@ function ap_settings5b()
         "jump"
             action = :command
             help = "start jumping mode"
+        "--time"
+            arg_type = String
+            default = "now"
+            metavar = "T"
+            help = "time at which to " *
+                   "perform the command"
     end
 
     @add_arg_table s0["run"] begin
@@ -153,18 +163,31 @@ function ap_settings5b()
     s0["jump"].description = "Jump mode"
     s0["jump"].commands_are_required = false
     s0["jump"].autofix_names = true
+    s0["jump"].add_help = false
+
+    add_arg_group(s0["jump"], "modifiers", "modifiers")
+    set_default_arg_group(s0["jump"])
 
     @add_arg_table s0["jump"] begin
         "--higher"
             action = :store_true
             help = "enhance jumping"
+            group = "modifiers"
         "--somersault"
             action = :command
             dest_name = "som"
             help = "somersault jumping mode"
-        "--clap-feet"
+        "--clap-feet", "-c"
             action = :command
             help = "clap feet jumping mode"
+    end
+
+    add_arg_group(s0["jump"], "other")
+    @add_arg_table s0["jump"] begin
+        "--help"
+            action = :show_help
+            help = "show this help message " *
+                   "and exit"
     end
 
     s0["jump"]["som"].description = "Somersault jump mode"
@@ -176,18 +199,35 @@ function ap_settings5b()
         "fly"
             action = :command
             help = "start flying mode"
+        "-T" # will be overridden (same dest_name as s0's --time,
+             # incompatible arg_type)
+            dest_name = "time"
+            arg_type = Int
     end
 
     s["jump"].autofix_names = true
+    s["jump"].add_help = false
 
+    add_arg_group(s["jump"], "modifiers", "modifiers")
     @add_arg_table s["jump"] begin
         "--lower"
             action = :store_false
             dest_name = "higher"
             help = "reduce jumping"
+    end
+
+    set_default_arg_group(s["jump"])
+
+    @add_arg_table s["jump"] begin
         "--clap-feet"
             action = :command
             help = "clap feet jumping mode"
+        "--som", "-s" # will be overridden (same dest_name as s0 command)
+            action = :store_true
+            help = "overridden"
+        "--somersault" # will be overridden (same option as s0 command)
+            action = :store_true
+            help = "overridden"
     end
 
     @add_arg_table s["fly"] begin
@@ -210,17 +250,39 @@ let s = ap_settings5b()
     ap_test5b(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-        usage: $(basename(Base.source_path())) {fly|run|jump}
+        usage: $(basename(Base.source_path())) [--time T] {fly|run|jump}
 
         commands:
-          fly   start flying mode
-          run   start running mode
-          jump  start jumping mode
+          fly       start flying mode
+          run       start running mode
+          jump      start jumping mode
+
+        optional arguments:
+          --time T  time at which to perform the command (default: "now")
+
+        """
+
+    stringhelp(s["jump"]) == """
+        usage: argparse_test5.jl jump [--lower] [--higher] [--help]
+                                {-c|--somersault}
+
+        commands:
+          -c, --clap-feet  clap feet jumping mode
+          --somersault     somersault jumping mode
+
+        modifiers:
+          --lower          reduce jumping
+          --higher         enhance jumping
+
+        other:
+          --help           show this help message and exit
 
         """
 
     @ap_test_throws ap_test5b([])
-    @test ap_test5b(["fly"]) == (String=>Any)["%COMMAND%"=>"fly", "fly"=>(String=>Any)["glade"=>false]]
-    @test ap_test5b(["jump", "--lower", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "jump"=>(String=>Any)["%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>(String=>Any)["whistle"=>false]]]
-    @test ap_test5b(["run", "--speed=3"]) == (String=>Any)["%COMMAND%"=>"run", "run"=>(String=>Any)["speed"=>3.0]]
+    @test ap_test5b(["fly"]) == (String=>Any)["%COMMAND%"=>"fly", "time"=>"now", "fly"=>(String=>Any)["glade"=>false]]
+    @test ap_test5b(["jump", "--lower", "--clap"]) == (String=>Any)["%COMMAND%"=>"jump", "time"=>"now",
+        "jump"=>(String=>Any)["%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>(String=>Any)["whistle"=>false]]]
+    @ap_test_throws ap_test5b(["jump"])
+    @test ap_test5b(["run", "--speed=3"]) == (String=>Any)["%COMMAND%"=>"run", "time"=>"now", "run"=>(String=>Any)["speed"=>3.0]]
 end

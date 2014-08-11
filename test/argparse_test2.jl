@@ -109,12 +109,15 @@ for s = [ap_settings2(), ap_settings2b()]
     @test ap_test2(["X", "Y"]) == (String=>Any)["opt1"=>0, "flag"=>false, "karma"=>0, "arg1"=>{"X", "Y"}, "arg2"=>{"no_arg_given"}]
     @test ap_test2(["X", "Y", "-k", "-f", "Z", "--karma", "--opt"]) == (String=>Any)["opt1"=>1, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
     @test ap_test2(["--opt", "-3", "X", "Y", "-k", "-f", "Z", "--karma"]) == (String=>Any)["opt1"=>-3, "flag"=>true, "karma"=>2, "arg1"=>{"X", "Y"}, "arg2"=>{"Z"}]
+    @ap_test_throws ap_test2(["--opt"])
+    @ap_test_throws ap_test2(["--opt="])
+    @ap_test_throws ap_test2(["--opt", "", "X", "Y"])
     @ap_test_throws ap_test2(["--opt", "1e-2", "X", "Y"])
 
-    @test_throws_02 ErrorException @add_arg_table(s, "required_arg_after_optional_args", required=true)
-    #wrong default
-    @test_throws_02 ErrorException @add_arg_table(s, "--opt", arg_type = Int, default = 1.5)
-    #wrong range tester
-    @test_throws_02 ErrorException @add_arg_table(s, "--opt", arg_type = Int, range_tester=x->string(x), default = 1)
-    @test_throws_02 ErrorException @add_arg_table(s, "--opt", arg_type = Int, range_tester=x->sqrt(x)<1, default = -1)
+    @ee_test_throws @add_arg_table(s, "required_arg_after_optional_args", required = true)
+    # wrong default
+    @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, default = 1.5)
+    # wrong range tester
+    @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
+    @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
 end

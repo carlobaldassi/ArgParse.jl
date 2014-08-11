@@ -116,8 +116,9 @@ for s = [ap_settings4(), ap_settings4b()]
     @test ap_test4(["-o", "X"]) == (String=>Any)["parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X"]
     @ap_test_throws ap_test4(["-h"])
 
+    # same metavar as another argument
     s.error_on_conflict = true
-    @test_throws_02 ErrorException @add_arg_table(s, "other-arg", metavar="parent-argument") # same metavar as another argument
+    @ee_test_throws @add_arg_table(s, "other-arg", metavar="parent-argument")
 end
 
 
@@ -169,6 +170,6 @@ end
 let s = ap_settings4_base()
 
     for s0 = [ap_settings4_conflict1(), ap_settings4_conflict2()]
-        @test_throws_02 ErrorException import_settings(s, s0)
+        @ee_test_throws import_settings(s, s0)
     end
 end

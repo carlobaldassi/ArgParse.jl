@@ -125,6 +125,16 @@ is_arg(arg::ArgParseField) = isempty(arg.long_opt_name) && isempty(arg.short_opt
 is_cmd(arg::ArgParseField) = is_command_action(arg.action)
 
 const cmd_dest_name = "%COMMAND%"
+
+function show(io::IO, s::ArgParseField)
+    p(x) = "  $x=$(s.(x))\n"
+    str = "ArgParseField(\n"
+    for f in names(ArgParseField)
+        str *= p(f)
+    end
+    str *= "  )"
+    print(io, str)
+end
 #}}}
 
 # ArgParseTable
@@ -1025,8 +1035,8 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
     for oag in other.args_groups
         skip = false
         for ag in settings.args_groups
-            if (!beginswith(oag.name, '#') && oag.name == ag.name) ||
-               (beginswith(ag.name, '#') && oag.desc == ag.desc)
+            # TODO: merge groups in some cases
+            if oag.name == ag.name
                 skip = true
                 break
             end
