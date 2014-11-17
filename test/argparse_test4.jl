@@ -112,8 +112,8 @@ for s = [ap_settings4(), ap_settings4b()]
 
     @test stringversion(s) == "Version 1.0\n"
 
-    @test ap_test4([]) == (String=>Any)["parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing]
-    @test ap_test4(["-o", "X"]) == (String=>Any)["parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X"]
+    @compat @test ap_test4([]) == Dict{String,Any}("parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing)
+    @compat @test ap_test4(["-o", "X"]) == Dict{String,Any}("parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X")
     @ap_test_throws ap_test4(["-h"])
 
     # same metavar as another argument

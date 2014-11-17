@@ -35,7 +35,7 @@ function ap_settings3()
                                                 # called repeatedly
             dest_name = "awk"
             range_tester = (x->x=="X"||x=="Y")  # each argument must be either "X" or "Y"
-            default = {{"X"}}
+            default = Any[Any["X"]]
             metavar = "XY"
             help = "either X or Y; all XY's are " *
                    "stored in chunks"
@@ -60,13 +60,13 @@ let s = ap_settings3()
           -u                    provide the answer as floating point
           --awkward-option XY [XY...]
                                 either X or Y; all XY's are stored in chunks
-                                (default: {{"X"}})
+                                (default: $(vecanyopen)$(vecanyopen)"X"$(vecanyclose)$(vecanyclose))
 
         """
 
-    @test ap_test3([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>{{"X"}}]
-    @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "-u", "--awkward-option=Y", "X", "--opt1"]) ==
-        (String=>Any)["O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "awk"=>{{"X"}, {"X", "X"}, {"Y", "X"}}]
+    @compat @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>Any[Any["X"]])
+    @compat @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "-u", "--awkward-option=Y", "X", "--opt1"]) ==
+        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
     @ap_test_throws ap_test3(["X"])
     @ap_test_throws ap_test3(["--awk", "Z"])
     @ap_test_throws ap_test3(["--awk", "-2"])
@@ -98,9 +98,9 @@ let s = ap_settings3()
     # allow ambiguous options
     s.allow_ambiguous_opts = true
     @add_arg_table(s, "-2", action = :store_true)
-    @test ap_test3([]) == (String=>Any)["O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>{{"X"}}, "2"=>false]
-    @test ap_test3(["-2"]) == (String=>Any)["O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>{{"X"}}, "2"=>true]
-    @test ap_test3(["--awk", "X", "-2"]) == (String=>Any)["O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>{{"X"}, {"X"}}, "2"=>true]
+    @compat @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>Any[Any["X"]], "2"=>false)
+    @compat @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>Any[["X"]], "2"=>true)
+    @compat @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
 
 end

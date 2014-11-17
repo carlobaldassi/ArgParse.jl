@@ -143,7 +143,7 @@ end
 type ArgParseTable
     fields::Vector{ArgParseField}
     subsettings::Dict{String,Any} # this in fact will be a Dict{String,ArgParseSettings}
-    ArgParseTable() = new(ArgParseField[], (String=>Any)[])
+    ArgParseTable() = new(ArgParseField[], Dict{String,Any}())
 end
 #}}}
 
@@ -189,7 +189,7 @@ type ArgParseSettings
 end
 
 # the "add_help" is kept for backwards compatibility and is now undocumented
-ArgParseSettings(desc::String, add_help = true; kw...) = ArgParseSettings(;{(:description, desc), (:add_help, add_help), kw...}...)
+ArgParseSettings(desc::String, add_help = true; kw...) = ArgParseSettings(;Any[(:description, desc), (:add_help, add_help), kw...]...)
 
 function show(io::IO, s::ArgParseSettings)
     p(x) = "  $x=$(s.(x))\n"
@@ -531,7 +531,7 @@ end
 macro add_arg_table(s, x...)
     # transform the tuple into a vector, so that
     # we can manipulate it
-    x = {x...}
+    x = Any[x...]
     # escape the ArgParseSettings
     s = esc(s)
     # start building the return expression
@@ -1180,9 +1180,9 @@ function usage_string(settings::ArgParseSettings)
 
     lc_len_limit = 24
 
-    cmd_lst = {}
-    pos_lst = {}
-    opt_lst = {}
+    cmd_lst = Any[]
+    pos_lst = Any[]
+    opt_lst = Any[]
     for f in settings.args_table.fields
         if is_cmd(f)
             if !isempty(f.short_opt_name)
@@ -1333,14 +1333,14 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
 
     usage_str = usage_string(settings)
 
-    group_lists = (String=>Vector{Any})[]
+    group_lists = Dict{String,Vector{Any}}()
     for ag in settings.args_groups
         group_lists[ag.name] = Any[]
     end
     for f in settings.args_table.fields
         dest_lst = group_lists[f.group]
         if is_arg(f)
-            push!(dest_lst, {f.metavar, gen_help_text(f, settings)})
+            push!(dest_lst, Any[f.metavar, gen_help_text(f, settings)])
             max_lc_len = max(max_lc_len, length(f.metavar))
         else
             opt_str1 = join([["-"*x for x in f.short_opt_name], ["--"*x for x in f.long_opt_name]], ", ")
@@ -1361,7 +1361,7 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
                     found_a_bug()
                 end
             end
-            new_opt = {opt_str1 * opt_str2, gen_help_text(f, settings)}
+            new_opt = Any[opt_str1 * opt_str2, gen_help_text(f, settings)]
             push!(dest_lst, new_opt)
             max_lc_len = max(max_lc_len, length(new_opt[1]))
         end
@@ -1448,7 +1448,7 @@ type ParserState
     truncated_shopts::Bool
     out_dict::Dict{String,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
-        out_dict = (String=>Any)[]
+        out_dict = Dict{String,Any}()
         for f in settings.args_table.fields
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
@@ -1830,7 +1830,7 @@ end
 # convert_to_symbols
 #{{{
 function convert_to_symbols(parsed_args::Dict{String,Any})
-    new_parsed_args = (Symbol=>Any)[]
+    new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)
         cmd = parsed_args[cmd_dest_name]
