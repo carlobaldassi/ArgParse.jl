@@ -4,6 +4,7 @@ module ArgParse
 
 using TextWrap
 using OptionsMod
+using Compat
 
 export
 # types
@@ -217,7 +218,7 @@ function check_name_format(name::ArgName)
     isa(name, Vector) || return true
     for n in name
         isempty(n)         && error("empty name")
-        beginswith(n, '-') || error("only options can have multiple names")
+        startswith(n, '-') || error("only options can have multiple names")
     end
     return true
 end
@@ -435,7 +436,7 @@ end
 
 function check_metavar(metavar::String)
     isempty(metavar)         && error("empty metavar")
-    beginswith(metavar, '-') && error("metavars cannot begin with -")
+    startswith(metavar, '-') && error("metavars cannot begin with -")
     ismatch(r"\s", metavar)  && error("illegal metavar name: $metavar (contains whitespace)")
     nbspc in metavar         && error("illegal metavar name: $metavar (contains non-breakable-space)")
     return true
@@ -443,7 +444,7 @@ end
 
 function check_group_name(name::String)
     isempty(name)         && error("empty group name")
-    beginswith(name, '#') && error("invalid group name (starts with #)")
+    startswith(name, '#') && error("invalid group name (starts with #)")
     return true
 end
 #}}}
@@ -457,13 +458,13 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     r(n) = settings.autofix_names ? replace(n, '_', '-') : n
     if isa(name, Vector)
         for n in name
-            if beginswith(n, "--")
+            if startswith(n, "--")
                 n == "--" && error("illegal option name: --")
                 long_opt_name = r(n[3:end])
                 check_long_opt_name(long_opt_name, settings)
                 push!(long_opts, long_opt_name)
             else
-                @assert beginswith(n, '-')
+                @assert startswith(n, '-')
                 n == "-" && error("illegal option name: -")
                 short_opt_name = n[2:end]
                 check_short_opt_name(short_opt_name, settings)
@@ -471,12 +472,12 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
             end
         end
     else
-        if beginswith(name, "--")
+        if startswith(name, "--")
             name == "--" && error("illegal option name: --")
             long_opt_name = r(name[3:end])
             check_long_opt_name(long_opt_name, settings)
             push!(long_opts, long_opt_name)
-        elseif beginswith(name, '-')
+        elseif startswith(name, '-')
             name == "-" && error("illegal option name: -")
             short_opt_name = name[2:end]
             check_short_opt_name(short_opt_name, settings)
@@ -662,7 +663,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
     isa(nargs, ArgConsumerType) || (nargs = ArgConsumerType(nargs))
     isa(action, Symbol) || (action = symbol(action))
 
-    is_opt = isa(name, Vector) || beginswith(name, '-')
+    is_opt = isa(name, Vector) || startswith(name, '-')
 
     check_action_is_valid(action)
 
@@ -885,7 +886,7 @@ end
 set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settings, "")
 function set_default_arg_group(settings::ArgParseSettings, name::Union(String,Symbol))
     name = string(name)
-    beginswith(name, '#') && error("invalid group name: $name (begins with #)")
+    startswith(name, '#') && error("invalid group name: $name (begins with #)")
     isempty(name) && (settings.default_group = ""; return)
     found = any(ag->ag.name==name, settings.args_groups)
     found || error("group $name not found")
@@ -1159,8 +1160,8 @@ const number_regex =
 
 function looks_like_an_option(arg::String, settings::ArgParseSettings)
     arg == "-" && return false
-    beginswith(arg, "--") && return true
-    beginswith(arg, '-') || return false
+    startswith(arg, "--") && return true
+    startswith(arg, '-') || return false
     # begins with '-'
     # check if it's a number:
     ismatch(number_regex, arg) || return true
@@ -1488,7 +1489,7 @@ function preparse(state::ParserState, settings::ArgParseSettings)
             state.token_arg = nothing
             shift!(args_list)
             continue
-        elseif beginswith(arg, "--")
+        elseif startswith(arg, "--")
             eq = search(arg, '=')
             if eq != 0
                 opt_name = arg[3:eq-1]
@@ -1733,7 +1734,7 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
                 f = g
                 fln = ln
                 break
-            elseif beginswith(ln, opt_name)
+            elseif startswith(ln, opt_name)
                 nfound += 1
                 f = g
                 fln = ln
@@ -1794,7 +1795,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         state.arg_consumed && break
         if found_command(state)
             if rest_as_arg !== nothing && !isempty(rest_as_arg)
-                beginswith(rest_as_arg, '-') && argparse_error("illegal short options sequence after command $(state.command): $rest_as_arg")
+                startswith(rest_as_arg, '-') && argparse_error("illegal short options sequence after command $(state.command): $rest_as_arg")
                 unshift!(state.args_list, "-" * rest_as_arg)
                 state.truncated_shopts = true
             end

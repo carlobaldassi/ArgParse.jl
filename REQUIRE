@@ -1,4 +1,4 @@
 julia 0.2-
-Compat
+Compat 0.2.9
 Options
 TextWrap 0.1-
