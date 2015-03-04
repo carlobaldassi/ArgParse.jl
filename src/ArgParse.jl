@@ -1344,7 +1344,7 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
             push!(dest_lst, Any[f.metavar, gen_help_text(f, settings)])
             max_lc_len = max(max_lc_len, length(f.metavar))
         else
-            opt_str1 = join([["-"*x for x in f.short_opt_name], ["--"*x for x in f.long_opt_name]], ", ")
+            opt_str1 = join([["-"*x for x in f.short_opt_name]; ["--"*x for x in f.long_opt_name]], ", ")
             if is_flag(f)
                 opt_str2 = ""
             else
