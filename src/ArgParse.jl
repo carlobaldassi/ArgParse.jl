@@ -676,8 +676,8 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
     is_flag = is_flag_action(action)
 
     if !is_opt
-        is_flag && error("error: invalid action for positional argument: $action")
-        nargs.desc == :? && error("error: invalid 'nargs' for positional argument: '?'")
+        is_flag && error("invalid action for positional argument: $action")
+        nargs.desc == :? && error("invalid 'nargs' for positional argument: '?'")
     end
 
     pos_arg, long_opts, short_opts = name_to_fieldnames(name, settings)
