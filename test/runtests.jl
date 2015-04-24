@@ -2,7 +2,7 @@ module ArgParseTests
 
 include("common.jl")
 
-for i = 1:6
+for i = 1:7
     print("\rRunning argparse_test$i")
     try
         include("argparse_test$i.jl")

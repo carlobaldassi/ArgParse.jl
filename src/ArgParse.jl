@@ -714,7 +714,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
             found_a_bug()
         end
     elseif is_opt
-        append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :metavar])
+        append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :required, :metavar])
         nargs.desc == :? && push!(valid_keys, :constant)
     elseif action != :command_arg
         append!(valid_keys, [:arg_type, :default, :range_tester, :required, :metavar])
@@ -1104,8 +1104,8 @@ end
 
 function test_required_args(settings::ArgParseSettings, found_args::Set{String})
     for f in settings.args_table.fields
-        is_arg(f) && f.required && !(f.metavar in found_args) &&
-            argparse_error("required argument $(f.metavar) was not provided")
+        !is_cmd(f) && f.required && !(f.metavar in found_args) &&
+            argparse_error("required $(idstring(f)) was not provided")
     end
     return true
 end
@@ -1217,6 +1217,13 @@ function usage_string(settings::ArgParseSettings)
             end
             push!(pos_lst, bra_pre * arg_str * bra_post)
         else
+            if !f.required
+                bra_pre = "["
+                bra_post = "]"
+            else
+                bra_pre = ""
+                bra_post = ""
+            end
             if !isempty(f.short_opt_name)
                 opt_str1 = "-" * f.short_opt_name[1]
             else
@@ -1239,7 +1246,7 @@ function usage_string(settings::ArgParseSettings)
                     found_a_bug()
                 end
             end
-            new_opt = "[" * opt_str1 * opt_str2 * "]"
+            new_opt = bra_pre * opt_str1 * opt_str2 * bra_post
             push!(opt_lst, new_opt)
         end
     end
@@ -1756,6 +1763,7 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
         parse1_flag(state, settings, f, arg_after_eq !== nothing, "--"*opt_name)
     else
         parse1_optarg(state, settings, f, arg_after_eq, "--"*opt_name)
+        push!(state.found_args, f.metavar)
     end
     return
 end
@@ -1796,6 +1804,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
             parse1_flag(state, settings, f, next_is_eq, "-"*opt_name)
         else
             parse1_optarg(state, settings, f, rest_as_arg, "-"*opt_name)
+            push!(state.found_args, f.metavar)
         end
         state.arg_consumed && break
         if found_command(state)

@@ -428,8 +428,8 @@ This is the list of all available settings:
   ``arg_type`` and ``range_tester``.
 * ``constant`` (default = ``nothing``): this value is used by the ``:store_const`` and ``:append_const`` actions, or when ``nargs = '?'``
   and the option argument is not provided.
-* ``required`` (default = ``false``): determines if a positional argument is required (this setting is ignored by options, which are always
-  optional).
+* ``required`` (default = ``false``): determines if an argument is required (this setting is ignored by flags, which are always
+  optional, and in general should be avoided for options if possible).
 * ``range_tester`` (default = ``x->true``): a function returning a ``Bool`` value which tests whether an argument is allowed (e.g.
   you could use ``arg_type = Integer`` and ``range_tester = isodd`` to allow only odd integer values)
 * ``dest_name`` (default = auto-generated): the key which will be associated with the argument in the ``Dict`` object returned by
