@@ -83,7 +83,7 @@ let s = ap_settings6()
           --opt2                append O2 to the stack
 
         weird options:
-          --awkward-option XY [XY...]
+          --awkward-option XY [XY...]
                                 either X or Y; all XY's are stored in chunks
           --şİłłÿ ☺ ☺ ☺         an option with a silly name, which expects 3
                                 arguments

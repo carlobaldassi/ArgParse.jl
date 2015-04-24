@@ -58,7 +58,7 @@ let s = ap_settings3()
           --opt2                append O2
           -k                    provide the answer
           -u                    provide the answer as floating point
-          --awkward-option XY [XY...]
+          --awkward-option XY [XY...]
                                 either X or Y; all XY's are stored in chunks
                                 (default: $(vecanyopen)$(vecanyopen)"X"$(vecanyclose)$(vecanyclose))
 

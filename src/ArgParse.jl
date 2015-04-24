@@ -26,6 +26,8 @@ import Base: show, getindex, setindex!, haskey
 found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
 const nbspc = '\u00a0'
 const nbsps = "$nbspc"
+print_unnbsp(io::IO, args...) = print(io, map(s->replace(s, nbspc, ' '), args)...)
+println_unnbsp(io::IO, args...) = println(io, map(s->replace(s, nbspc, ' '), args)...)
 
 # actions
 #{{{
@@ -1311,11 +1313,12 @@ function print_group(io::IO, lst::Vector, desc::String, lc_usable_len::Int, lc_l
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
             ll_wrapped = wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
                               initial_indent = lmargin, subsequent_indent = sindent)
-            println(io, replace(ll_wrapped, nbspc, ' '))
+            println_unnbsp(io, ll_wrapped)
         else
-            println(io, lmargin, l[1])
-            println_wrapped(io, l[2], break_long_words = false, break_on_hyphens = false,
-                                      initial_indent = sindent, subsequent_indent = sindent)
+            println_unnbsp(io, lmargin, l[1])
+            l2_wrapped = wrap(l[2], break_long_words = false, break_on_hyphens = false,
+                                    initial_indent = sindent, subsequent_indent = sindent)
+            println_unnbsp(io, l2_wrapped)
         end
     end
     println(io)
@@ -1377,7 +1380,8 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
     println(io, usage_str)
     println(io)
     if !isempty(settings.description)
-        println_wrapped(io, settings.description, break_long_words = false, break_on_hyphens = false)
+        desc_wrapped = wrap(settings.description, break_long_words = false, break_on_hyphens = false)
+        println_unnbsp(io, desc_wrapped)
         println(io)
     end
 
@@ -1387,7 +1391,8 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
     end
 
     if !isempty(settings.epilog)
-        println_wrapped(io, settings.epilog, break_long_words = false, break_on_hyphens = false)
+        epilog_wrapped = wrap(settings.epilog, break_long_words = false, break_on_hyphens = false)
+        println_unnbsp(io, epilog_wrapped)
         println(io)
     end
     exit_when_done && exit(0)
