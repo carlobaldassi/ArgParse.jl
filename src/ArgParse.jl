@@ -732,7 +732,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
 
     check_dest_name(dest_name)
 
-    set_if_valid(k, x) = if k in valid_keys new_arg.(k) = x end
+    set_if_valid(k, x) = k in valid_keys && setfield!(new_arg, k, x)
 
     set_if_valid(:arg_type, arg_type)
     set_if_valid(:default, deepcopy(default))
@@ -1823,7 +1823,7 @@ function parse_arg(state::ParserState, settings::ArgParseSettings)
 
     parse1_optarg(state, settings, f, nothing, f.dest_name)
 
-    push!(state.found_args, settings.args_table.fields[state.last_arg].metavar)
+    push!(state.found_args, f.metavar)
     return
 end
 #}}}
