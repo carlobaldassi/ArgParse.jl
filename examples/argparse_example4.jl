@@ -1,5 +1,5 @@
 # example 4: dest_name, metavar, range_tester, alternative
-#            actions
+#            actions, epilog with examples
 
 using ArgParse
 
@@ -39,6 +39,35 @@ function main(args)
             help = "either X or Y; all XY's are " *
                    "stored in chunks"
     end
+
+    # we add an epilog and provide usage examples, also demonstrating
+    # how to have some control on the formatting: we use additional '\n' at
+    # the end of lines to force newlines, and '\ua0' to put non-breakable spaces.
+    # Non-breakable spaces ensure will be substituted with spaces in the output.
+    s.epilog = """
+        examples:\n
+        \n
+        \ua0\ua0$(basename(Base.source_path())) --opt1 --opt2 --opt2 -k\n
+        \n
+        \ua0\ua0$(basename(Base.source_path())) --awkward X X --opt1 --awkward X Y X --opt2\n
+        \n
+        The first form takes option 1 once, than option 2, then activates the answer flag,
+        while the second form takes only option 1 and then 2, and intersperses them with "X\ua0X"
+        and "X\ua0Y\ua0X" groups, for no particular reason.
+        """
+
+    # the epilog section will be displayed like this in the help screen:
+    #
+    #     examples:
+    #
+    #       argparse_example4.jl --opt1 --opt2 --opt2 -kkkkk
+    #
+    #       argparse_example4.jl --awkward X X --opt1 --awkward X Y X --opt2
+    #
+    #     The first form takes option 1 once, than option 2, then activates the
+    #     answer flag, while the second form takes only option 1 and then 2, and
+    #     intersperses them with "X X" and "X Y X" groups, for no particular
+    #     reason.
 
     parsed_args = parse_args(args, s)
     println("Parsed args:")

@@ -1387,8 +1387,10 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
     println(io, usage_str)
     println(io)
     if !isempty(settings.description)
-        desc_wrapped = wrap(settings.description, break_long_words = false, break_on_hyphens = false)
-        println_unnbsp(io, desc_wrapped)
+        for d in split(settings.description, "\n\n")
+            desc_wrapped = wrap(d, break_long_words = false, break_on_hyphens = false)
+            println_unnbsp(io, desc_wrapped)
+        end
         println(io)
     end
 
@@ -1398,8 +1400,10 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
     end
 
     if !isempty(settings.epilog)
-        epilog_wrapped = wrap(settings.epilog, break_long_words = false, break_on_hyphens = false)
-        println_unnbsp(io, epilog_wrapped)
+        for ep in split(settings.epilog, "\n\n")
+            epilog_wrapped = wrap(ep, break_long_words = false, break_on_hyphens = false)
+            println_unnbsp(io, epilog_wrapped)
+        end
         println(io)
     end
     exit_when_done && exit(0)

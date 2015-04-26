@@ -227,9 +227,11 @@ This is the list of general settings currently available:
 * ``prog`` (default = ``""``): the name of the program, as displayed in the auto-generated help and usage screens.
   If left empty, the source file name will be used.
 * ``description`` (default = ``""``): a description of what the program does, to be displayed in the auto-generated
-  help-screen, between the usage lines and the arguments description. It will be automatically formatted.
+  help-screen, between the usage lines and the arguments description. It will be automatically formatted, but you can
+  force newlines by using two consecutive newlines in the string, and manually control spaces by using non-breakable
+  spaces (the character ``'\ua0'``).
 * ``epilog`` (default = ``""``): like ``description``, but will be displayed at the end of the help-screen, after the
-  arguments description.
+  arguments description. The same formatting rules also apply.
 * ``usage`` (default = ``""``): the usage line(s) to be displayed in the help screen and when an error is found during parsing.
   If left empty, it will be auto-generated.
 * ``version`` (default = ``"Unknown version"``): version information. It's used by the ``:show_version`` action.

@@ -1,10 +1,10 @@
-# test 7: required options
+# test 7: required options, line breaks in desc/epilog
 
 using OptionsMod
 
 function ap_settings7()
 
-    s = ArgParseSettings(description = "Test 7 for ArgParse.jl",
+    s = ArgParseSettings(description = "Test 7 for ArgParse.jl\n\nTesting oxymoronic options",
                          exc_handler = ArgParse.debug_handler)
 
     @add_arg_table s begin
@@ -22,6 +22,16 @@ function ap_settings7()
             help = "yet another oxymoronic option"
     end
 
+    s.epilog = """
+        Example:\n
+        \n
+        \ua0\ua0<program> --oxymoronic X -o 1\n
+        \n
+        Not a particularly enlightening example, but
+        on the other hand this program does not really
+        do anything useful.
+        """
+
     return s
 end
 
@@ -32,6 +42,7 @@ let s = ap_settings7()
         usage: $(basename(Base.source_path())) --oxymoronic OXYMORONIC [--opt OPT] [-f] -o O
 
         Test 7 for ArgParse.jl
+        Testing oxymoronic options
 
         optional arguments:
           --oxymoronic OXYMORONIC
@@ -39,6 +50,13 @@ let s = ap_settings7()
           --opt OPT             a true option
           -f, --flag            a flag
           -o O                  yet another oxymoronic option
+
+        Example:
+
+          <program> --oxymoronic X -o 1
+
+        Not a particularly enlightening example, but on the other hand this
+        program does not really do anything useful.
 
         """
 
