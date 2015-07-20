@@ -1,10 +1,9 @@
-isdefined(:OptionsMod) || require("Options")
+isdefined(:OptionsMod) || @ eval import Options
 
 module ArgParse
 
 using TextWrap
 using OptionsMod
-using Compat
 
 export
 # types
