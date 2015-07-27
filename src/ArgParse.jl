@@ -1,4 +1,4 @@
-isdefined(:OptionsMod) || require("Options")
+isdefined(:OptionsMod) || @eval import Options
 
 module ArgParse
 
