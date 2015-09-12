@@ -6,6 +6,8 @@ using TextWrap
 using OptionsMod
 using Compat
 
+include("macros.jl")
+
 export
 # types
     ArgParseSettings,
@@ -100,25 +102,22 @@ const std_groups = [cmd_group, pos_group, opt_group]
 
 # ArgParseField
 #{{{
-type ArgParseField
-    dest_name::String
-    long_opt_name::Vector{String}
-    short_opt_name::Vector{String}
-    arg_type::Type
-    action::Symbol
-    nargs::ArgConsumerType
-    default
-    constant
-    range_tester::Function
-    required::Bool
-    help::String
-    metavar::String
-    group::String
-    fake::Bool
-    function ArgParseField()
-        return new("", String[], String[], Any, :store_true, ArgConsumerType(),
-                   nothing, nothing, x->true, false, "", "", "", false)
-    end
+#{{{
+@default type ArgParseField
+    dest_name::String = ""
+    long_opt_name::Vector{String} = String[]
+    short_opt_name::Vector{String} = String[]
+    arg_type::Type = Any
+    action::Symbol = :store_true
+    nargs::ArgConsumerType = ArgConsumerType()
+    default = nothing
+    constant = nothing
+    range_tester::Function = x -> true
+    required::Bool = false
+    help::String = ""
+    metavar::String = ""
+    group::String = ""
+    fake::Bool = false
 end
 
 is_flag(arg::ArgParseField) = is_flag_action(arg.action)
@@ -143,52 +142,31 @@ end
 
 # ArgParseTable
 #{{{
-type ArgParseTable
-    fields::Vector{ArgParseField}
-    subsettings::Dict{String,Any} # this in fact will be a Dict{String,ArgParseSettings}
-    ArgParseTable() = new(ArgParseField[], Dict{String,Any}())
+@default type ArgParseTable
+    fields::Vector{ArgParseField} = ArgParseField[]
+    subsettings::Dict{String,Any} = Dict{String,Any}() # this in fact will be a Dict{String,ArgParseSettings}
 end
 #}}}
 
 # ArgParseSettings
 #{{{
-type ArgParseSettings
-    prog::String
-    description::String
-    epilog::String
-    usage::String
-    version::String
-    add_help::Bool
-    add_version::Bool
-    autofix_names::Bool
-    error_on_conflict::Bool
-    suppress_warnings::Bool
-    allow_ambiguous_opts::Bool
-    commands_are_required::Bool
-    args_groups::Vector{ArgParseGroup}
-    default_group::String
-    args_table::ArgParseTable
-    exc_handler::Function
-
-    function ArgParseSettings(;prog::String = Base.source_path() != nothing ? basename(Base.source_path()) : "",
-                               description::String = "",
-                               epilog::String = "",
-                               usage::String = "",
-                               version::String = "Unspecified version",
-                               add_help::Bool = true,
-                               add_version::Bool = false,
-                               autofix_names::Bool = false,
-                               error_on_conflict::Bool = true,
-                               suppress_warnings::Bool = false,
-                               allow_ambiguous_opts::Bool = false,
-                               commands_are_required::Bool = true,
-                               exc_handler::Function = default_handler
-                               )
-        return new(prog, description, epilog, usage, version, add_help, add_version,
-                   autofix_names, error_on_conflict, suppress_warnings, allow_ambiguous_opts,
-                   commands_are_required, copy(std_groups), "",
-                   ArgParseTable(), exc_handler)
-    end
+@default type ArgParseSettings
+    prog::String = Base.source_path() != nothing ? basename(Base.source_path()) : ""
+    description::String = ""
+    epilog::String = ""
+    usage::String = ""
+    version::String = "Unspecified version"
+    add_help::Bool = true
+    add_version::Bool = false
+    autofix_names::Bool = false
+    error_on_conflict::Bool = true
+    suppress_warnings::Bool = false
+    allow_ambiguous_opts::Bool = false
+    commands_are_required::Bool = true
+    args_groups::Vector{ArgParseGroup} = copy(std_groups)
+    default_group::String = ""
+    args_table::ArgParseTable = ArgParseTable()
+    exc_handler::Function = default_handler
 end
 
 # the "add_help" is kept for backwards compatibility and is now undocumented
@@ -1082,7 +1060,7 @@ end
 
 # ArgParseError
 #{{{
-type ArgParseError <: Exception
+immutable ArgParseError <: Exception
     text::String
 end
 
