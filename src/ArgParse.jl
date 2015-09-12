@@ -1,6 +1,9 @@
+isdefined(:OptionsMod) || @eval import Options
+
 module ArgParse
 
 using TextWrap
+using OptionsMod
 using Compat
 
 export
@@ -1539,17 +1542,21 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
     if settings.add_version
         settings.add_version = false
         add_arg_field(settings, "--version",
-                      action = :show_version,
-                      help = "show version information and exit",
-                      group = "")
+            @options begin
+                action = :show_version
+                help = "show version information and exit"
+                group = ""
+            end)
         version_added = true
     end
     if settings.add_help
         settings.add_help = false
         add_arg_field(settings, ["--help","-h"],
-                      action = :show_help,
-                      help = "show this help message and exit",
-                      group = "")
+            @options begin
+                action = :show_help
+                help = "show this help message and exit"
+                group = ""
+            end)
         help_added = true
     end
 
