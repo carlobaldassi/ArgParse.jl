@@ -1205,7 +1205,7 @@ function usage_string(settings::ArgParseSettings)
                 bra_post = ""
             end
             if isa(f.nargs.desc, Int)
-                arg_str = string(ntuple(f.nargs.desc, i->(i==1?f.metavar:(nbsps * f.metavar)))...)
+                arg_str = string(ntuple(i->(i==1?f.metavar:(nbsps * f.metavar)), f.nargs.desc)...)
             elseif f.nargs.desc == :A
                 arg_str = f.metavar
             elseif f.nargs.desc == :?
@@ -1233,7 +1233,7 @@ function usage_string(settings::ArgParseSettings)
                 opt_str2 = ""
             else
                 if isa(f.nargs.desc, Int)
-                    opt_str2 = string(ntuple(f.nargs.desc, i->(nbsps * f.metavar))...)
+                    opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
                 elseif f.nargs.desc == :A
                     opt_str2 = nbsps * f.metavar
                 elseif f.nargs.desc == :?
@@ -1359,7 +1359,7 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
                 opt_str2 = ""
             else
                 if isa(f.nargs.desc, Int)
-                    opt_str2 = string(ntuple(f.nargs.desc, i->(nbsps * f.metavar))...)
+                    opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
                 elseif f.nargs.desc == :A
                     opt_str2 = nbsps * f.metavar
                 elseif f.nargs.desc == :?
