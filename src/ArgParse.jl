@@ -87,12 +87,11 @@ default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 
 # ArgParseGroup
 #{{{
-type ArgParseGroup
-    name::String
-    desc::String
-    ArgParseGroup(n::String, d::String) = new(n, d)
+immutable ArgParseGroup{T}
+    name::T
+    desc::T
 end
-ArgParseGroup(n::Symbol, d::String) = new(string(n), d)
+ArgParseGroup(n, d) = ArgParseGroup(string(n), string(d))
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
