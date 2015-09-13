@@ -54,19 +54,20 @@ is_command_action(a::Symbol) = a in command_actions
 
 # ArgConsumerType
 #{{{
-immutable ArgConsumerType
-    desc::Union(Int,Symbol)
-    function ArgConsumerType(n::Integer)
-        n >= 0 || error("nargs can't be negative")
-        new(n)
-    end
-    function ArgConsumerType(s::Symbol)
-        s in [:A, :?, :*, :+, :R] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
-        new(s)
-    end
+immutable ArgConsumerType{T}
+    desc::T
 end
 ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
+function ArgConsumerType{T<:Integer}(n::T)
+    n >= 0 || error("nargs can't be negative")
+    ArgConsumerType{T}(n)
+end
+function ArgConsumerType(s::Symbol)
+    s in [:A, :?, :*, :+, :R] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
+    ArgConsumerType{Symbol}(s)
+end
+
 
 function show(io::IO, nargs::ArgConsumerType)
     print(io, isa(nargs.desc, Int) ? nargs.desc : "'"*string(nargs.desc)*"'")
