@@ -183,8 +183,6 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-typealias ArgName{T<:String} Union(T, Vector{T})
-
 getindex(s::ArgParseSettings, c::String) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::String) = haskey(s.args_table.subsettings, c)
 setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.args_table.subsettings, x, c)
@@ -193,15 +191,15 @@ setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.arg
 
 # fields declarations sanity checks
 #{{{
-function check_name_format(name::ArgName)
-    isempty(name) && error("empty name")
-    isa(name, Vector) || return true
+function check_name_format{T<:String}(name::Vector{T})
     for n in name
-        isempty(n)         && error("empty name")
+        check_name_format(n)
         startswith(n, '-') || error("only options can have multiple names")
     end
     return true
 end
+
+check_name_format(name::String) = isempty(name) && error("empty name") || true
 
 function check_type(opt, T::Type, message::String)
     isa(opt, T) || error(message)
@@ -431,41 +429,46 @@ end
 
 # add_arg_table and related
 #{{{
-function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
+function name_to_fieldnames{T<:String}(name::Vector{T}, settings::ArgParseSettings)
     pos_arg = ""
     long_opts = String[]
     short_opts = String[]
     r(n) = settings.autofix_names ? replace(n, '_', '-') : n
-    if isa(name, Vector)
-        for n in name
-            if startswith(n, "--")
-                n == "--" && error("illegal option name: --")
-                long_opt_name = r(n[3:end])
-                check_long_opt_name(long_opt_name, settings)
-                push!(long_opts, long_opt_name)
-            else
-                @assert startswith(n, '-')
-                n == "-" && error("illegal option name: -")
-                short_opt_name = n[2:end]
-                check_short_opt_name(short_opt_name, settings)
-                push!(short_opts, short_opt_name)
-            end
-        end
-    else
-        if startswith(name, "--")
-            name == "--" && error("illegal option name: --")
-            long_opt_name = r(name[3:end])
+    for n in name
+        if startswith(n, "--")
+            n == "--" && error("illegal option name: --")
+            long_opt_name = r(n[3:end])
             check_long_opt_name(long_opt_name, settings)
             push!(long_opts, long_opt_name)
-        elseif startswith(name, '-')
-            name == "-" && error("illegal option name: -")
-            short_opt_name = name[2:end]
+        else
+            @assert startswith(n, '-')
+            n == "-" && error("illegal option name: -")
+            short_opt_name = n[2:end]
             check_short_opt_name(short_opt_name, settings)
             push!(short_opts, short_opt_name)
-        else
-            check_arg_name(name)
-            pos_arg = name
         end
+    end
+    return pos_arg, long_opts, short_opts
+end
+
+function name_to_fieldnames(name::String, settings::ArgParseSettings)
+    pos_arg = ""
+    long_opts = String[]
+    short_opts = String[]
+    r(n) = settings.autofix_names ? replace(n, '_', '-') : n
+    if startswith(name, "--")
+        name == "--" && error("illegal option name: --")
+        long_opt_name = r(name[3:end])
+        check_long_opt_name(long_opt_name, settings)
+        push!(long_opts, long_opt_name)
+    elseif startswith(name, '-')
+        name == "-" && error("illegal option name: -")
+        short_opt_name = name[2:end]
+        check_short_opt_name(short_opt_name, settings)
+        push!(short_opts, short_opt_name)
+    else
+        check_arg_name(name)
+        pos_arg = name
     end
     return pos_arg, long_opts, short_opts
 end
@@ -491,11 +494,11 @@ function get_cmd_prog_hint(arg::ArgParseField)
 end
 
 
-function add_arg_table(settings::ArgParseSettings, table::Union(ArgName, Options)...)
+function add_arg_table{T<:String}(settings::ArgParseSettings, table::Union(T, Vector{T}, Options)...)
     has_name = false
     for i = 1:length(table)
         !has_name && isa(table[i], Options) && error("option field must be preceded by the arg name")
-        has_name = isa(table[i], ArgName)
+        has_name = isa(table[i], String) || isa(table[i], Vector)
     end
     i = 1
     while i <= length(table)
@@ -608,7 +611,7 @@ end
 get_group_name(group::String, arg::ArgParseField, settings::ArgParseSettings) =
     get_group(group, arg, settings).name
 
-function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
+function add_arg_field{T<:String}(settings::ArgParseSettings, name::Union(T, Vector{T}), desc::Options)
     check_name_format(name)
 
     supplied_opts = keys(desc.key2index)
