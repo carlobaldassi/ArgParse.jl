@@ -1138,7 +1138,7 @@ function parse_item(it_type::Type, x::String)
         if isempty(x)
             y = ""
         else
-            y = eval(parse(x)[1])
+            y = eval(parse(x))
         end
         r = convert(it_type, y)
     catch
