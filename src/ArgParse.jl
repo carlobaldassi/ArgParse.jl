@@ -6,6 +6,8 @@ using TextWrap
 using OptionsMod
 using Compat
 
+include("macros.jl")
+
 export
 # types
     ArgParseSettings,
@@ -52,19 +54,20 @@ is_command_action(a::Symbol) = a in command_actions
 
 # ArgConsumerType
 #{{{
-immutable ArgConsumerType
-    desc::Union(Int,Symbol)
-    function ArgConsumerType(n::Integer)
-        n >= 0 || error("nargs can't be negative")
-        new(n)
-    end
-    function ArgConsumerType(s::Symbol)
-        s in [:A, :?, :*, :+, :R] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
-        new(s)
-    end
+immutable ArgConsumerType{T}
+    desc::T
 end
 ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
+function ArgConsumerType{T<:Integer}(n::T)
+    n >= 0 || error("nargs can't be negative")
+    ArgConsumerType{T}(n)
+end
+function ArgConsumerType(s::Symbol)
+    s in [:A, :?, :*, :+, :R] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
+    ArgConsumerType{Symbol}(s)
+end
+
 
 function show(io::IO, nargs::ArgConsumerType)
     print(io, isa(nargs.desc, Int) ? nargs.desc : "'"*string(nargs.desc)*"'")
@@ -84,12 +87,11 @@ default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 
 # ArgParseGroup
 #{{{
-type ArgParseGroup
-    name::String
-    desc::String
-    ArgParseGroup(n::String, d::String) = new(n, d)
+immutable ArgParseGroup{T}
+    name::T
+    desc::T
 end
-ArgParseGroup(n::Symbol, d::String) = new(string(n), d)
+ArgParseGroup(n, d) = ArgParseGroup(string(n), string(d))
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
@@ -100,25 +102,22 @@ const std_groups = [cmd_group, pos_group, opt_group]
 
 # ArgParseField
 #{{{
-type ArgParseField
-    dest_name::String
-    long_opt_name::Vector{String}
-    short_opt_name::Vector{String}
-    arg_type::Type
-    action::Symbol
-    nargs::ArgConsumerType
-    default
-    constant
-    range_tester::Function
-    required::Bool
-    help::String
-    metavar::String
-    group::String
-    fake::Bool
-    function ArgParseField()
-        return new("", String[], String[], Any, :store_true, ArgConsumerType(),
-                   nothing, nothing, x->true, false, "", "", "", false)
-    end
+#{{{
+@default type ArgParseField
+    dest_name::String = ""
+    long_opt_name::Vector{String} = String[]
+    short_opt_name::Vector{String} = String[]
+    arg_type::Type = Any
+    action::Symbol = :store_true
+    nargs::ArgConsumerType = ArgConsumerType()
+    default = nothing
+    constant = nothing
+    range_tester::Function = x -> true
+    required::Bool = false
+    help::String = ""
+    metavar::String = ""
+    group::String = ""
+    fake::Bool = false
 end
 
 is_flag(arg::ArgParseField) = is_flag_action(arg.action)
@@ -143,52 +142,31 @@ end
 
 # ArgParseTable
 #{{{
-type ArgParseTable
-    fields::Vector{ArgParseField}
-    subsettings::Dict{String,Any} # this in fact will be a Dict{String,ArgParseSettings}
-    ArgParseTable() = new(ArgParseField[], Dict{String,Any}())
+@default type ArgParseTable
+    fields::Vector{ArgParseField} = ArgParseField[]
+    subsettings::Dict{String,Any} = Dict{String,Any}() # this in fact will be a Dict{String,ArgParseSettings}
 end
 #}}}
 
 # ArgParseSettings
 #{{{
-type ArgParseSettings
-    prog::String
-    description::String
-    epilog::String
-    usage::String
-    version::String
-    add_help::Bool
-    add_version::Bool
-    autofix_names::Bool
-    error_on_conflict::Bool
-    suppress_warnings::Bool
-    allow_ambiguous_opts::Bool
-    commands_are_required::Bool
-    args_groups::Vector{ArgParseGroup}
-    default_group::String
-    args_table::ArgParseTable
-    exc_handler::Function
-
-    function ArgParseSettings(;prog::String = Base.source_path() != nothing ? basename(Base.source_path()) : "",
-                               description::String = "",
-                               epilog::String = "",
-                               usage::String = "",
-                               version::String = "Unspecified version",
-                               add_help::Bool = true,
-                               add_version::Bool = false,
-                               autofix_names::Bool = false,
-                               error_on_conflict::Bool = true,
-                               suppress_warnings::Bool = false,
-                               allow_ambiguous_opts::Bool = false,
-                               commands_are_required::Bool = true,
-                               exc_handler::Function = default_handler
-                               )
-        return new(prog, description, epilog, usage, version, add_help, add_version,
-                   autofix_names, error_on_conflict, suppress_warnings, allow_ambiguous_opts,
-                   commands_are_required, copy(std_groups), "",
-                   ArgParseTable(), exc_handler)
-    end
+@default type ArgParseSettings
+    prog::String = Base.source_path() != nothing ? basename(Base.source_path()) : ""
+    description::String = ""
+    epilog::String = ""
+    usage::String = ""
+    version::String = "Unspecified version"
+    add_help::Bool = true
+    add_version::Bool = false
+    autofix_names::Bool = false
+    error_on_conflict::Bool = true
+    suppress_warnings::Bool = false
+    allow_ambiguous_opts::Bool = false
+    commands_are_required::Bool = true
+    args_groups::Vector{ArgParseGroup} = copy(std_groups)
+    default_group::String = ""
+    args_table::ArgParseTable = ArgParseTable()
+    exc_handler::Function = default_handler
 end
 
 # the "add_help" is kept for backwards compatibility and is now undocumented
@@ -205,8 +183,6 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-typealias ArgName{T<:String} Union(T, Vector{T})
-
 getindex(s::ArgParseSettings, c::String) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::String) = haskey(s.args_table.subsettings, c)
 setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.args_table.subsettings, x, c)
@@ -215,15 +191,15 @@ setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.arg
 
 # fields declarations sanity checks
 #{{{
-function check_name_format(name::ArgName)
-    isempty(name) && error("empty name")
-    isa(name, Vector) || return true
+function check_name_format{T<:String}(name::Vector{T})
     for n in name
-        isempty(n)         && error("empty name")
+        check_name_format(n)
         startswith(n, '-') || error("only options can have multiple names")
     end
     return true
 end
+
+check_name_format(name::String) = isempty(name) && error("empty name") || true
 
 function check_type(opt, T::Type, message::String)
     isa(opt, T) || error(message)
@@ -453,41 +429,46 @@ end
 
 # add_arg_table and related
 #{{{
-function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
+function name_to_fieldnames{T<:String}(name::Vector{T}, settings::ArgParseSettings)
     pos_arg = ""
     long_opts = String[]
     short_opts = String[]
     r(n) = settings.autofix_names ? replace(n, '_', '-') : n
-    if isa(name, Vector)
-        for n in name
-            if startswith(n, "--")
-                n == "--" && error("illegal option name: --")
-                long_opt_name = r(n[3:end])
-                check_long_opt_name(long_opt_name, settings)
-                push!(long_opts, long_opt_name)
-            else
-                @assert startswith(n, '-')
-                n == "-" && error("illegal option name: -")
-                short_opt_name = n[2:end]
-                check_short_opt_name(short_opt_name, settings)
-                push!(short_opts, short_opt_name)
-            end
-        end
-    else
-        if startswith(name, "--")
-            name == "--" && error("illegal option name: --")
-            long_opt_name = r(name[3:end])
+    for n in name
+        if startswith(n, "--")
+            n == "--" && error("illegal option name: --")
+            long_opt_name = r(n[3:end])
             check_long_opt_name(long_opt_name, settings)
             push!(long_opts, long_opt_name)
-        elseif startswith(name, '-')
-            name == "-" && error("illegal option name: -")
-            short_opt_name = name[2:end]
+        else
+            @assert startswith(n, '-')
+            n == "-" && error("illegal option name: -")
+            short_opt_name = n[2:end]
             check_short_opt_name(short_opt_name, settings)
             push!(short_opts, short_opt_name)
-        else
-            check_arg_name(name)
-            pos_arg = name
         end
+    end
+    return pos_arg, long_opts, short_opts
+end
+
+function name_to_fieldnames(name::String, settings::ArgParseSettings)
+    pos_arg = ""
+    long_opts = String[]
+    short_opts = String[]
+    r(n) = settings.autofix_names ? replace(n, '_', '-') : n
+    if startswith(name, "--")
+        name == "--" && error("illegal option name: --")
+        long_opt_name = r(name[3:end])
+        check_long_opt_name(long_opt_name, settings)
+        push!(long_opts, long_opt_name)
+    elseif startswith(name, '-')
+        name == "-" && error("illegal option name: -")
+        short_opt_name = name[2:end]
+        check_short_opt_name(short_opt_name, settings)
+        push!(short_opts, short_opt_name)
+    else
+        check_arg_name(name)
+        pos_arg = name
     end
     return pos_arg, long_opts, short_opts
 end
@@ -513,11 +494,11 @@ function get_cmd_prog_hint(arg::ArgParseField)
 end
 
 
-function add_arg_table(settings::ArgParseSettings, table::Union(ArgName, Options)...)
+function add_arg_table{T<:String}(settings::ArgParseSettings, table::Union(T, Vector{T}, Options)...)
     has_name = false
     for i = 1:length(table)
         !has_name && isa(table[i], Options) && error("option field must be preceded by the arg name")
-        has_name = isa(table[i], ArgName)
+        has_name = isa(table[i], String) || isa(table[i], Vector)
     end
     i = 1
     while i <= length(table)
@@ -630,7 +611,7 @@ end
 get_group_name(group::String, arg::ArgParseField, settings::ArgParseSettings) =
     get_group(group, arg, settings).name
 
-function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
+function add_arg_field{T<:String}(settings::ArgParseSettings, name::Union(T, Vector{T}), desc::Options)
     check_name_format(name)
 
     supplied_opts = keys(desc.key2index)
@@ -1082,7 +1063,7 @@ end
 
 # ArgParseError
 #{{{
-type ArgParseError <: Exception
+immutable ArgParseError <: Exception
     text::String
 end
 
