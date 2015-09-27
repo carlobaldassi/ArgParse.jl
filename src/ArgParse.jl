@@ -52,8 +52,8 @@ is_command_action(a::Symbol) = a in command_actions
 
 # ArgConsumerType
 #{{{
-immutable ArgConsumerType
-    desc::Union(Int,Symbol)
+@compat immutable ArgConsumerType
+    desc::Union{Int,Symbol}
     function ArgConsumerType(n::Integer)
         n >= 0 || error("nargs can't be negative")
         new(n)
@@ -85,11 +85,11 @@ default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 # ArgParseGroup
 #{{{
 type ArgParseGroup
-    name::String
-    desc::String
-    ArgParseGroup(n::String, d::String) = new(n, d)
+    name::AbstractString
+    desc::AbstractString
+    ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
 end
-ArgParseGroup(n::Symbol, d::String) = new(string(n), d)
+ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
@@ -101,9 +101,9 @@ const std_groups = [cmd_group, pos_group, opt_group]
 # ArgParseField
 #{{{
 type ArgParseField
-    dest_name::String
-    long_opt_name::Vector{String}
-    short_opt_name::Vector{String}
+    dest_name::AbstractString
+    long_opt_name::Vector{AbstractString}
+    short_opt_name::Vector{AbstractString}
     arg_type::Type
     action::Symbol
     nargs::ArgConsumerType
@@ -111,12 +111,12 @@ type ArgParseField
     constant
     range_tester::Function
     required::Bool
-    help::String
-    metavar::String
-    group::String
+    help::AbstractString
+    metavar::AbstractString
+    group::AbstractString
     fake::Bool
     function ArgParseField()
-        return new("", String[], String[], Any, :store_true, ArgConsumerType(),
+        return new("", AbstractString[], AbstractString[], Any, :store_true, ArgConsumerType(),
                    nothing, nothing, x->true, false, "", "", "", false)
     end
 end
@@ -145,19 +145,19 @@ end
 #{{{
 type ArgParseTable
     fields::Vector{ArgParseField}
-    subsettings::Dict{String,Any} # this in fact will be a Dict{String,ArgParseSettings}
-    ArgParseTable() = new(ArgParseField[], Dict{String,Any}())
+    subsettings::Dict{AbstractString,Any} # this in fact will be a Dict{AbstractString,ArgParseSettings}
+    ArgParseTable() = new(ArgParseField[], Dict{AbstractString,Any}())
 end
 #}}}
 
 # ArgParseSettings
 #{{{
 type ArgParseSettings
-    prog::String
-    description::String
-    epilog::String
-    usage::String
-    version::String
+    prog::AbstractString
+    description::AbstractString
+    epilog::AbstractString
+    usage::AbstractString
+    version::AbstractString
     add_help::Bool
     add_version::Bool
     autofix_names::Bool
@@ -166,15 +166,15 @@ type ArgParseSettings
     allow_ambiguous_opts::Bool
     commands_are_required::Bool
     args_groups::Vector{ArgParseGroup}
-    default_group::String
+    default_group::AbstractString
     args_table::ArgParseTable
     exc_handler::Function
 
-    function ArgParseSettings(;prog::String = Base.source_path() != nothing ? basename(Base.source_path()) : "",
-                               description::String = "",
-                               epilog::String = "",
-                               usage::String = "",
-                               version::String = "Unspecified version",
+    function ArgParseSettings(;prog::AbstractString = Base.source_path() != nothing ? basename(Base.source_path()) : "",
+                               description::AbstractString = "",
+                               epilog::AbstractString = "",
+                               usage::AbstractString = "",
+                               version::AbstractString = "Unspecified version",
                                add_help::Bool = true,
                                add_version::Bool = false,
                                autofix_names::Bool = false,
@@ -192,7 +192,7 @@ type ArgParseSettings
 end
 
 # the "add_help" is kept for backwards compatibility and is now undocumented
-ArgParseSettings(desc::String, add_help = true; kw...) = ArgParseSettings(;Any[(:description, desc), (:add_help, add_help), kw...]...)
+ArgParseSettings(desc::AbstractString, add_help = true; kw...) = ArgParseSettings(;Any[(:description, desc), (:add_help, add_help), kw...]...)
 
 function show(io::IO, s::ArgParseSettings)
     p(x) = "  $x=$(s.(x))\n"
@@ -205,11 +205,11 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-typealias ArgName{T<:String} Union(T, Vector{T})
+@compat typealias ArgName{T<:AbstractString} Union{T, Vector{T}}
 
-getindex(s::ArgParseSettings, c::String) = s.args_table.subsettings[c]
-haskey(s::ArgParseSettings, c::String) = haskey(s.args_table.subsettings, c)
-setindex!(s::ArgParseSettings, x::ArgParseSettings, c::String) = setindex!(s.args_table.subsettings, x, c)
+getindex(s::ArgParseSettings, c::AbstractString) = s.args_table.subsettings[c]
+haskey(s::ArgParseSettings, c::AbstractString) = haskey(s.args_table.subsettings, c)
+setindex!(s::ArgParseSettings, x::ArgParseSettings, c::AbstractString) = setindex!(s.args_table.subsettings, x, c)
 
 #}}}
 
@@ -225,7 +225,7 @@ function check_name_format(name::ArgName)
     return true
 end
 
-function check_type(opt, T::Type, message::String)
+function check_type(opt, T::Type, message::AbstractString)
     isa(opt, T) || error(message)
     return true
 end
@@ -251,7 +251,7 @@ function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
     return true
 end
 
-function check_long_opt_name(name::String, settings::ArgParseSettings)
+function check_long_opt_name(name::AbstractString, settings::ArgParseSettings)
     '=' in name           && error("illegal option name: $name (contains '=')")
     ismatch(r"\s", name)  && error("illegal option name: $name (contains whitespace)")
     nbspc in name         && error("illegal option name: $name (contains non-breakable-space)")
@@ -262,7 +262,7 @@ function check_long_opt_name(name::String, settings::ArgParseSettings)
     return true
 end
 
-function check_short_opt_name(name::String, settings::ArgParseSettings)
+function check_short_opt_name(name::AbstractString, settings::ArgParseSettings)
     length(name) != 1                && error("short options must use a single character")
     name == "="                      && error("illegal short option name: $name")
     ismatch(r"\s", name)             && error("illegal option name: $name (contains whitespace)")
@@ -273,12 +273,12 @@ function check_short_opt_name(name::String, settings::ArgParseSettings)
     return true
 end
 
-function check_arg_name(name::String)
+function check_arg_name(name::AbstractString)
     ismatch(r"^%[A-Z]*%$", name) && error("invalid positional arg name: $name (is reserved)")
     return true
 end
 
-function check_dest_name(name::String)
+function check_dest_name(name::AbstractString)
     ismatch(r"^%[A-Z]*%$", name) && error("invalid dest_name: $name (is reserved)")
     return true
 end
@@ -333,7 +333,7 @@ function check_conflicts_with_commands(settings::ArgParseSettings, new_arg::ArgP
     return true
 end
 
-function check_conflicts_with_commands(settings::ArgParseSettings, new_cmd::String)
+function check_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
     for a in settings.args_table.fields
         new_cmd == a.dest_name && error("command $new_cmd has the same destination of $(idstring(a))")
     end
@@ -363,14 +363,14 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
     return true
 end
 
-check_default_type(default::Nothing, arg_type::Type) = true
+@compat check_default_type(default::Void, arg_type::Type) = true
 function check_default_type(default, arg_type::Type)
     isa(default, arg_type) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), arg_type=$arg_type)")
 end
 
-check_default_type_multi_action(default::Nothing, arg_type::Type) = true
-check_default_type_multi_action(default::Vector{None}, arg_type::Type) = true
+@compat check_default_type_multi_action(default::Void, arg_type::Type) = true
+@compat check_default_type_multi_action(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_action(default, arg_type::Type)
     (isa(default, Vector) && (arg_type <: eltype(default))) ||
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T)")
@@ -378,8 +378,8 @@ function check_default_type_multi_action(default, arg_type::Type)
     return true
 end
 
-check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
-check_default_type_multi_nargs(default::Vector{None}, arg_type::Type) = true
+@compat check_default_type_multi_nargs(default::Void, arg_type::Type) = true
+@compat check_default_type_multi_nargs(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_nargs(default::Vector, arg_type::Type)
     all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type")
     return true
@@ -387,8 +387,8 @@ end
 check_default_type_multi_nargs(default, arg_type::Type) =
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector)")
 
-check_default_type_multi2(default::Nothing, arg_type::Type) = true
-check_default_type_multi2(default::Vector{None}, arg_type::Type) = true
+@compat check_default_type_multi2(default::Void, arg_type::Type) = true
+@compat check_default_type_multi2(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
     (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
@@ -396,7 +396,7 @@ function check_default_type_multi2(default, arg_type::Type)
     return true
 end
 
-check_range_default(default::Nothing, range_tester::Function) = true
+@compat check_range_default(default::Void, range_tester::Function) = true
 function check_range_default(default, range_tester::Function)
     local res::Bool
     try
@@ -408,7 +408,7 @@ function check_range_default(default, range_tester::Function)
     return true
 end
 
-check_range_default_multi(default::Nothing, range_tester::Function) = true
+@compat check_range_default_multi(default::Void, range_tester::Function) = true
 function check_range_default_multi(default::Vector, range_tester::Function)
     for d in default
         local res::Bool
@@ -422,7 +422,7 @@ function check_range_default_multi(default::Vector, range_tester::Function)
     return true
 end
 
-check_range_default_multi2(default::Nothing, range_tester::Function) = true
+@compat check_range_default_multi2(default::Void, range_tester::Function) = true
 function check_range_default_multi2(default::Vector, range_tester::Function)
     for dl in default, d in dl
         local res::Bool
@@ -436,7 +436,7 @@ function check_range_default_multi2(default::Vector, range_tester::Function)
     return true
 end
 
-function check_metavar(metavar::String)
+function check_metavar(metavar::AbstractString)
     isempty(metavar)         && error("empty metavar")
     startswith(metavar, '-') && error("metavars cannot begin with -")
     ismatch(r"\s", metavar)  && error("illegal metavar name: $metavar (contains whitespace)")
@@ -444,7 +444,7 @@ function check_metavar(metavar::String)
     return true
 end
 
-function check_group_name(name::String)
+function check_group_name(name::AbstractString)
     isempty(name)         && error("empty group name")
     startswith(name, '#') && error("invalid group name (starts with #)")
     return true
@@ -455,8 +455,8 @@ end
 #{{{
 function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     pos_arg = ""
-    long_opts = String[]
-    short_opts = String[]
+    long_opts = AbstractString[]
+    short_opts = AbstractString[]
     r(n) = settings.autofix_names ? replace(n, '_', '-') : n
     if isa(name, Vector)
         for n in name
@@ -492,7 +492,7 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     return pos_arg, long_opts, short_opts
 end
 
-function auto_dest_name(pos_arg::String, long_opts::Vector{String}, short_opts::Vector{String}, autofix_names::Bool)
+function auto_dest_name(pos_arg::AbstractString, long_opts::Vector{AbstractString}, short_opts::Vector{AbstractString}, autofix_names::Bool)
     r(n) = autofix_names ? replace(n, '-', '_') : n
     isempty(pos_arg) || return r(pos_arg)
     isempty(long_opts) || return r(long_opts[1])
@@ -500,7 +500,7 @@ function auto_dest_name(pos_arg::String, long_opts::Vector{String}, short_opts::
     return short_opts[1]
 end
 
-function auto_metavar(dest_name::String, is_opt::Bool)
+function auto_metavar(dest_name::AbstractString, is_opt::Bool)
     is_opt || return dest_name
     prefix = ismatch(r"^[[:alpha:]_]", dest_name) ? "" : "_"
     return prefix * uppercase(dest_name)
@@ -513,7 +513,7 @@ function get_cmd_prog_hint(arg::ArgParseField)
 end
 
 
-function add_arg_table(settings::ArgParseSettings, table::Union(ArgName, Options)...)
+@compat function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Options}...)
     has_name = false
     for i = 1:length(table)
         !has_name && isa(table[i], Options) && error("option field must be preceded by the arg name")
@@ -554,7 +554,7 @@ macro add_arg_table(s, x...)
             # in-place and restart from the same position
             splice!(x, i, y.args)
             continue
-        elseif isa(y, String) || (isa(y, Expr) && (y.head == :vcat || y.head == :tuple))
+        elseif isa(y, AbstractString) || (isa(y, Expr) && (y.head == :vcat || y.head == :tuple))
             # found a string, or a vector expression, or a tuple:
             # this must be the option name
             if isa(y, Expr) && y.head == :tuple
@@ -614,7 +614,7 @@ macro add_arg_table(s, x...)
     exret
 end
 
-function get_group(group::String, arg::ArgParseField, settings::ArgParseSettings)
+function get_group(group::AbstractString, arg::ArgParseField, settings::ArgParseSettings)
     if isempty(group)
         is_cmd(arg) && return cmd_group
         is_arg(arg) && return pos_group
@@ -627,10 +627,10 @@ function get_group(group::String, arg::ArgParseField, settings::ArgParseSettings
     end
     found_a_bug()
 end
-get_group_name(group::String, arg::ArgParseField, settings::ArgParseSettings) =
+get_group_name(group::AbstractString, arg::ArgParseField, settings::ArgParseSettings) =
     get_group(group, arg, settings).name
 
-function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
+@compat function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
     check_name_format(name)
 
     supplied_opts = keys(desc.key2index)
@@ -651,16 +651,16 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
     end
     @check_used(desc)
 
-    check_type(nargs, Union(ArgConsumerType,Int,Char), "nargs must be an Int or a Char")
-    check_type(action, Union(String,Symbol), "action must be a String or a Symbol")
+    check_type(nargs, Union{ArgConsumerType,Int,Char}, "nargs must be an Int or a Char")
+    check_type(action, Union{AbstractString,Symbol}, "action must be an AbstractString or a Symbol")
     check_type(arg_type, Type, "invalid arg_type")
     check_type(required, Bool, "required must be a Bool")
     check_type(range_tester, Function, "range_tester must be a Function")
-    check_type(dest_name, String, "dest_name must be a String")
-    check_type(help, String, "help must be a String")
-    check_type(metavar, String, "metavar must be a String")
+    check_type(dest_name, AbstractString, "dest_name must be an AbstractString")
+    check_type(help, AbstractString, "help must be an AbstractString")
+    check_type(metavar, AbstractString, "metavar must be an AbstractString")
     check_type(force_override, Bool, "force_override must be a Bool")
-    check_type(group, Union(String,Symbol), "group must be a String or a Symbol")
+    check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a Symbol")
 
     isa(nargs, ArgConsumerType) || (nargs = ArgConsumerType(nargs))
     isa(action, Symbol) || (action = symbol(action))
@@ -751,7 +751,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
 
     if is_command_action(action)
         new_arg.dest_name = cmd_dest_name
-        new_arg.arg_type = String
+        new_arg.arg_type = AbstractString
         new_arg.constant = cmd_name
         new_arg.metavar = cmd_name
         cmd_prog_hint = get_cmd_prog_hint(new_arg)
@@ -843,7 +843,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
     return
 end
 
-function add_command(settings::ArgParseSettings, command::String, prog_hint::String, force_override::Bool)
+function add_command(settings::ArgParseSettings, command::AbstractString, prog_hint::AbstractString, force_override::Bool)
     haskey(settings, command) && error("command $command already added")
     if force_override
         override_conflicts_with_commands(settings, command)
@@ -867,18 +867,18 @@ function add_command(settings::ArgParseSettings, command::String, prog_hint::Str
     return ss
 end
 
-autogen_group_name(desc::String) = "#$(hash(desc))"
+autogen_group_name(desc::AbstractString) = "#$(hash(desc))"
 
-add_arg_group(settings::ArgParseSettings, desc::String) =
+add_arg_group(settings::ArgParseSettings, desc::AbstractString) =
     _add_arg_group(settings, desc, autogen_group_name(desc), true)
-function add_arg_group(settings::ArgParseSettings, desc::String,
-                       tag::Union(String,Symbol), set_as_default::Bool = true)
+@compat function add_arg_group(settings::ArgParseSettings, desc::AbstractString,
+                               tag::Union{AbstractString,Symbol}, set_as_default::Bool = true)
     name = string(tag)
     check_group_name(name)
     _add_arg_group(settings, desc, name, set_as_default)
 end
 
-function _add_arg_group(settings::ArgParseSettings, desc::String, name::String, set_as_default::Bool)
+function _add_arg_group(settings::ArgParseSettings, desc::AbstractString, name::AbstractString, set_as_default::Bool)
     already_added = any(ag->ag.name==name, settings.args_groups)
     already_added || push!(settings.args_groups, ArgParseGroup(name, desc))
     set_as_default && (settings.default_group = name)
@@ -886,7 +886,7 @@ function _add_arg_group(settings::ArgParseSettings, desc::String, name::String, 
 end
 
 set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settings, "")
-function set_default_arg_group(settings::ArgParseSettings, name::Union(String,Symbol))
+@compat function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol})
     name = string(name)
     startswith(name, '#') && error("invalid group name: $name (begins with #)")
     isempty(name) && (settings.default_group = ""; return)
@@ -899,7 +899,7 @@ end
 
 # import_settings & friends
 #{{{
-function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::String)
+function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
     ids0 = Int[]
     for ia in 1:length(settings.args_table.fields)
         a = settings.args_table.fields[ia]
@@ -1083,7 +1083,7 @@ end
 # ArgParseError
 #{{{
 type ArgParseError <: Exception
-    text::String
+    text::AbstractString
 end
 
 argparse_error(x...) = throw(ArgParseError(string(x...)))
@@ -1091,7 +1091,7 @@ argparse_error(x...) = throw(ArgParseError(string(x...)))
 
 # parsing checks
 #{{{
-function test_range(range_tester::Function, arg, name::String)
+function test_range(range_tester::Function, arg, name::AbstractString)
     local rng_chk::Bool
     try
         rng_chk = range_tester(arg)
@@ -1102,7 +1102,7 @@ function test_range(range_tester::Function, arg, name::String)
     return
 end
 
-function test_required_args(settings::ArgParseSettings, found_args::Set{String})
+function test_required_args(settings::ArgParseSettings, found_args::Set{AbstractString})
     for f in settings.args_table.fields
         !is_cmd(f) && f.required && !(f.metavar in found_args) &&
             argparse_error("required $(idstring(f)) was not provided")
@@ -1130,9 +1130,9 @@ end
 
 # parsing aux functions
 #{{{
-parse_item(it_type::Type{Any}, x::String) = x
-parse_item{T<:String}(it_type::Type{T}, x::String) = convert(T, x)
-function parse_item(it_type::Type, x::String)
+parse_item(it_type::Type{Any}, x::AbstractString) = x
+parse_item{T<:AbstractString}(it_type::Type{T}, x::AbstractString) = convert(T, x)
+function parse_item(it_type::Type, x::AbstractString)
     local r
     try
         if isempty(x)
@@ -1160,7 +1160,7 @@ const number_regex =
         )
       $"x
 
-function looks_like_an_option(arg::String, settings::ArgParseSettings)
+function looks_like_an_option(arg::AbstractString, settings::ArgParseSettings)
     arg == "-" && return false
     startswith(arg, "--") && return true
     startswith(arg, '-') || return false
@@ -1293,7 +1293,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     default_str = ""
     const_str = ""
     if !is_command_action(arg.action)
-        if arg.arg_type != Any && !(arg.arg_type <: String)
+        if arg.arg_type != Any && !(arg.arg_type <: AbstractString)
             type_str = pre * "(type: " * string(arg.arg_type)
         end
         if arg.default !== nothing && !isequal(arg.default, [])
@@ -1309,8 +1309,8 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     return arg.help * type_str * default_str * const_str * post
 end
 
-function print_group(io::IO, lst::Vector, desc::String, lc_usable_len::Int, lc_len::Int,
-                     lmargin::String, rmargin::String, sindent::String)
+function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::Int, lc_len::Int,
+                     lmargin::AbstractString, rmargin::AbstractString, sindent::AbstractString)
     isempty(lst) && return
     println(io, desc, ":")
     for l in lst
@@ -1344,7 +1344,7 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
 
     usage_str = usage_string(settings)
 
-    group_lists = Dict{String,Vector{Any}}()
+    group_lists = Dict{AbstractString,Vector{Any}}()
     for ag in settings.args_groups
         group_lists[ag.name] = Any[]
     end
@@ -1453,24 +1453,24 @@ function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::B
     return parsed_args
 end
 
-type ParserState
+@compat type ParserState
     args_list::Vector
     arg_delim_found::Bool
-    token::Union(String,Nothing)
-    token_arg::Union(String,Nothing)
+    token::Union{AbstractString,Void}
+    token_arg::Union{AbstractString,Void}
     arg_consumed::Bool
     last_arg::Int
-    found_args::Set{String}
-    command::Union(String,Nothing)
+    found_args::Set{AbstractString}
+    command::Union{AbstractString,Void}
     truncated_shopts::Bool
-    out_dict::Dict{String,Any}
+    out_dict::Dict{AbstractString,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
-        out_dict = Dict{String,Any}()
+        out_dict = Dict{AbstractString,Any}()
         for f in settings.args_table.fields
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
-        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{String}(), nothing, truncated_shopts, out_dict)
+        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, out_dict)
     end
 end
 
@@ -1534,7 +1534,7 @@ function preparse(state::ParserState, settings::ArgParseSettings)
 end
 
 function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool=false)
-    any(x->!isa(x,String), args_list) && error("malformed args_list")
+    any(x->!isa(x,AbstractString), args_list) && error("malformed args_list")
 
     version_added = false
     help_added = false
@@ -1600,7 +1600,7 @@ end
 
 # common parse functions
 #{{{
-function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField, has_arg::Bool, opt_name::String)
+function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField, has_arg::Bool, opt_name::AbstractString)
     has_arg && argparse_error("option $opt_name takes no arguments")
     command = nothing
     out_dict = state.out_dict
@@ -1626,7 +1626,7 @@ function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParse
     return
 end
 
-function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField, rest, name::String)
+function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField, rest, name::AbstractString)
     args_list = state.args_list
     arg_delim_found = state.arg_delim_found
     out_dict = state.out_dict
@@ -1739,7 +1739,7 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
     opt_name = state.token
     arg_after_eq = state.token_arg
     local f::ArgParseField
-    local fln::String
+    local fln::AbstractString
     exact_match = false
     nfound = 0
     for g in settings.args_table.fields
@@ -1848,7 +1848,7 @@ end
 
 # convert_to_symbols
 #{{{
-function convert_to_symbols(parsed_args::Dict{String,Any})
+function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
     new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)

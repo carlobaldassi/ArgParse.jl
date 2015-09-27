@@ -61,7 +61,7 @@ let s = ap_settings7()
         """
 
     @ap_test_throws ap_test7([])
-    @compat @test ap_test7(["--oxymoronic=A", "-o=B"]) == Dict{String,Any}("oxymoronic"=>"A", "opt"=>nothing, "o"=>"B", "flag"=>false)
+    @compat @test ap_test7(["--oxymoronic=A", "-o=B"]) == Dict{AbstractString,Any}("oxymoronic"=>"A", "opt"=>nothing, "o"=>"B", "flag"=>false)
     @ap_test_throws ap_test7(["--oxymoronic=A", "--opt=B"])
     @ap_test_throws ap_test7(["--opt=A, -o=B"])
 end

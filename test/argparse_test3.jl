@@ -9,13 +9,13 @@ function ap_settings3()
     @add_arg_table s begin
         "--opt1"
             action = :append_const   # appends 'constant' to 'dest_name'
-            arg_type = String
+            arg_type = AbstractString
             constant = "O1"
             dest_name = "O_stack"    # this changes the destination
             help = "append O1"
         "--opt2"
             action = :append_const
-            arg_type = String
+            arg_type = AbstractString
             constant = "O2"
             dest_name = "O_stack"    # same dest_name as opt1, different constant
             help = "append O2"
@@ -70,9 +70,9 @@ let s = ap_settings3()
 
         """
 
-    @compat @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[Any["X"]])
+    @compat @test ap_test3([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[Any["X"]])
     @compat @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "-u", "--array=[4]", "--awkward-option=Y", "X", "--opt1"]) ==
-        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "array"=>[4], "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
+        Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "array"=>[4], "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
     @ap_test_throws ap_test3(["X"])
     @ap_test_throws ap_test3(["--awk", "Z"])
     @ap_test_throws ap_test3(["--awk", "-2"])
@@ -94,7 +94,7 @@ let s = ap_settings3()
     @ee_test_throws @add_arg_table(s, "--opt", action = :store_const, arg_type = Int, default = 1)
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_const, arg_type = Int)
     # incompatible action
-    @ee_test_throws @add_arg_table(s, "--opt3", action = :store_const, arg_type = String, constant = "O3", dest_name = "O_stack", help = "append O3")
+    @ee_test_throws @add_arg_table(s, "--opt3", action = :store_const, arg_type = AbstractString, constant = "O3", dest_name = "O_stack", help = "append O3")
     # wrong range tester
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->string(x), default = Int[0, 1, 2])
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->string(x), default = Vector{Int}[[1,1],[0,2]])
@@ -105,9 +105,9 @@ let s = ap_settings3()
     # allow ambiguous options
     s.allow_ambiguous_opts = true
     @add_arg_table(s, "-2", action = :store_true)
-    @compat @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[Any["X"]], "2"=>false)
-    @compat @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[["X"]], "2"=>true)
-    @compat @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
+    @compat @test ap_test3([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[Any["X"]], "2"=>false)
+    @compat @test ap_test3(["-2"]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[["X"]], "2"=>true)
+    @compat @test ap_test3(["--awk", "X", "-2"]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
 
 end
