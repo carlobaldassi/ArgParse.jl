@@ -332,26 +332,25 @@ methods to populate it:
 
 .. function:: add_arg_table(settings, [arg_name [,arg_options]]...)
 
-    This function is almost equivalent to the macro version. Its syntax is stricter (tuples and blocks are not allowed and argument options
-    are explicitly specified as ``Options`` objects) but the ``arg_name`` entries need not be explicit, they can be anything which evaluates
-    to a ``String`` or a ``Vector{String}``.
+    This function is very similar to the macro version. Its syntax is stricter: tuples and blocks are not allowed and argument options
+    are explicitly specified as ``Dict`` objects. However, since it doesn't involve macros, it offers more flexibility in other respects,
+    e.g. the ``arg_name`` entries need not be explicit, they can be anything which evaluates to a ``String`` or a ``Vector{String}``.
 
     Example::
 
         add_arg_table(settings,
             ["--opt1", "-o"],
-            @options begin
-                help = "an option with an argument"
-            end,
+            Dict(
+                :help => "an option with an argument"
+            ),
             "--opt2",
             "arg1",
-            @options begin
-                help = "a positional argument"
-                required = true
-            end)
+            Dict(
+                :help => "a positional argument"
+                :required => true
+            ))
 
-    Note that the OptionsMod module (provided by the `Options package <https://github.com/JuliaLang/Options.jl>`_) must be imported
-    in order to use this function.
+    Note that the ``Dict``s are constructed using Julia 0.4 syntax in the above example.
 
 .. _argparse-argument-table-entries:
 
@@ -403,7 +402,7 @@ converted to underscores: for example, ``"--my-opt"`` will yield ``"my_opt"`` as
 
 The argument name is also used to generate a default metavar in case ``metavar`` is not explicitly set in the table entry. The rules
 are the same used to determine the default ``dest_name``, but for options the result will be uppercased (e.g. ``"--long"`` will
-become ``LONG``). Note that this poses additional constraints on the positional argument names (e.g. whitespaces are not allowed in
+become ``LONG``). Note that this poses additional constraints on the positional argument names (e.g. whitespace is not allowed in
 metavars).
 
 .. _argparse-arg-entry-settings:
@@ -424,8 +423,8 @@ This is the list of all available settings:
   ``:store_arg`` and ``"store_arg"`` are accepted). The default action is ``:store_arg`` unless ``nargs`` is ``0``, in which case the
   default is ``:store_true``. See :ref:`this section <argparse-actions-and-nargs>` for a list of all available actions and a detailed
   explanation.
-* ``arg_type`` (default = ``Any``): the type of the argument. Makes only sense with non-flag arguments.
-* ``default`` (default = ``nothing``): the default value if the option or positional argument is not parsed. Makes only sense with
+* ``arg_type`` (default = ``Any``): the type of the argument. Only makes sense with non-flag arguments.
+* ``default`` (default = ``nothing``): the default value if the option or positional argument is not parsed. Only makes sense with
   non-flag arguments, or when the action is ``:store_const`` or ``:append_const``. Unless it's ``nothing``, it must be consistent with
   ``arg_type`` and ``range_tester``.
 * ``constant`` (default = ``nothing``): this value is used by the ``:store_const`` and ``:append_const`` actions, or when ``nargs = '?'``
@@ -443,8 +442,7 @@ This is the list of all available settings:
   positional arguments, it will also be used as an identifier in all other messages (e.g. in reporting errors), therefore it must
   be unique. The auto-generations rules are explained in :ref:`this section <argparse-argument-names>`.
 * ``force_override``: if ``true``, conflicts are ignored when adding this entry in the argument table (see also :ref:`this section
-  <argparse-conflicts>`). By default,
-  it follows the general ``error_on_conflict`` settings).
+  <argparse-conflicts>`). By default, it follows the general ``error_on_conflict`` settings.
 * ``group``: the option group to which the argument will be assigned to (see :ref:`this section <argparse-groups>`). By default, the
   current default group is used if specified, otherwise the assignment is automatic.
 
@@ -887,8 +885,8 @@ Here are some examples of styles for the ``@add_arg_table`` marco and ``add_arg_
         end)
 
     add_arg_table(settings,
-        ["-opt", "-o"], @options(help := "an option"),
-        "arg"         , @options(help := "a positional argument")
+        ["-opt", "-o"], Dict(:help => "an option"),
+        "arg"         , Dict(:help => "a positional argument")
         )
 
 The restrictions are:

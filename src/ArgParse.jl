@@ -1,9 +1,8 @@
-isdefined(:OptionsMod) || @eval import Options
+VERSION >= v"0.4.0-rc" && __precompile__()
 
 module ArgParse
 
 using TextWrap
-using OptionsMod
 using Compat
 
 export
@@ -133,7 +132,7 @@ const scmd_dest_name = :_COMMAND_
 function show(io::IO, s::ArgParseField)
     p(x) = "  $x=$(s.(x))\n"
     str = "ArgParseField(\n"
-    for f in names(ArgParseField)
+    for f in fieldnames(ArgParseField)
         str *= p(f)
     end
     str *= "  )"
@@ -197,7 +196,7 @@ ArgParseSettings(desc::AbstractString, add_help = true; kw...) = ArgParseSetting
 function show(io::IO, s::ArgParseSettings)
     p(x) = "  $x=$(s.(x))\n"
     str = "ArgParseSettings(\n"
-    for f in setdiff(names(ArgParseSettings), [:args_groups, :args_table])
+    for f in setdiff(fieldnames(ArgParseSettings), [:args_groups, :args_table])
         str *= p(f)
     end
     str *= "  >> " * usage_string(s) * "\n"
@@ -513,19 +512,19 @@ function get_cmd_prog_hint(arg::ArgParseField)
 end
 
 
-@compat function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Options}...)
+@compat function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Vector, Dict}...)
     has_name = false
     for i = 1:length(table)
-        !has_name && isa(table[i], Options) && error("option field must be preceded by the arg name")
-        has_name = isa(table[i], ArgName)
+        !has_name && !isa(table[i], ArgName) && error("option field must be preceded by the arg name")
+        has_name = true
     end
     i = 1
     while i <= length(table)
-        if i+1 <= length(table) && isa(table[i+1], Options)
-            add_arg_field(settings, table[i], table[i+1])
+        if i+1 <= length(table) && !isa(table[i+1], ArgName)
+            add_arg_field(settings, table[i]; table[i+1]...)
             i += 2
         else
-            add_arg_field(settings, table[i], Options())
+            add_arg_field(settings, table[i])
             i += 1
         end
     end
@@ -543,7 +542,14 @@ macro add_arg_table(s, x...)
     end
     # initialize the name and the options expression
     name = nothing
-    exopt = Any[:Options]
+    if VERSION ≥ v"0.4-"
+        dicthead = [:Dict]
+        dictcall = :call
+    else
+        dicthead = []
+        dictcall = :dict
+    end
+    exopt = Any[dicthead...]
 
     # iterate over the arguments
     i = 1
@@ -564,9 +570,10 @@ macro add_arg_table(s, x...)
             if name !== nothing
                 # there was a previous arg field on hold
                 # first, concretely build the options
-                opt = Expr(:call, exopt...)
+                opt = Expr(dictcall, exopt...)
+                kopts = Expr(:parameters, Expr(:(...), opt))
                 # then, call add_arg_field
-                aaf = Expr(:call, :add_arg_field, s, name, opt)
+                aaf = Expr(:call, :add_arg_field, kopts, s, name)
                 # store it in the output expression
                 exret = quote
                     $exret
@@ -575,12 +582,13 @@ macro add_arg_table(s, x...)
             end
             # put the name on hold, reinitialize the options expression
             name = y
-            exopt = Any[:Options]
+            exopt = Any[dicthead...]
             i += 1
         elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
             # found an assignment: add it to the current options expression
-            push!(exopt, Expr(:quote, y.args[1]))
-            push!(exopt, esc(y.args[2]))
+            y.head = :(=>)
+            push!(exopt, Expr(:(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
+            #push!(exopt, esc(y.args[2]))
             i += 1
         elseif isa(y, LineNumberNode) || (isa(y,Expr) && y.head == :line)
             # a line number node, ignore
@@ -595,8 +603,9 @@ macro add_arg_table(s, x...)
     if name !== nothing
         # there is an arg field on hold
         # same as above
-        opt = Expr(:call, exopt...)
-        aaf = Expr(:call, :add_arg_field, s, name, opt)
+        opt = Expr(dictcall, exopt...)
+        kopts = Expr(:parameters, Expr(:(...), opt))
+        aaf = Expr(:call, :add_arg_field, kopts, s, name)
         exret = quote
             $exret
             $aaf
@@ -630,10 +639,65 @@ end
 get_group_name(group::AbstractString, arg::ArgParseField, settings::ArgParseSettings) =
     get_group(group, arg, settings).name
 
-@compat function add_arg_field(settings::ArgParseSettings, name::ArgName, desc::Options)
+#imported from Options.jl, with slight modifications
+macro defaults(opts, ex...)
+    # Transform the tuple into a vector, so that
+    # we can manipulate it
+    ex = Any[ex...]
+    opts = esc(opts)
+    # Transform the opts array into a Dict
+    exret = :($opts = Dict{Symbol,Any}($opts))
+    # Initialize the checks
+    used = esc(gensym("opts"))
+    exret = quote
+        $exret
+        $used = Dict{Symbol,Bool}([(k,false) for (k,v) in $opts])
+    end
+
+    # Check each argument in the assignment list
+    i = 1
+    while i <= length(ex)
+        y = ex[i]
+        if isa(y, Expr) && y.head == :block
+            # Found a begin..end block: expand its contents in-place
+            # and restart from the same position
+            splice!(ex, i, y.args)
+            continue
+        elseif isa(y, LineNumberNode) || (isa(y,Expr) && y.head == :line)
+            # A line number node, ignore
+            i += 1
+            continue
+        elseif !isa(y,Expr) || !(y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
+            error("Arguments to @defaults following the options variable must be assignments, e.g., a=5 or a=>5")
+        end
+        y.head = :(=)
+
+        sym = y.args[1]
+        qsym = Expr(:quote, sym)
+        exret = quote
+            $exret
+            if haskey($opts, $qsym)
+                $(esc(sym)) = $opts[$qsym]
+                $used[$qsym] = true
+            else
+                $(esc(y))
+            end
+        end
+        i += 1
+    end
+    exret = quote
+        $exret
+        for (k,v) in $used
+            v || error("unknown description field: $k")
+        end
+    end
+    exret
+end
+
+@compat function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     check_name_format(name)
 
-    supplied_opts = keys(desc.key2index)
+    supplied_opts = Symbol[k for (k,v) in desc]
 
     @defaults desc begin
         nargs = ArgConsumerType()
@@ -649,7 +713,6 @@ get_group_name(group::AbstractString, arg::ArgParseField, settings::ArgParseSett
         force_override = !settings.error_on_conflict
         group = settings.default_group
     end
-    @check_used(desc)
 
     check_type(nargs, Union{ArgConsumerType,Int,Char}, "nargs must be an Int or a Char")
     check_type(action, Union{AbstractString,Symbol}, "action must be an AbstractString or a Symbol")
@@ -1542,21 +1605,19 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
     if settings.add_version
         settings.add_version = false
         add_arg_field(settings, "--version",
-            @options begin
-                action = :show_version
-                help = "show version information and exit"
-                group = ""
-            end)
+            action = :show_version,
+            help = "show version information and exit",
+            group = ""
+            )
         version_added = true
     end
     if settings.add_help
         settings.add_help = false
         add_arg_field(settings, ["--help","-h"],
-            @options begin
-                action = :show_help
-                help = "show this help message and exit"
-                group = ""
-            end)
+            action = :show_help,
+            help = "show this help message and exit",
+            group = ""
+            )
         help_added = true
     end
 
@@ -1866,5 +1927,10 @@ end
 #}}}
 #}}}
 
+
+if VERSION >= v"0.4.0-rc"
+    include("precompile.jl")
+    _precompile_()
+end
 
 end # module ArgParse

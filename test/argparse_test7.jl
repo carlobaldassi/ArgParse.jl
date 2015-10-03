@@ -1,7 +1,5 @@
 # test 7: required options, line breaks in desc/epilog
 
-using OptionsMod
-
 function ap_settings7()
 
     s = ArgParseSettings(description = "Test 7 for ArgParse.jl\n\nTesting oxymoronic options",
