@@ -84,12 +84,11 @@ default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 
 # ArgParseGroup
 #{{{
-type ArgParseGroup
-    name::AbstractString
-    desc::AbstractString
-    ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
+type ArgParseGroup{T<:AbstractString}
+    name::T
+    desc::T
 end
-ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
+ArgParseGroup(n::Symbol, d::Any) = ArgParseGroup(string(n), string(d))
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
@@ -100,10 +99,10 @@ const std_groups = [cmd_group, pos_group, opt_group]
 
 # ArgParseField
 #{{{
-type ArgParseField
-    dest_name::AbstractString
-    long_opt_name::Vector{AbstractString}
-    short_opt_name::Vector{AbstractString}
+type ArgParseField{T<:AbstractString}
+    dest_name::T
+    long_opt_name::Vector{T}
+    short_opt_name::Vector{T}
     arg_type::Type
     action::Symbol
     nargs::ArgConsumerType
@@ -111,12 +110,12 @@ type ArgParseField
     constant
     range_tester::Function
     required::Bool
-    help::AbstractString
-    metavar::AbstractString
-    group::AbstractString
+    help::T
+    metavar::T
+    group::T
     fake::Bool
     function ArgParseField()
-        return new("", AbstractString[], AbstractString[], Any, :store_true, ArgConsumerType(),
+        return new("", T[], T[], Any, :store_true, ArgConsumerType(),
                    nothing, nothing, x->true, false, "", "", "", false)
     end
 end
@@ -143,21 +142,21 @@ end
 
 # ArgParseTable
 #{{{
-type ArgParseTable
-    fields::Vector{ArgParseField}
-    subsettings::Dict{AbstractString,Any} # this in fact will be a Dict{AbstractString,ArgParseSettings}
-    ArgParseTable() = new(ArgParseField[], Dict{AbstractString,Any}())
+type ArgParseTable{T <: AbstractString}
+    fields::Vector{ArgParseField{T}}
+    subsettings::Dict{T,Any} # this in fact will be a Dict{T,ArgParseSettings}
+    ArgParseTable() = new(ArgParseField[], Dict{T,Any}())
 end
 #}}}
 
 # ArgParseSettings
 #{{{
-type ArgParseSettings
-    prog::AbstractString
-    description::AbstractString
-    epilog::AbstractString
-    usage::AbstractString
-    version::AbstractString
+type ArgParseSettings{T <: AbstractString}
+    prog::T
+    description::T
+    epilog::T
+    usage::T
+    version::T
     add_help::Bool
     add_version::Bool
     autofix_names::Bool
@@ -166,15 +165,15 @@ type ArgParseSettings
     allow_ambiguous_opts::Bool
     commands_are_required::Bool
     args_groups::Vector{ArgParseGroup}
-    default_group::AbstractString
+    default_group::T
     args_table::ArgParseTable
     exc_handler::Function
 
-    function ArgParseSettings(;prog::AbstractString = Base.source_path() != nothing ? basename(Base.source_path()) : "",
-                               description::AbstractString = "",
-                               epilog::AbstractString = "",
-                               usage::AbstractString = "",
-                               version::AbstractString = "Unspecified version",
+    function ArgParseSettings(;prog::T = Base.source_path() != nothing ? basename(Base.source_path()) : "",
+                               description::T = "",
+                               epilog::T = "",
+                               usage::T = "",
+                               version::T = "Unspecified version",
                                add_help::Bool = true,
                                add_version::Bool = false,
                                autofix_names::Bool = false,
