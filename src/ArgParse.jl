@@ -17,7 +17,6 @@ export
     set_default_arg_group,
     import_settings,
     usage_string,
-    parse_item,
     parse_args
 
 import Base: show, getindex, setindex!, haskey
@@ -1201,8 +1200,10 @@ function parse_item_wrapper(it_type::Type, x::AbstractString)
     local r::it_type
     try
         r = parse_item(it_type, x)
-    catch
-        argparse_error("invalid argument: $x (conversion to type $it_type failed; you may need to overload ArgParse.parse_item)")
+    catch err
+        argparse_error("""
+            invalid argument: $x (conversion to type $it_type failed; you may need to overload ArgParse.parse_item;
+                              the error was: $err)""")
     end
     return r
 end
@@ -1210,18 +1211,17 @@ end
 parse_item(it_type::Type{Any}, x::AbstractString) = x
 parse_item{T<:AbstractString}(it_type::Type{T}, x::AbstractString) = convert(T, x)
 parse_item{T<:Number}(it_type::Type{T}, x::AbstractString) = parse(it_type, x)
+parse_item(it_type::Type, x::AbstractString) = it_type(x)
 
 function parse_item_eval(it_type::Type, x::AbstractString)
     local r::it_type
     try
-        if isempty(x)
-            y = ""
-        else
-            y = eval(parse(x))
-        end
+        y = (VERSION < v"0.4-" && isempty(x)) ? nothing : eval(parse(x))
         r = convert(it_type, y)
-    catch
-        argparse_error("invalid argument: $x (must be of type $it_type)")
+    catch err
+        argparse_error("""
+            invalid argument: $x (must evaluate or convert to type $it_type;
+                              the error was: $err)""")
     end
     return r
 end

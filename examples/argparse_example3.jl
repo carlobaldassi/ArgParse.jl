@@ -29,7 +29,7 @@ function main(args)
             required = true
         "arg2"
             nargs = '*'                            # eats up as many arguments as possible before an option
-            default = {"no_arg_given"}             # since the result will be a Vector{Any}, the default must
+            default = Any["no_arg_given"]          # since the result will be a Vector{Any}, the default must
                                                    # also be (or it can be [] or nothing)
             help = "second argument, eats up " *
                    "as many items as possible " *

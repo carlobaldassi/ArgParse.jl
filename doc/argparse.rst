@@ -131,8 +131,9 @@ Also, we can see how invoking it with the wrong arguments produces errors::
     usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
 
     $ julia myprog1.jl --opt2 1.5 somearg
-    invalid argument: 1.5 (conversion to type Int64 failed; you may need to overload ArgParse.parse_item)
-    usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
+    invalid argument: 1.5 (conversion to type Int64 failed; you may need to overload ArgParse.parse_item;
+                      the error was: ArgumentError("invalid base 10 digit '.' in \"1.5\""))
+    usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] arg1
 
 When everything goes fine instead, our program will print the resulting ``Dict``::
 
