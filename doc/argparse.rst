@@ -131,7 +131,7 @@ Also, we can see how invoking it with the wrong arguments produces errors::
     usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
 
     $ julia myprog1.jl --opt2 1.5 somearg
-    invalid argument: 1.5 (must be of type Int64)
+    invalid argument: 1.5 (conversion to type Int64 failed; you may need to overload ArgParse.parse_item)
     usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
 
 When everything goes fine instead, our program will print the resulting ``Dict``::
@@ -143,7 +143,7 @@ When everything goes fine instead, our program will print the resulting ``Dict``
       opt1  =>  nothing
       flag1  =>  false
 
-    $ julia myprog1.jl --opt1 "2+2" --opt2 "2+2" somearg --flag
+    $ julia myprog1.jl --opt1 "2+2" --opt2 "4" somearg --flag
     Parsed args:
       arg1  =>  somearg
       opt2  =>  4
@@ -155,8 +155,8 @@ From these examples, a number of things can be noticed:
 * ``opt1`` defaults to ``nothing``, since no ``default`` setting was used for it in ``@add_arg_table``
 * ``opt1`` argument type, begin unspecified, defaults to ``Any``, but in practice it's parsed as a
   string (e.g. ``"2+2"``)
-* ``opt2`` instead has ``Int`` argument type, so ``"2+2"`` will be parsed as an expression and converted
-  to an integer
+* ``opt2`` instead has ``Int`` argument type, so ``"4"`` will be parsed and converted to an integer,
+  an error is emitted if the conversion fails
 * positional arguments can be passed in between options
 * long options can be passed in abbreviated form (e.g. ``--flag`` instead of ``--flag1``) as long as
   there's no ambiguity
@@ -423,7 +423,9 @@ This is the list of all available settings:
   ``:store_arg`` and ``"store_arg"`` are accepted). The default action is ``:store_arg`` unless ``nargs`` is ``0``, in which case the
   default is ``:store_true``. See :ref:`this section <argparse-actions-and-nargs>` for a list of all available actions and a detailed
   explanation.
-* ``arg_type`` (default = ``Any``): the type of the argument. Only makes sense with non-flag arguments.
+* ``arg_type`` (default = ``Any``): the type of the argument. Only makes sense with non-flag arguments. Only works out-of-the-box with
+  string and number types, but see :ref:`this section <argparse-custom-parsing>` for details on how to make it work for general types
+  (including user-defined ones).
 * ``default`` (default = ``nothing``): the default value if the option or positional argument is not parsed. Only makes sense with
   non-flag arguments, or when the action is ``:store_const`` or ``:append_const``. Unless it's ``nothing``, it must be consistent with
   ``arg_type`` and ``range_tester``.
@@ -445,6 +447,10 @@ This is the list of all available settings:
   <argparse-conflicts>`). By default, it follows the general ``error_on_conflict`` settings.
 * ``group``: the option group to which the argument will be assigned to (see :ref:`this section <argparse-groups>`). By default, the
   current default group is used if specified, otherwise the assignment is automatic.
+* ``eval_arg`` (default: ``false``): if ``true``, the argument will be parsed as a Julia expression and evaluated, which means that
+  for example ``"2+2"`` will yield the integer ``4`` rather than a string. Note that this is a security risk for outside-facing
+  programs and should generally be avoided: overload `ArgParse.parse_item` instead (see :ref:`this section <argparse-custom-parsing>`).
+  Only makes sense for non-flag arguments.
 
 .. _argparse-actions-and-nargs:
 
@@ -813,6 +819,31 @@ the resolution of most of the conflicts in favor of the newest added entry. The 
   a command override another command when added with ``@add_arg_table`` (compatible commands are merged
   by ``import_settings`` though)
 
+.. _argparse-custom-parsing:
+
+-----------------------
+Parsing to custom types
+-----------------------
+
+If you specify an ``arg_type`` setting (see :ref:`this section <argparse-arg-entry-settings>`) for an option
+or an argument, ``parse_args`` will try to parse it, i.e. to convert the string to the specified type. This
+only works for a limited number of types, which can either be directly constructed from strings or be parsed via
+the Julia's built-in `parse` function. In order to extend this functionality to other types, including user-defined
+custom types, you need to overload the `ArgParse.parse_item` function. Example::
+
+    type CustomType
+        val::Int
+    end
+
+    function ArgParse.parse_item(::Type{CustomType}, x::AbstractString)
+        return CustomType(parse(Int, x))
+    end
+
+Note that the second argument needs to be of type `AbstractString` (or `String` in Julia 0.3) to avoid ambiguity
+warnings. Also note that if your type is parametric (e.g. ``CustomType{T}``), you need to overload the function
+like this: ``function ArgParse.parse_item{T}(::Type{CustomType{T}, x::AbstractString)``.
+
+
 .. _argparse-details:
 
 ---------------
@@ -827,10 +858,10 @@ always recognized as non-options. However, if the ``allow_ambiguous_opts`` gener
 options in the argument table will take precedence: for example, if the option ``-1`` is added, and it takes an
 argument, then ``-123`` will be parsed as that option, and ``23`` will be its argument.
 
-Some ambiguities still remains though, because the ``ArgParse`` module will actually accept and parse expressions,
-not only numbers, and therefore one may try to pass arguments like ``-e`` or ``-pi``; in that case, these will
-always be at risk of being recognized as options. The easiest workaround is to put them in parentheses,
-e.g. ``(-e)``.
+Some ambiguities still remains though, because the ``ArgParse`` module can actually accept and parse expressions,
+not only numbers (although this is not the default), and therefore one may try to pass arguments like ``-e`` or
+``-pi``; in that case, these will always be at risk of being recognized as options. The easiest workaround is to
+put them in parentheses, e.g. ``(-e)``.
 
 When an option is declared to accept a fixed positive number of arguments or the remainder of the command line
 (i.e. if ``nargs`` is a non-zero number, or ``'A'``, or ``'R'``), ``parse_args`` will not try to check if the
@@ -844,8 +875,9 @@ follows as an argument (i.e. not an option); all which follows goes under the ru
 when short option groups are being parsed. For example, if the option in question is ``-x``, then both 
 ``-y -x=-2 4 -y`` and ``-yx-2 4 -y`` will parse ``"-2"`` and ``"4"`` as the arguments of ``-x``.
 
-Finally, since expressions may be evaluated during parsing, note that there is no safeguard against passing
-things like ``run(`rm -fr ~`)`` and seeing your data evaporate (don't try that!). Be careful.
+Finally, note that with the `eval_arg` setting expressions are evaluated during parsing, which means that there is no
+safeguard against passing things like ``run(`rm -fr someimportantthing`)`` and seeing your data evaporate
+(don't try that!). Be careful and generally try to avoid using the `eval_arg` setting.
 
 .. _argparse-table-styles:
 

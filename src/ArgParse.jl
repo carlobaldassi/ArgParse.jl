@@ -17,6 +17,7 @@ export
     set_default_arg_group,
     import_settings,
     usage_string,
+    parse_item,
     parse_args
 
 import Base: show, getindex, setindex!, haskey
@@ -110,13 +111,14 @@ type ArgParseField
     constant
     range_tester::Function
     required::Bool
+    eval_arg::Bool
     help::AbstractString
     metavar::AbstractString
     group::AbstractString
     fake::Bool
     function ArgParseField()
         return new("", AbstractString[], AbstractString[], Any, :store_true, ArgConsumerType(),
-                   nothing, nothing, x->true, false, "", "", "", false)
+                   nothing, nothing, x->true, false, false, "", "", "", false)
     end
 end
 
@@ -707,6 +709,7 @@ end
         constant = nothing
         required = false
         range_tester = x->true
+        eval_arg = false
         dest_name = ""
         help = ""
         metavar = ""
@@ -777,7 +780,7 @@ end
             found_a_bug()
         end
     elseif is_opt
-        append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :required, :metavar])
+        append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :required, :metavar, :eval_arg])
         nargs.desc == :? && push!(valid_keys, :constant)
     elseif action != :command_arg
         append!(valid_keys, [:arg_type, :default, :range_tester, :required, :metavar])
@@ -806,6 +809,7 @@ end
     set_if_valid(:required, required)
     set_if_valid(:help, help)
     set_if_valid(:metavar, metavar)
+    set_if_valid(:eval_arg, eval_arg)
 
     if !is_flag
         isempty(new_arg.metavar) && (new_arg.metavar = auto_metavar(new_arg.dest_name, is_opt))
@@ -1193,10 +1197,22 @@ end
 
 # parsing aux functions
 #{{{
+function parse_item_wrapper(it_type::Type, x::AbstractString)
+    local r::it_type
+    try
+        r = parse_item(it_type, x)
+    catch
+        argparse_error("invalid argument: $x (conversion to type $it_type failed; you may need to overload ArgParse.parse_item)")
+    end
+    return r
+end
+
 parse_item(it_type::Type{Any}, x::AbstractString) = x
 parse_item{T<:AbstractString}(it_type::Type{T}, x::AbstractString) = convert(T, x)
-function parse_item(it_type::Type, x::AbstractString)
-    local r
+parse_item{T<:Number}(it_type::Type{T}, x::AbstractString) = parse(it_type, x)
+
+function parse_item_eval(it_type::Type, x::AbstractString)
+    local r::it_type
     try
         if isempty(x)
             y = ""
@@ -1357,7 +1373,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     const_str = ""
     if !is_command_action(arg.action)
         if arg.arg_type != Any && !(arg.arg_type <: AbstractString)
-            type_str = pre * "(type: " * string(arg.arg_type)
+            type_str = pre * "(type: " * string_compact(arg.arg_type)
         end
         if arg.default !== nothing && !isequal(arg.default, [])
             mid = isempty(type_str) ? " (" : ", "
@@ -1693,6 +1709,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     out_dict = state.out_dict
 
     arg_consumed = false
+    parse_function = f.eval_arg ? parse_item_eval : parse_item_wrapper
     command = nothing
     is_multi_nargs(f.nargs) && (opt_arg = Array(f.arg_type, 0))
     if isa(f.nargs.desc, Int)
@@ -1703,19 +1720,19 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             argparse_error("$name requires $num argument", num > 1 ? "s" : "")
         end
         if rest !== nothing
-            a = parse_item(f.arg_type, rest)
+            a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_consumed = true
         end
         for i = (1+corr):num
-            a = parse_item(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, shift!(args_list))
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
     elseif f.nargs.desc == :A
         if rest !== nothing
-            a = parse_item(f.arg_type, rest)
+            a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             opt_arg = a
             arg_consumed = true
@@ -1723,13 +1740,13 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             if isempty(args_list)
                 argparse_error("option $name requires an argument")
             end
-            a = parse_item(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, shift!(args_list))
             test_range(f.range_tester, a, name)
             opt_arg = a
         end
     elseif f.nargs.desc == :?
         if rest !== nothing
-            a = parse_item(f.arg_type, rest)
+            a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             opt_arg = a
             arg_consumed = true
@@ -1737,7 +1754,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             if isempty(args_list)
                 opt_arg = deepcopy(f.constant)
             else
-                a = parse_item(f.arg_type, shift!(args_list))
+                a = parse_function(f.arg_type, shift!(args_list))
                 test_range(f.range_tester, a, name)
                 opt_arg = a
             end
@@ -1745,7 +1762,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     elseif f.nargs.desc == :* || f.nargs.desc == :+
         arg_found = false
         if rest !== nothing
-            a = parse_item(f.arg_type, rest)
+            a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_consumed = true
@@ -1755,7 +1772,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             if !arg_delim_found && looks_like_an_option(args_list[1], settings)
                 break
             end
-            a = parse_item(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, shift!(args_list))
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_found = true
@@ -1765,13 +1782,13 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
         end
     elseif f.nargs.desc == :R
         if rest !== nothing
-            a = parse_item(f.arg_type, rest)
+            a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_consumed = true
         end
         while !isempty(args_list)
-            a = parse_item(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, shift!(args_list))
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
