@@ -2,21 +2,12 @@ using ArgParse
 using Base.Test
 using Compat
 
-# backwards-compatible test_throws (works in julia 0.2)
-macro test_throws_02(args...)
-    if VERSION >= v"0.3-"
-        :(@test_throws($(esc(args[1])), $(esc(args[2]))))
-    else
-        :(@test_throws($(esc(args[2]))))
-    end
-end
-
 macro ap_test_throws(args)
-    :(@test_throws_02 ArgParseError $(esc(args)))
+    :(@test_throws ArgParseError $(esc(args)))
 end
 
 macro ee_test_throws(args)
-    :(@test_throws_02 ErrorException $(esc(args)))
+    :(@test_throws ErrorException $(esc(args)))
 end
 
 macro tostring(ex)
