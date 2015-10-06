@@ -1946,7 +1946,7 @@ end
 
 
 if VERSION >= v"0.4.0-rc"
-    include("precompile.jl")
+    include("../precompile/precompile.jl")
     _precompile_()
 end
 
