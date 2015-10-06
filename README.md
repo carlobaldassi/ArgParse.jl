@@ -7,3 +7,4 @@ See also the examples in the `examples/` directory.
 
 [![Build Status](https://api.travis-ci.org/carlobaldassi/ArgParse.jl.png?branch=master)](https://travis-ci.org/carlobaldassi/ArgParse.jl)
 [![Coverage Status](https://img.shields.io/coveralls/carlobaldassi/ArgParse.jl.svg)](https://coveralls.io/r/carlobaldassi/ArgParse.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/5c81omg867fu2gfy/branch/master?svg=true)](https://ci.appveyor.com/project/carlobaldassi/argparse-jl/branch/master)
