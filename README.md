@@ -20,10 +20,16 @@ Changes in release 0.3.0
 Breaking changes
 ----------------
 
-Upgrading from versions 0.2.X to 0.3.X, the following API change was made,
-which may break existing code: option arguments are no longer evaluated by
-default. This is for security reasons. Evaluation can be forced on a per-option
-basis with the `eval_arg=true` setting (although this is discuraged).
+Upgrading from versions 0.2.X to 0.3.X, the following API changes were made,
+which may break existing code:
+
+* Option arguments are no longer evaluated by default. This is for security
+  reasons. Evaluation can be forced on a per-option basis with the
+  `eval_arg=true` setting (although this is discuraged).
+* The syntax of the `add_arg_table` function has changed, it now takes a `Dict`
+  object instead of an `@options` opbject, since the dependency on the
+  Options.jl module was removed. (The `@add_arg_table` macro is unchanged
+  though.)
 
 Other changes
 -------------
