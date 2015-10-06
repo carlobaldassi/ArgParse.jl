@@ -98,7 +98,7 @@ let s = ap_settings5()
         Somersault jump mode
 
         optional arguments:
-          -t [T]  twist a number of times (type: Int64, default: 1, without
+          -t [T]  twist a number of times (type: $Int, default: 1, without
                   arg: 1)
           -b      blink
 

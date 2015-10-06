@@ -93,7 +93,7 @@ for s = [ap_settings2(), ap_settings2b()]
                          before an option (default: $(vecanyopen)"no_arg_given"$(vecanyclose))
 
         optional arguments:
-          --opt1 [OPT1]  an option (type: Int64, default: 0, without arg: 1)
+          --opt1 [OPT1]  an option (type: $Int, default: 0, without arg: 1)
           -f, --flag     a flag
           -k, --karma    increase karma
 

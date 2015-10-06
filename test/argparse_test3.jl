@@ -42,7 +42,7 @@ function ap_settings3()
             help = "provide the answer as floating point"
         "--array"
             default = [7, 3, 2]
-            arg_type = Vector{Int64}
+            arg_type = Vector{Int}
             eval_arg = true          # enables evaluation of the argument. NOTE: security risk!
             help = "create an array"
         "--custom"
@@ -79,7 +79,7 @@ let s = ap_settings3()
           --opt2                append O2
           -k                    provide the answer
           -u                    provide the answer as floating point
-          --array ARRAY         create an array (type: Array{Int64,1},
+          --array ARRAY         create an array (type: Array{$Int,1},
                                 default: [7,3,2])
         """ * (VERSION < v"0.4-" ?
         """
