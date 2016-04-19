@@ -101,10 +101,10 @@ Putting all this together in a file, we can see how a basic command-line interfa
             println("  $arg  =>  $val")
         end
     end
-    
+
     main()
-    
-If we save this as a file called ``myprog1.jl``, we can see how a ``--help`` option is added by default, 
+
+If we save this as a file called ``myprog1.jl``, we can see how a ``--help`` option is added by default,
 and a help message is automatically generated and formatted::
 
     $ julia myprog1.jl --help
@@ -240,6 +240,8 @@ This is the list of general settings currently available:
   to the argument table.
 * ``add_version`` (default = ``false``): if ``true``, a ``--version`` option (triggering the ``:show_version`` action) is added
   to the argument table.
+* ``fromfile_prefix_chars`` (default = ``Set{Char}()``): an argument beginning with one of these characters will specify a file from which
+  arguments will be read, one argument read per line. Alphanumeric characters and the hyphen-minus ("-") are prohibited.
 * ``autofix_names`` (default = ``false``): if ``true``, will try to automatically fix the uses of dashes (``-``) and underscores (``_``)
   in option names and destinations: all underscores will be converted to dashes in long option names; also, associated destination names, if
   auto-generated (see :ref:`this_section <argparse-argument-names>`), will have dashes replaced with underscores, both for long options and for
@@ -257,7 +259,7 @@ This is the list of general settings currently available:
   during parsing (e.g. an option is not recognized, a required argument is not passed etc.). It takes two arguments:
   the ``settings::ArgParseSettings`` object and the ``err::ArgParseError`` exception. The default handler prints the error text
   and the usage screen on standard error and exits with error code 1::
-  
+
     function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
         println(STDERR, err.text)
         println(STDERR, usage_string(settings))
@@ -873,7 +875,7 @@ look like options.
 
 When ``nargs`` is ``'+'`` or ``'*'`` and an option is being parsed, then using the ``'='`` character will mark what
 follows as an argument (i.e. not an option); all which follows goes under the rules explained above. The same is true
-when short option groups are being parsed. For example, if the option in question is ``-x``, then both 
+when short option groups are being parsed. For example, if the option in question is ``-x``, then both
 ``-y -x=-2 4 -y`` and ``-yx-2 4 -y`` will parse ``"-2"`` and ``"4"`` as the arguments of ``-x``.
 
 Finally, note that with the `eval_arg` setting expressions are evaluated during parsing, which means that there is no
