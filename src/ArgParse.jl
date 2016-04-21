@@ -148,7 +148,18 @@ type ArgParseTable
     subsettings::Dict{AbstractString,Any} # this in fact will be a Dict{AbstractString,ArgParseSettings}
     ArgParseTable() = new(ArgParseField[], Dict{AbstractString,Any}())
 end
-#}}}
+
+# disallow alphanumeric, -
+function check_prefix_chars(chars)
+    result = Set{Char}()
+    for c in chars
+        if isalnum(c) || c == '-'
+            throw(ArgParseError("‘$c’ is not allowed as prefix character"))
+        end
+        push!(result, c)
+    end
+    result
+end
 
 # ArgParseSettings
 #{{{
@@ -160,6 +171,7 @@ type ArgParseSettings
     version::AbstractString
     add_help::Bool
     add_version::Bool
+    fromfile_prefix_chars::Set{Char}
     autofix_names::Bool
     error_on_conflict::Bool
     suppress_warnings::Bool
@@ -177,6 +189,7 @@ type ArgParseSettings
                                version::AbstractString = "Unspecified version",
                                add_help::Bool = true,
                                add_version::Bool = false,
+                               fromfile_prefix_chars = Set{Char}(),
                                autofix_names::Bool = false,
                                error_on_conflict::Bool = true,
                                suppress_warnings::Bool = false,
@@ -184,10 +197,12 @@ type ArgParseSettings
                                commands_are_required::Bool = true,
                                exc_handler::Function = default_handler
                                )
-        return new(prog, description, epilog, usage, version, add_help, add_version,
-                   autofix_names, error_on_conflict, suppress_warnings, allow_ambiguous_opts,
-                   commands_are_required, copy(std_groups), "",
-                   ArgParseTable(), exc_handler)
+        fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
+        return new(
+            prog, description, epilog, usage, version, add_help, add_version,
+            fromfile_prefix_chars, autofix_names, error_on_conflict,
+            suppress_warnings, allow_ambiguous_opts, commands_are_required,
+            copy(std_groups), "", ArgParseTable(), exc_handler)
     end
 end
 
@@ -925,6 +940,7 @@ function add_command(settings::ArgParseSettings, command::AbstractString, prog_h
     ss.version = settings.version
     ss.add_help = settings.add_help
     ss.add_version = settings.add_version
+    ss.fromfile_prefix_chars = settings.fromfile_prefix_chars
     ss.error_on_conflict = settings.error_on_conflict
     ss.suppress_warnings = settings.suppress_warnings
     ss.allow_ambiguous_opts = settings.allow_ambiguous_opts
@@ -1612,8 +1628,37 @@ function preparse(state::ParserState, settings::ArgParseSettings)
     end
 end
 
+# faithful reproduction of Python 3.5.1 argparse.py
+# partially Copyright © 2001-2016 Python Software Foundation; All Rights Reserved
+function read_args_from_files(arg_strings, prefixes)
+    new_arg_strings = AbstractString[]
+
+    for arg_string in arg_strings
+        if isempty(arg_string) || arg_string[1] ∉ prefixes
+            # for regular arguments, just add them back into the list
+            push!(new_arg_strings, arg_string)
+        else
+            # replace arguments referencing files with the file content
+            open(arg_string[nextind(arg_string, 1):end]) do args_file
+                arg_strings = AbstractString[]
+                for arg_line in readlines(args_file)
+                    push!(arg_strings, rstrip(arg_line, '\n'))
+                end
+                arg_strings = read_args_from_files(arg_strings, prefixes)
+                append!(new_arg_strings, arg_strings)
+            end
+        end
+    end
+
+    # return the modified argument list
+    return new_arg_strings
+end
+
 function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool=false)
     any(x->!isa(x,AbstractString), args_list) && error("malformed args_list")
+    if !isempty(settings.fromfile_prefix_chars)
+        args_list = read_args_from_files(args_list, settings.fromfile_prefix_chars)
+    end
 
     version_added = false
     help_added = false
