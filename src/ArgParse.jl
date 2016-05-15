@@ -181,6 +181,8 @@ type ArgParseSettings
     default_group::AbstractString
     args_table::ArgParseTable
     exc_handler::Function
+    preformatted_description::Bool
+    preformatted_epilog::Bool
 
     function ArgParseSettings(;prog::AbstractString = Base.source_path() != nothing ? basename(Base.source_path()) : "",
                                description::AbstractString = "",
@@ -195,14 +197,18 @@ type ArgParseSettings
                                suppress_warnings::Bool = false,
                                allow_ambiguous_opts::Bool = false,
                                commands_are_required::Bool = true,
-                               exc_handler::Function = default_handler
+                               exc_handler::Function = default_handler,
+                               preformatted_description::Bool=false,
+                               preformatted_epilog::Bool=false,
                                )
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
             prog, description, epilog, usage, version, add_help, add_version,
             fromfile_prefix_chars, autofix_names, error_on_conflict,
             suppress_warnings, allow_ambiguous_opts, commands_are_required,
-            copy(std_groups), "", ArgParseTable(), exc_handler)
+            copy(std_groups), "", ArgParseTable(), exc_handler,
+            preformatted_description, preformatted_epilog,
+            )
     end
 end
 
@@ -1481,28 +1487,30 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
 
     println(io, usage_str)
     println(io)
-    if !isempty(settings.description)
-        for d in split(settings.description, "\n\n")
-            desc_wrapped = wrap(d, break_long_words = false, break_on_hyphens = false)
-            println_unnbsp(io, desc_wrapped)
-        end
-        println(io)
-    end
+    show_message(io, settings.description, settings.preformatted_description)
 
     for ag in settings.args_groups
         print_group(io, group_lists[ag.name], ag.desc, lc_usable_len, lc_len,
                     lmargin, rmargin, sindent)
     end
 
-    if !isempty(settings.epilog)
-        for ep in split(settings.epilog, "\n\n")
-            epilog_wrapped = wrap(ep, break_long_words = false, break_on_hyphens = false)
-            println_unnbsp(io, epilog_wrapped)
+    show_message(io, settings.epilog, settings.preformatted_epilog)
+    exit_when_done && exit(0)
+    return
+end
+
+function show_message(io::IO, message::AbstractString, preformatted::Bool)
+    if !isempty(message)
+        if preformatted
+            print(io, message)
+        else
+            for l in split(message, "\n\n")
+                message_wrapped = wrap(l, break_long_words = false, break_on_hyphens = false)
+                println_unnbsp(io, message_wrapped)
+            end
         end
         println(io)
     end
-    exit_when_done && exit(0)
-    return
 end
 
 show_version(settings::ArgParseSettings; kw...) = show_version(STDOUT, settings; kw...)
