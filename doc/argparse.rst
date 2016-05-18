@@ -231,8 +231,10 @@ This is the list of general settings currently available:
   help-screen, between the usage lines and the arguments description. It will be automatically formatted, but you can
   force newlines by using two consecutive newlines in the string, and manually control spaces by using non-breakable
   spaces (the character ``'\ua0'``).
+* ``preformatted_description`` (default = ``false``): disable automatic formatting of ``description``.
 * ``epilog`` (default = ``""``): like ``description``, but will be displayed at the end of the help-screen, after the
   arguments description. The same formatting rules also apply.
+* ``preformatted_epilog`` (default = ``false``): disable automatic formatting of ``epilog``.
 * ``usage`` (default = ``""``): the usage line(s) to be displayed in the help screen and when an error is found during parsing.
   If left empty, it will be auto-generated.
 * ``version`` (default = ``"Unknown version"``): version information. It's used by the ``:show_version`` action.
