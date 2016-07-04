@@ -62,7 +62,7 @@ is_command_action(a::Symbol) = a in command_actions
         new(s)
     end
 end
-ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
+ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
@@ -738,7 +738,7 @@ end
     end
 
     check_type(nargs, Union{ArgConsumerType,Int,Char}, "nargs must be an Int or a Char")
-    check_type(action, Union{AbstractString,Symbol}, "action must be an AbstractString or a Symbol")
+    check_type(action, Union{AbstractString,Symbol}, "action must be an AbstractString or a symbol")
     check_type(arg_type, Type, "invalid arg_type")
     check_type(required, Bool, "required must be a Bool")
     check_type(range_tester, Function, "range_tester must be a Function")
@@ -746,10 +746,10 @@ end
     check_type(help, AbstractString, "help must be an AbstractString")
     check_type(metavar, AbstractString, "metavar must be an AbstractString")
     check_type(force_override, Bool, "force_override must be a Bool")
-    check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a Symbol")
+    check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a symbol")
 
     isa(nargs, ArgConsumerType) || (nargs = ArgConsumerType(nargs))
-    isa(action, Symbol) || (action = symbol(action))
+    isa(action, Symbol) || (action = Symbol(action))
 
     is_opt = isa(name, Vector) || startswith(name, '-')
 
@@ -1984,13 +1984,13 @@ function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)
         cmd = parsed_args[cmd_dest_name]
-        scmd = symbol(cmd)
+        scmd = Symbol(cmd)
         new_parsed_args[scmd] = convert_to_symbols(parsed_args[cmd])
         new_parsed_args[scmd_dest_name] = scmd
     end
     for (k,v) in parsed_args
         (k == cmd_dest_name || k === cmd) && continue
-        new_parsed_args[symbol(k)] = v
+        new_parsed_args[Symbol(k)] = v
     end
     return new_parsed_args
 end
