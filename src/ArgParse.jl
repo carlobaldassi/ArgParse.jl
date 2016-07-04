@@ -62,7 +62,7 @@ is_command_action(a::Symbol) = a in command_actions
         new(s)
     end
 end
-ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
+ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
