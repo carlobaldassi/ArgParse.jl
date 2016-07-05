@@ -40,13 +40,13 @@ const internal_actions = [:store_arg, :store_true, :store_false, :store_const,
                           :show_help, :show_version]
 
 const nonflag_actions = [:store_arg, :append_arg, :command_arg]
-is_flag_action(a::Symbol) = !(a in nonflag_actions)
+@compat is_flag_action(a::Symbol) = !(a in nonflag_actions)
 
 const multi_actions = [:append_arg, :append_const]
-is_multi_action(a::Symbol) = a in multi_actions
+@compat is_multi_action(a::Symbol) = a in multi_actions
 
 const command_actions = [:command_arg, :command_flag]
-is_command_action(a::Symbol) = a in command_actions
+@compat is_command_action(a::Symbol) = a in command_actions
 #}}}
 
 # ArgConsumerType
@@ -62,7 +62,7 @@ is_command_action(a::Symbol) = a in command_actions
         new(s)
     end
 end
-ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
+@compat ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
@@ -76,7 +76,7 @@ function default_action(nargs::Integer)
     return :store_arg
 end
 default_action(nargs::Char) = :store_arg
-default_action(nargs::Symbol) = :store_arg
+@compat default_action(nargs::Symbol) = :store_arg
 
 default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 #}}}
@@ -88,7 +88,7 @@ type ArgParseGroup
     desc::AbstractString
     ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
 end
-ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
+@compat ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
@@ -251,18 +251,19 @@ function check_type(opt, T::Type, message::AbstractString)
     return true
 end
 
-function warn_extra_opts(opts, valid_keys::Vector{Symbol})
+@compat function warn_extra_opts(opts, valid_keys::Vector{Symbol})
+
     for k in opts
         k in valid_keys || warn("ignored option: $k")
     end
     return true
 end
 
-function check_action_is_valid(action::Symbol)
+@compat function check_action_is_valid(action::Symbol)
     action in all_actions || error("invalid action: $action")
 end
 
-function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
+@compat function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
     is_flag_action(action) && nargs.desc != 0 && nargs.desc != :A &&
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
     is_command_action(action) && nargs.desc != :A &&
@@ -1979,7 +1980,7 @@ end
 
 # convert_to_symbols
 #{{{
-function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
+@compat function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
     new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)
