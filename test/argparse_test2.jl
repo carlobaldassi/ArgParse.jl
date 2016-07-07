@@ -5,7 +5,6 @@
 
 function ap_settings2()
 
-
     s = ArgParseSettings(description = "Test 2 for ArgParse.jl",
                          epilog = "Have fun!",
                          version = "Version 1.0",
@@ -42,7 +41,7 @@ function ap_settings2()
     return s
 end
 
-function ap_settings2b()
+@compat function ap_settings2b()
 
     s = ArgParseSettings(description = "Test 2 for ArgParse.jl",
                          epilog = "Have fun!",
