@@ -40,13 +40,13 @@ const internal_actions = [:store_arg, :store_true, :store_false, :store_const,
                           :show_help, :show_version]
 
 const nonflag_actions = [:store_arg, :append_arg, :command_arg]
-@compat is_flag_action(a::Symbol) = !(a in nonflag_actions)
+is_flag_action(a::Symbol) = !(a in nonflag_actions)
 
 const multi_actions = [:append_arg, :append_const]
-@compat is_multi_action(a::Symbol) = a in multi_actions
+is_multi_action(a::Symbol) = a in multi_actions
 
 const command_actions = [:command_arg, :command_flag]
-@compat is_command_action(a::Symbol) = a in command_actions
+is_command_action(a::Symbol) = a in command_actions
 #}}}
 
 # ArgConsumerType
@@ -76,7 +76,7 @@ function default_action(nargs::Integer)
     return :store_arg
 end
 default_action(nargs::Char) = :store_arg
-@compat default_action(nargs::Symbol) = :store_arg
+default_action(nargs::Symbol) = :store_arg
 
 default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 #}}}
@@ -88,7 +88,7 @@ type ArgParseGroup
     desc::AbstractString
     ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
 end
-@compat ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
+ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
@@ -251,7 +251,7 @@ function check_type(opt, T::Type, message::AbstractString)
     return true
 end
 
-@compat function warn_extra_opts(opts, valid_keys::Vector{Symbol})
+function warn_extra_opts(opts, valid_keys::Vector{Symbol})
 
     for k in opts
         k in valid_keys || warn("ignored option: $k")
@@ -259,11 +259,11 @@ end
     return true
 end
 
-@compat function check_action_is_valid(action::Symbol)
+function check_action_is_valid(action::Symbol)
     action in all_actions || error("invalid action: $action")
 end
 
-@compat function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
+function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
     is_flag_action(action) && nargs.desc != 0 && nargs.desc != :A &&
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
     is_command_action(action) && nargs.desc != :A &&
@@ -739,7 +739,7 @@ end
     end
 
     check_type(nargs, Union{ArgConsumerType,Int,Char}, "nargs must be an Int or a Char")
-    check_type(action, Union{AbstractString,Symbol}, "action must be an AbstractString or a symbol")
+    check_type(action, Union{AbstractString,Symbol}, "action must be an AbstractString or a Symbol")
     check_type(arg_type, Type, "invalid arg_type")
     check_type(required, Bool, "required must be a Bool")
     check_type(range_tester, Function, "range_tester must be a Function")
@@ -747,7 +747,7 @@ end
     check_type(help, AbstractString, "help must be an AbstractString")
     check_type(metavar, AbstractString, "metavar must be an AbstractString")
     check_type(force_override, Bool, "force_override must be a Bool")
-    check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a symbol")
+    check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a Symbol")
 
     isa(nargs, ArgConsumerType) || (nargs = ArgConsumerType(nargs))
     isa(action, Symbol) || (action = Symbol(action))
