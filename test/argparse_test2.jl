@@ -3,7 +3,7 @@
 #         number of arguments;
 #         function version of add_arg_table
 
-@compat function ap_settings2()
+function ap_settings2()
 
 
     s = ArgParseSettings(description = "Test 2 for ArgParse.jl",
@@ -42,7 +42,7 @@
     return s
 end
 
-@compat function ap_settings2b()
+function ap_settings2b()
 
     s = ArgParseSettings(description = "Test 2 for ArgParse.jl",
                          epilog = "Have fun!",
