@@ -62,7 +62,7 @@ is_command_action(a::Symbol) = a in command_actions
         new(s)
     end
 end
-ArgConsumerType(c::Char) = ArgConsumerType(symbol(c))
+@compat ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
@@ -252,6 +252,7 @@ function check_type(opt, T::Type, message::AbstractString)
 end
 
 function warn_extra_opts(opts, valid_keys::Vector{Symbol})
+
     for k in opts
         k in valid_keys || warn("ignored option: $k")
     end
@@ -749,7 +750,7 @@ end
     check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a Symbol")
 
     isa(nargs, ArgConsumerType) || (nargs = ArgConsumerType(nargs))
-    isa(action, Symbol) || (action = symbol(action))
+    isa(action, Symbol) || (action = Symbol(action))
 
     is_opt = isa(name, Vector) || startswith(name, '-')
 
@@ -1979,18 +1980,18 @@ end
 
 # convert_to_symbols
 #{{{
-function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
+@compat function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
     new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)
         cmd = parsed_args[cmd_dest_name]
-        scmd = symbol(cmd)
+        scmd = Symbol(cmd)
         new_parsed_args[scmd] = convert_to_symbols(parsed_args[cmd])
         new_parsed_args[scmd_dest_name] = scmd
     end
     for (k,v) in parsed_args
         (k == cmd_dest_name || k === cmd) && continue
-        new_parsed_args[symbol(k)] = v
+        new_parsed_args[Symbol(k)] = v
     end
     return new_parsed_args
 end
