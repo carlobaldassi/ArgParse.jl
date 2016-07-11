@@ -1586,7 +1586,7 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     try
         state.out_dict[cmd] = parse_args_unhandled(state.args_list, settings[cmd], state.truncated_shopts)
     catch err
-        isa(err, ArgParseError) || rethrow()
+        isa(err, ArgParseError) || rethrow(err)
         settings[cmd].exc_handler(settings[cmd], err)
     finally
         state.truncated_shopts = false
