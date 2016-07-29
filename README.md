@@ -2,17 +2,27 @@ ArgParse.jl Overview
 ====================
 
 ArgParse.jl is a package for parsing command-line arguments to
-[Julia](http://julialang.org) programs.
+[Julia][julia] programs.
 
 The documentation can be found at
-[this link](http://argparsejl.readthedocs.org/en/latest/argparse.html), or in
+[this link][docs-latest], or in
 the [doc directory](doc).
 
 See also the [examples directory](examples).
 
-[![Build Status](https://api.travis-ci.org/carlobaldassi/ArgParse.jl.png?branch=master)](https://travis-ci.org/carlobaldassi/ArgParse.jl)
-[![Coverage Status](https://coveralls.io/repos/carlobaldassi/ArgParse.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/carlobaldassi/ArgParse.jl?branch=master)
-[![Build status](https://ci.appveyor.com/api/projects/status/5c81omg867fu2gfy/branch/master?svg=true)](https://ci.appveyor.com/project/carlobaldassi/argparse-jl/branch/master)
+[![Build Status][build-status-img]][build-status-url]
+[![Coverage Status][cov-status-img]][cov-status-url]
+[![Build status][appv-status-img]][appv-status-url]
+
+Changes in release 0.3.1
+========================
+
+New available settings
+----------------------
+
+* `fromfile_prexif_chars` (see [#27][PR27])
+* `preformatted_desciption`/`preformatted_epilog` (see [#28][PR28])
+
 
 Changes in release 0.3.0
 ========================
@@ -39,3 +49,18 @@ Other changes
   also improved
 * Removed dependecy on the Options.jl module
 * Enabled precompilation on Julia 0.4
+
+[julia]: http://julialang.org
+[docs-latest]: http://argparsejl.readthedocs.org/en/latest/argparse.html
+
+[build-status-img]: https://api.travis-ci.org/carlobaldassi/ArgParse.jl.png?branch=master
+[build-status-url]: https://travis-ci.org/carlobaldassi/ArgParse.jl
+
+[cov-status-img]: https://coveralls.io/repos/carlobaldassi/ArgParse.jl/badge.svg?branch=master&service=github
+[cov-status-url]: https://coveralls.io/github/carlobaldassi/ArgParse.jl?branch=master
+
+[appv-status-img]: https://ci.appveyor.com/api/projects/status/5c81omg867fu2gfy/branch/master?svg=true
+[appv-status-url]: https://ci.appveyor.com/project/carlobaldassi/argparse-jl/branch/master
+
+[PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
+[PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
