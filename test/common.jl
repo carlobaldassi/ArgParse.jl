@@ -24,11 +24,3 @@ end
 
 stringhelp(s::ArgParseSettings) = @tostring ArgParse.show_help(s, exit_when_done = false)
 stringversion(s::ArgParseSettings) = @tostring ArgParse.show_version(s, exit_when_done = false)
-
-if VERSION < v"0.4-"
-    const vecanyopen = "{"
-    const vecanyclose = "}"
-else
-    const vecanyopen = "Any["
-    const vecanyclose = "]"
-end

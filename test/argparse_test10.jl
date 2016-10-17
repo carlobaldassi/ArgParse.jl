@@ -39,7 +39,7 @@ function ap_settings10()
     return s
 end
 
-@compat function ap_settings10b()
+function ap_settings10b()
 
     s = ArgParseSettings(description = "Test 10 for ArgParse.jl",
                          epilog = "Have fun!",
@@ -140,7 +140,7 @@ for s = [ap_settings10(), ap_settings10b()]
         positional arguments:
           arg1         first argument, two entries at once
           arg2         second argument, eats up as many items as possible
-                       before an option (default: $(vecanyopen)"no_arg_given"$(vecanyclose))
+                       before an option (default: Any["no_arg_given"])
 
         optional arguments:
           --opt1 A B   an option (type: $Int, default: [0,1])
@@ -154,9 +154,9 @@ for s = [ap_settings10(), ap_settings10b()]
     @test stringversion(s) == "Version 1.0\n"
 
     @ap_test_throws ap_test10([])
-    @compat @test ap_test10(["X", "Y"]) == Dict{AbstractString,Any}("opt1"=>[0, 1], "flag"=>false, "karma"=>0, "arg1"=>Any["X", "Y"], "arg2"=>Any["no_arg_given"])
-    @compat @test ap_test10(["X", "Y", "-k", "-f", "Z", "--karma", "--opt1", "2", "3"]) == Dict{AbstractString,Any}("opt1"=>[2, 3], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
-    @compat @test ap_test10(["--opt1", "-3", "-5", "X", "Y", "-k", "-f", "Z", "--karma"]) == Dict{AbstractString,Any}("opt1"=>[-3, -5], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
+    @test ap_test10(["X", "Y"]) == Dict{AbstractString,Any}("opt1"=>[0, 1], "flag"=>false, "karma"=>0, "arg1"=>Any["X", "Y"], "arg2"=>Any["no_arg_given"])
+    @test ap_test10(["X", "Y", "-k", "-f", "Z", "--karma", "--opt1", "2", "3"]) == Dict{AbstractString,Any}("opt1"=>[2, 3], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
+    @test ap_test10(["--opt1", "-3", "-5", "X", "Y", "-k", "-f", "Z", "--karma"]) == Dict{AbstractString,Any}("opt1"=>[-3, -5], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
     @ap_test_throws ap_test10(["--opt"])
     @ap_test_throws ap_test10(["--opt="])
     @ap_test_throws ap_test10(["--opt", "", "X", "Y"])

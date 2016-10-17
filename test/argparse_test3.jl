@@ -94,12 +94,12 @@ let s = ap_settings3()
         """
           --awkward-option XY [XY...]
                                 either X or Y; all XY's are stored in chunks
-                                (default: $(vecanyopen)$(vecanyopen)"X"$(vecanyclose)$(vecanyclose))
+                                (default: Any[Any["X"]])
 
         """
 
-    @compat @test ap_test3([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[Any["X"]])
-    @compat @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "-u", "--array=[4]", "--custom", "custom", "--awkward-option=Y", "X", "--opt1"]) ==
+    @test ap_test3([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[Any["X"]])
+    @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "-u", "--array=[4]", "--custom", "custom", "--awkward-option=Y", "X", "--opt1"]) ==
         Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "array"=>[4], "custom"=>CustomType(), "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
     @ap_test_throws ap_test3(["X"])
     @ap_test_throws ap_test3(["--awk", "Z"])
@@ -134,9 +134,9 @@ let s = ap_settings3()
     # allow ambiguous options
     s.allow_ambiguous_opts = true
     @add_arg_table(s, "-2", action = :store_true)
-    @compat @test ap_test3([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[Any["X"]], "2"=>false)
-    @compat @test ap_test3(["-2"]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[["X"]], "2"=>true)
-    @compat @test ap_test3(["--awk", "X", "-2"]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
+    @test ap_test3([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[Any["X"]], "2"=>false)
+    @test ap_test3(["-2"]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[["X"]], "2"=>true)
+    @test ap_test3(["--awk", "X", "-2"]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
 
 end

@@ -92,12 +92,12 @@ let s = ap_settings6()
 
         """
 
-    @compat @test ap_test6([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "awk"=>Vector{Any}[], "şİłłÿ"=>Any[], "rest"=>[])
-    @compat @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł=-1", "-2", "-3"]) ==
+    @test ap_test6([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "awk"=>Vector{Any}[], "şİłłÿ"=>Any[], "rest"=>[])
+    @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł=-1", "-2", "-3"]) ==
         Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>Any[Any["X", "X"], Any["Y", "X"]], "şİłłÿ"=>["-1", "-2", "-3"], "rest"=>[])
-    @compat @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
+    @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
         Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2"], "k"=>0, "awk"=>Any[Any["X", "X"]], "şİłłÿ"=>[], "rest"=>Any["-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"])
-    @compat @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r=-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
+    @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r=-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
         Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2"], "k"=>0, "awk"=>Any[Any["X", "X"]], "şİłłÿ"=>[], "rest"=>Any["-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"])
     @ap_test_throws ap_test6(["X"])
     @ap_test_throws ap_test6(["--awk"])

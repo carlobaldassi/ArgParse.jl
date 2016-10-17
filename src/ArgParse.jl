@@ -51,7 +51,7 @@ is_command_action(a::Symbol) = a in command_actions
 
 # ArgConsumerType
 #{{{
-@compat immutable ArgConsumerType
+immutable ArgConsumerType
     desc::Union{Int,Symbol}
     function ArgConsumerType(n::Integer)
         n >= 0 || error("nargs can't be negative")
@@ -62,7 +62,7 @@ is_command_action(a::Symbol) = a in command_actions
         new(s)
     end
 end
-@compat ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
+ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
@@ -226,7 +226,7 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-@compat typealias ArgName{T<:AbstractString} Union{T, Vector{T}}
+typealias ArgName{T<:AbstractString} Union{T, Vector{T}}
 
 getindex(s::ArgParseSettings, c::AbstractString) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::AbstractString) = haskey(s.args_table.subsettings, c)
@@ -390,14 +390,14 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
     return true
 end
 
-@compat check_default_type(default::Void, arg_type::Type) = true
+check_default_type(default::Void, arg_type::Type) = true
 function check_default_type(default, arg_type::Type)
     isa(default, arg_type) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), arg_type=$arg_type)")
 end
 
-@compat check_default_type_multi_action(default::Void, arg_type::Type) = true
-@compat check_default_type_multi_action(default::Vector{Union{}}, arg_type::Type) = true
+check_default_type_multi_action(default::Void, arg_type::Type) = true
+check_default_type_multi_action(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_action(default, arg_type::Type)
     (isa(default, Vector) && (arg_type <: eltype(default))) ||
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T)")
@@ -405,8 +405,8 @@ function check_default_type_multi_action(default, arg_type::Type)
     return true
 end
 
-@compat check_default_type_multi_nargs(default::Void, arg_type::Type) = true
-@compat check_default_type_multi_nargs(default::Vector{Union{}}, arg_type::Type) = true
+check_default_type_multi_nargs(default::Void, arg_type::Type) = true
+check_default_type_multi_nargs(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_nargs(default::Vector, arg_type::Type)
     all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type")
     return true
@@ -414,8 +414,8 @@ end
 check_default_type_multi_nargs(default, arg_type::Type) =
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector)")
 
-@compat check_default_type_multi2(default::Void, arg_type::Type) = true
-@compat check_default_type_multi2(default::Vector{Union{}}, arg_type::Type) = true
+check_default_type_multi2(default::Void, arg_type::Type) = true
+check_default_type_multi2(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
     (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
@@ -423,7 +423,7 @@ function check_default_type_multi2(default, arg_type::Type)
     return true
 end
 
-@compat check_range_default(default::Void, range_tester::Function) = true
+check_range_default(default::Void, range_tester::Function) = true
 function check_range_default(default, range_tester::Function)
     local res::Bool
     try
@@ -435,7 +435,7 @@ function check_range_default(default, range_tester::Function)
     return true
 end
 
-@compat check_range_default_multi(default::Void, range_tester::Function) = true
+check_range_default_multi(default::Void, range_tester::Function) = true
 function check_range_default_multi(default::Vector, range_tester::Function)
     for d in default
         local res::Bool
@@ -449,7 +449,7 @@ function check_range_default_multi(default::Vector, range_tester::Function)
     return true
 end
 
-@compat check_range_default_multi2(default::Void, range_tester::Function) = true
+check_range_default_multi2(default::Void, range_tester::Function) = true
 function check_range_default_multi2(default::Vector, range_tester::Function)
     for dl in default, d in dl
         local res::Bool
@@ -547,7 +547,7 @@ function get_cmd_prog_hint(arg::ArgParseField)
 end
 
 
-@compat function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Vector, Dict}...)
+function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Vector, Dict}...)
     has_name = false
     for i = 1:length(table)
         !has_name && !isa(table[i], ArgName) && error("option field must be preceded by the arg name")
@@ -729,7 +729,7 @@ macro defaults(opts, ex...)
     exret
 end
 
-@compat function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
+function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     check_name_format(name)
 
     supplied_opts = Symbol[k for (k,v) in desc]
@@ -982,8 +982,8 @@ autogen_group_name(desc::AbstractString) = "#$(hash(desc))"
 
 add_arg_group(settings::ArgParseSettings, desc::AbstractString) =
     _add_arg_group(settings, desc, autogen_group_name(desc), true)
-@compat function add_arg_group(settings::ArgParseSettings, desc::AbstractString,
-                               tag::Union{AbstractString,Symbol}, set_as_default::Bool = true)
+function add_arg_group(settings::ArgParseSettings, desc::AbstractString,
+                       tag::Union{AbstractString,Symbol}, set_as_default::Bool = true)
     name = string(tag)
     check_group_name(name)
     _add_arg_group(settings, desc, name, set_as_default)
@@ -997,7 +997,7 @@ function _add_arg_group(settings::ArgParseSettings, desc::AbstractString, name::
 end
 
 set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settings, "")
-@compat function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol})
+function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol})
     name = string(name)
     startswith(name, '#') && error("invalid group name: $name (begins with #)")
     isempty(name) && (settings.default_group = ""; return)
@@ -1597,7 +1597,7 @@ function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::B
     return parsed_args
 end
 
-@compat type ParserState
+type ParserState
     args_list::Vector
     arg_delim_found::Bool
     token::Union{AbstractString,Void}
@@ -2020,7 +2020,7 @@ end
 
 # convert_to_symbols
 #{{{
-@compat function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
+function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
     new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)

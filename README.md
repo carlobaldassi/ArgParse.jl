@@ -14,6 +14,19 @@ See also the [examples directory](examples).
 [![Coverage Status][cov-status-img]][cov-status-url]
 [![Build status][appv-status-img]][appv-status-url]
 
+Changes in release 0.4.0
+========================
+
+New features
+------------
+
+* Added support for vectors of METAVAR names (see [#33][PR33])
+
+Other changes
+-------------
+
+* Support for Julia v0.3 was dropped.
+
 Changes in release 0.3.1
 ========================
 
@@ -64,3 +77,4 @@ Other changes
 
 [PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
 [PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
+[PR33]: https://github.com/carlobaldassi/ArgParse.jl/pull/33
