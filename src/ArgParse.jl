@@ -1213,9 +1213,9 @@ function test_range(range_tester::Function, arg, name::AbstractString)
     return
 end
 
-function test_required_args(settings::ArgParseSettings, found_args::Set{Union{AbstractString, Vector}})
+function test_required_args(settings::ArgParseSettings, found_args::Set{AbstractString})
     for f in settings.args_table.fields
-        !is_cmd(f) && f.required && !(f.metavar in found_args) &&
+        !is_cmd(f) && f.required && !(idstring(f) in found_args) &&
             argparse_error("required $(idstring(f)) was not provided")
     end
     return true
@@ -1604,7 +1604,7 @@ type ParserState
     token_arg::Union{AbstractString,Void}
     arg_consumed::Bool
     last_arg::Int
-    found_args::Set{Union{AbstractString, Vector}}
+    found_args::Set{AbstractString}
     command::Union{AbstractString,Void}
     truncated_shopts::Bool
     out_dict::Dict{AbstractString,Any}
@@ -1614,7 +1614,7 @@ type ParserState
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
-        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{Union{AbstractString, Vector}}(), nothing, truncated_shopts, out_dict)
+        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, out_dict)
     end
 end
 
@@ -1939,7 +1939,7 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
         parse1_flag(state, settings, f, arg_after_eq !== nothing, "--"*opt_name)
     else
         parse1_optarg(state, settings, f, arg_after_eq, "--"*opt_name)
-        push!(state.found_args, f.metavar)
+        push!(state.found_args, idstring(f))
     end
     return
 end
@@ -1980,7 +1980,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
             parse1_flag(state, settings, f, next_is_eq, "-"*opt_name)
         else
             parse1_optarg(state, settings, f, rest_as_arg, "-"*opt_name)
-            push!(state.found_args, f.metavar)
+            push!(state.found_args, idstring(f))
         end
         state.arg_consumed && break
         if found_command(state)
@@ -2013,7 +2013,7 @@ function parse_arg(state::ParserState, settings::ArgParseSettings)
 
     parse1_optarg(state, settings, f, nothing, f.dest_name)
 
-    push!(state.found_args, f.metavar)
+    push!(state.found_args, idstring(f))
     return
 end
 #}}}
