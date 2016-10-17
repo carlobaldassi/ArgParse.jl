@@ -447,7 +447,8 @@ This is the list of all available settings:
   be automaticaly formatted; also, ``arg_type`` and ``default`` will be automatically appended to it if provided.
 * ``metavar`` (default = auto-generated): a token which will be used in usage and help screens to describe the argument syntax. For
   positional arguments, it will also be used as an identifier in all other messages (e.g. in reporting errors), therefore it must
-  be unique. The auto-generations rules are explained in :ref:`this section <argparse-argument-names>`.
+  be unique. For optional arguments, if ``nargs > 1`` then ``metavar`` can be a ``Vector`` of ``String``\ s of length ``nargs``. The
+  auto-generations rules are explained in :ref:`this section <argparse-argument-names>`.
 * ``force_override``: if ``true``, conflicts are ignored when adding this entry in the argument table (see also :ref:`this section
   <argparse-conflicts>`). By default, it follows the general ``error_on_conflict`` settings.
 * ``group``: the option group to which the argument will be assigned to (see :ref:`this section <argparse-groups>`). By default, the

@@ -112,7 +112,7 @@ type ArgParseField
     required::Bool
     eval_arg::Bool
     help::AbstractString
-    metavar::AbstractString
+    metavar::Union{AbstractString, Vector}
     group::AbstractString
     fake::Bool
     function ArgParseField()
@@ -248,6 +248,11 @@ end
 
 function check_type(opt, T::Type, message::AbstractString)
     isa(opt, T) || error(message)
+    return true
+end
+
+function check_eltype(opt, T::Type, message::AbstractString)
+    eltype(opt) <: T || error(message)
     return true
 end
 
@@ -463,6 +468,13 @@ function check_metavar(metavar::AbstractString)
     startswith(metavar, '-') && error("metavars cannot begin with -")
     ismatch(r"\s", metavar)  && error("illegal metavar name: $metavar (contains whitespace)")
     nbspc in metavar         && error("illegal metavar name: $metavar (contains non-breakable-space)")
+    return true
+end
+
+function check_metavar{T<:AbstractString}(metavar::Vector{T})
+    for single_value in metavar
+        check_metavar(single_value)
+    end
     return true
 end
 
@@ -745,7 +757,16 @@ end
     check_type(range_tester, Function, "range_tester must be a Function")
     check_type(dest_name, AbstractString, "dest_name must be an AbstractString")
     check_type(help, AbstractString, "help must be an AbstractString")
-    check_type(metavar, AbstractString, "metavar must be an AbstractString")
+    # Check metavar's type to be either an AbstractString or a
+    # Vector{T<:AbstractString}
+    metavar_error = "metavar must be an AbstractString or a Vector{T<:AbstractString}"
+    isa(metavar, AbstractString) ||
+        (
+            check_type(metavar, Vector, metavar_error) &&
+            check_eltype(metavar, AbstractString, metavar_error) &&
+            check_type(nargs, Integer, "nargs must be an integer for multiple metavars") &&
+            (length(metavar) == nargs || error("metavars array must have length of nargs"))
+        )
     check_type(force_override, Bool, "force_override must be a Bool")
     check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a Symbol")
 
@@ -767,6 +788,7 @@ end
     if !is_opt
         is_flag && error("invalid action for positional argument: $action")
         nargs.desc == :? && error("invalid 'nargs' for positional argument: '?'")
+        isa(metavar, Vector) && error("multiple metavars only supported for optional arguments")
     end
 
     pos_arg, long_opts, short_opts = name_to_fieldnames(name, settings)
@@ -1191,7 +1213,7 @@ function test_range(range_tester::Function, arg, name::AbstractString)
     return
 end
 
-function test_required_args(settings::ArgParseSettings, found_args::Set{AbstractString})
+function test_required_args(settings::ArgParseSettings, found_args::Set{Union{AbstractString, Vector}})
     for f in settings.args_table.fields
         !is_cmd(f) && f.required && !(f.metavar in found_args) &&
             argparse_error("required $(idstring(f)) was not provided")
@@ -1307,7 +1329,13 @@ function usage_string(settings::ArgParseSettings)
                 bra_post = ""
             end
             if isa(f.nargs.desc, Int)
-                arg_str = string(ntuple(i->(i==1?f.metavar:(nbsps * f.metavar)), f.nargs.desc)...)
+                if isa(f.metavar, AbstractString)
+                    arg_str = string(ntuple(i->(i==1?f.metavar:(nbsps * f.metavar)), f.nargs.desc)...)
+                elseif isa(f.metavar, Vector)
+                    arg_str = string(ntuple(i->(i==1?f.metavar[i]:(nbsps * f.metavar[i])), f.nargs.desc)...)
+                else
+                    found_a_bug()
+                end
             elseif f.nargs.desc == :A
                 arg_str = f.metavar
             elseif f.nargs.desc == :?
@@ -1335,7 +1363,13 @@ function usage_string(settings::ArgParseSettings)
                 opt_str2 = ""
             else
                 if isa(f.nargs.desc, Int)
-                    opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
+                    if isa(f.metavar, AbstractString)
+                        opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
+                    elseif isa(f.metavar, Vector)
+                        opt_str2 = string(ntuple(i->(nbsps * f.metavar[i]), f.nargs.desc)...)
+                    else
+                        found_a_bug()
+                    end
                 elseif f.nargs.desc == :A
                     opt_str2 = nbsps * f.metavar
                 elseif f.nargs.desc == :?
@@ -1461,7 +1495,13 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
                 opt_str2 = ""
             else
                 if isa(f.nargs.desc, Int)
-                    opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
+                    if isa(f.metavar, AbstractString)
+                        opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
+                    elseif isa(f.metavar, Vector)
+                        opt_str2 = string(ntuple(i->(nbsps * f.metavar[i]), f.nargs.desc)...)
+                    else
+                        found_a_bug()
+                    end
                 elseif f.nargs.desc == :A
                     opt_str2 = nbsps * f.metavar
                 elseif f.nargs.desc == :?
@@ -1564,7 +1604,7 @@ end
     token_arg::Union{AbstractString,Void}
     arg_consumed::Bool
     last_arg::Int
-    found_args::Set{AbstractString}
+    found_args::Set{Union{AbstractString, Vector}}
     command::Union{AbstractString,Void}
     truncated_shopts::Bool
     out_dict::Dict{AbstractString,Any}
@@ -1574,7 +1614,7 @@ end
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
-        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, out_dict)
+        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{Union{AbstractString, Vector}}(), nothing, truncated_shopts, out_dict)
     end
 end
 
