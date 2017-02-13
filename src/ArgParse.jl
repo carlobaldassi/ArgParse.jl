@@ -216,7 +216,7 @@ end
 ArgParseSettings(desc::AbstractString, add_help = true; kw...) = ArgParseSettings(;Any[(:description, desc), (:add_help, add_help), kw...]...)
 
 function show(io::IO, s::ArgParseSettings)
-    p(x) = "  $x=$(s.(x))\n"
+    p(x) = "  $x=$(getfield(s, x))\n"
     str = "ArgParseSettings(\n"
     for f in setdiff(fieldnames(ArgParseSettings), [:args_groups, :args_table])
         str *= p(f)
@@ -595,6 +595,13 @@ macro add_arg_table(s, x...)
             # in-place and restart from the same position
             splice!(x, i, y.args)
             continue
+        elseif isa(y, Expr) && y.head == :macrocall &&
+                    ((y.args[1] == GlobalRef(Core, Symbol("@doc"))) ||
+                    (isa(y.args[1], Expr) && y.args[1].head == :core &&
+                     y.args[1].args[1] == Symbol("@doc")))
+                        # Was parsed as doc syntax. Split into components
+            splice!(x, i, y.args[2:end])
+            continue
         elseif isa(y, AbstractString) || (isa(y, Expr) && (y.head == :vcat || y.head == :tuple))
             # found a string, or a vector expression, or a tuple:
             # this must be the option name
@@ -622,7 +629,7 @@ macro add_arg_table(s, x...)
         elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
             # found an assignment: add it to the current options expression
             y.head = :(=>)
-            push!(exopt, Expr(:(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
+            push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
             #push!(exopt, esc(y.args[2]))
             i += 1
         elseif isa(y, LineNumberNode) || (isa(y,Expr) && y.head == :line)

@@ -80,7 +80,7 @@ let s = ap_settings3()
           -k                    provide the answer
           -u                    provide the answer as floating point
           --array ARRAY         create an array (type: Array{$Int,1},
-                                default: [7,3,2])
+                                default: [7, 3, 2])
         """ * (VERSION < v"0.4-" || VERSION ≥ v"0.5-" ?
         """
           --custom CUSTOM       the only accepted argument is "custom" (type:
