@@ -225,7 +225,11 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-typealias ArgName{T<:AbstractString} Union{T, Vector{T}}
+macro talias(T1, T2)
+    return Expr(VERSION < v"0.6-" ? :typealias : :(=), esc(T1), esc(T2))
+end
+
+@talias ArgName{T<:AbstractString} Union{T, Vector{T}}
 
 getindex(s::ArgParseSettings, c::AbstractString) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::AbstractString) = haskey(s.args_table.subsettings, c)
