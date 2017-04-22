@@ -1,9 +1,8 @@
-VERSION >= v"0.4.0-rc" && __precompile__()
+__precompile__()
 
 module ArgParse
 
 using TextWrap
-using Compat
 
 export
 # types

@@ -56,7 +56,7 @@ function ap_settings5()
 end
 
 let s = ap_settings5()
-    ap_test5(args) = parse_args(args, s)
+    ap_test5(args; kw...) = parse_args(args, s; kw...)
 
     @test stringhelp(s) == """
         usage: $(basename(Base.source_path())) {run|jump}
@@ -120,8 +120,7 @@ let s = ap_settings5()
     @ap_test_throws ap_test5(["jump", "-sb-"])
     @ap_test_throws ap_test5(["jump", "-s-b"])
 
-    @test parse_args(["jump", "-sbt2"], s, as_symbols = true) ==
-        Dict{Symbol,Any}(:_COMMAND_=>:jump, :jump=>Dict{Symbol,Any}(:higher=>false, :_COMMAND_=>:som, :som=>Dict{Symbol,Any}(:t=>2, :b=>true)))
+    @test ap_test5(["run", "--speed", "3"], as_symbols = true) == Dict{Symbol,Any}(:_COMMAND_=>:run, :run=>Dict{Symbol,Any}(:speed=>3.0))
 
     # argument after command
     @ee_test_throws @add_arg_table(s, "arg_after_command")
@@ -133,8 +132,9 @@ let s = ap_settings5()
     @ee_test_throws @add_arg_table(s["jump"], "--som")
     @ee_test_throws @add_arg_table(s["jump"], "-s", dest_name = "som")
 
+    # conflict between dest_name and a reserved Symbol
     @add_arg_table(s, "--COMMAND", dest_name="_COMMAND_")
-    @ee_test_throws parse_args(["run", "--speed", "3"], s, as_symbols = true)
+    @ee_test_throws ap_test5(["run", "--speed", "3"], as_symbols = true)
 end
 
 function ap_settings5b()

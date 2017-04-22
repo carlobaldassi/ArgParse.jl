@@ -1,6 +1,5 @@
 using ArgParse
 using Base.Test
-using Compat
 
 macro ap_test_throws(args)
     :(@test_throws ArgParseError $(esc(args)))
