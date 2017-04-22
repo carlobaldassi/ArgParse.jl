@@ -576,14 +576,7 @@ macro add_arg_table(s, x...)
     end
     # initialize the name and the options expression
     name = nothing
-    if VERSION ≥ v"0.4-"
-        dicthead = [:Dict]
-        dictcall = :call
-    else
-        dicthead = []
-        dictcall = :dict
-    end
-    exopt = Any[dicthead...]
+    exopt = Any[:Dict]
 
     # iterate over the arguments
     i = 1
@@ -604,7 +597,7 @@ macro add_arg_table(s, x...)
             if name !== nothing
                 # there was a previous arg field on hold
                 # first, concretely build the options
-                opt = Expr(dictcall, exopt...)
+                opt = Expr(:call, exopt...)
                 kopts = Expr(:parameters, Expr(:(...), opt))
                 # then, call add_arg_field
                 aaf = Expr(:call, :add_arg_field, kopts, s, name)
@@ -616,7 +609,7 @@ macro add_arg_table(s, x...)
             end
             # put the name on hold, reinitialize the options expression
             name = y
-            exopt = Any[dicthead...]
+            exopt = Any[:Dict]
             i += 1
         elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
             # found an assignment: add it to the current options expression
@@ -637,7 +630,7 @@ macro add_arg_table(s, x...)
     if name !== nothing
         # there is an arg field on hold
         # same as above
-        opt = Expr(dictcall, exopt...)
+        opt = Expr(:call, exopt...)
         kopts = Expr(:parameters, Expr(:(...), opt))
         aaf = Expr(:call, :add_arg_field, kopts, s, name)
         exret = quote
@@ -1260,8 +1253,7 @@ parse_item(it_type::Type, x::AbstractString) = it_type(x)
 function parse_item_eval(it_type::Type, x::AbstractString)
     local r::it_type
     try
-        y = (VERSION < v"0.4-" && isempty(x)) ? nothing : eval(parse(x))
-        r = convert(it_type, y)
+        r = convert(it_type, eval(parse(x)))
     catch err
         argparse_error("""
             invalid argument: $x (must evaluate or convert to type $it_type;
@@ -2038,9 +2030,7 @@ end
 #}}}
 
 
-if VERSION >= v"0.4.0-rc"
-    include("../precompile/precompile.jl")
-    _precompile_()
-end
+include("../precompile/precompile.jl")
+_precompile_()
 
 end # module ArgParse
