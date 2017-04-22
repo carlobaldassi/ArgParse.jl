@@ -143,7 +143,7 @@ for s = [ap_settings10(), ap_settings10b()]
                        before an option (default: Any["no_arg_given"])
 
         optional arguments:
-          --opt1 A B   an option (type: $Int, default: [0,1])
+          --opt1 A B   an option (type: $Int, default: $([0, 1]))
           -f, --flag   a flag
           -k, --karma  increase karma
 
