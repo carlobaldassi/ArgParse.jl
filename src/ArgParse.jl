@@ -1609,9 +1609,9 @@ type ParserState
     found_args::Set{AbstractString}
     command::Union{AbstractString,Void}
     truncated_shopts::Bool
-    out_dict::Dict{AbstractString,Any}
+    out_dict::Dict{String,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
-        out_dict = Dict{AbstractString,Any}()
+        out_dict = Dict{String,Any}()
         for f in settings.args_table.fields
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
@@ -2030,7 +2030,7 @@ end
 
 # convert_to_symbols
 #{{{
-function convert_to_symbols(parsed_args::Dict{AbstractString,Any})
+function convert_to_symbols(parsed_args::Dict{String,Any})
     new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)
