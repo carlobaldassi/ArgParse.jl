@@ -890,7 +890,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
                 end
             end
             if action == :append_const && (new_arg.default === nothing || new_arg.default == [])
-                new_arg.default = Array(new_arg.arg_type, 0)
+                new_arg.default = Array{new_arg.arg_type}(0)
             end
         elseif action == :command_flag
             # nothing to do
@@ -918,9 +918,9 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
             check_range_default_multi2(default, range_tester)
         end
         if (is_multi_action(new_arg.action) && is_multi_nargs(new_arg.nargs)) && (default === nothing || default == [])
-            new_arg.default = Array(Vector{arg_type}, 0)
+            new_arg.default = Array{Vector{arg_type}}(0)
         elseif (is_multi_action(new_arg.action) || is_multi_nargs(new_arg.nargs)) && (default === nothing || default == [])
-            new_arg.default = Array(arg_type, 0)
+            new_arg.default = Array{arg_type}(0)
         end
 
         if is_opt && nargs.desc == :?
@@ -1811,7 +1811,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     arg_consumed = false
     parse_function = f.eval_arg ? parse_item_eval : parse_item_wrapper
     command = nothing
-    is_multi_nargs(f.nargs) && (opt_arg = Array(f.arg_type, 0))
+    is_multi_nargs(f.nargs) && (opt_arg = Array{f.arg_type}(0))
     if isa(f.nargs.desc, Int)
         num::Int = f.nargs.desc
         num > 0 || found_a_bug()
