@@ -587,6 +587,13 @@ macro add_arg_table(s, x...)
             # in-place and restart from the same position
             splice!(x, i, y.args)
             continue
+        elseif isa(y, Expr) && y.head == :macrocall &&
+            ((y.args[1] == GlobalRef(Core, Symbol("@doc"))) ||
+             (isa(y.args[1], Expr) && y.args[1].head == :core &&
+              y.args[1].args[1] == Symbol("@doc")))
+            # Was parsed as doc syntax. Split into components
+            splice!(x, i, y.args[2:end])
+            continue
         elseif isa(y, AbstractString) || (isa(y, Expr) && (y.head == :vcat || y.head == :tuple))
             # found a string, or a vector expression, or a tuple:
             # this must be the option name
