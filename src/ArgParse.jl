@@ -1631,10 +1631,18 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     end
 end
 
-function preparse(state::ParserState, settings::ArgParseSettings)
+if VERSION < v"0.6-"
+    cput!(c, args...) = produce(args...)
+    chann(f, args...) = Task(()->f(Channel(), args...))
+else
+    const cput! = put!
+    chann(f, args...) = Channel((c->f(c, args...)))
+end
+
+function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
     args_list = state.args_list
     while !isempty(args_list)
-        state.arg_delim_found && (produce(:pos_arg); continue)
+        state.arg_delim_found && (cput!(c, :pos_arg); continue)
         arg = args_list[1]
         if state.truncated_shopts
             @assert arg[1] == '-'
@@ -1660,17 +1668,17 @@ function preparse(state::ParserState, settings::ArgParseSettings)
             shift!(args_list)
             state.token = opt_name
             state.token_arg = arg_after_eq
-            produce(:long_option)
+            cput!(c, :long_option)
         elseif looks_like_an_option(arg, settings)
             shopts_lst = arg[2:end]
             shift!(args_list)
             state.token = shopts_lst
             state.token_arg = nothing
-            produce(:short_option_list)
+            cput!(c, :short_option_list)
         else
             state.token = nothing
             state.token_arg = nothing
-            produce(:pos_arg)
+            cput!(c, :pos_arg)
         end
     end
 end
@@ -1730,7 +1738,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
     end
 
     state = ParserState(args_list, settings, truncated_shopts)
-    preparser = Task(()->preparse(state, settings))
+    preparser = chann(preparse, state, settings)
 
     try
         for tag in preparser
