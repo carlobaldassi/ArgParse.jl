@@ -17,7 +17,7 @@ macro tostring(ex)
     quote
         io = IOBuffer()
         $newcall
-        takebuf_string(io)
+        String(take!(io))
     end
 end
 

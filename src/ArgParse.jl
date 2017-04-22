@@ -1417,7 +1417,7 @@ function usage_string(settings::ArgParseSettings)
     return out_str
 end
 
-string_compact(x...) = (io = IOBuffer(); showcompact(io, x...); takebuf_string(io))
+string_compact(x...) = (io = IOBuffer(); showcompact(io, x...); String(take!(io)))
 
 function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     is_flag(arg) && return arg.help
