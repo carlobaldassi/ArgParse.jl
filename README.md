@@ -32,6 +32,8 @@ See also the examples in the [examples directory](examples).
 ## Changes in release 0.5.0
 
 * Added support for Julia v0.6, dropped support for Julia v0.4.
+* The default output type is now `Dict{String,Any}`, as stated in the docs,
+  rather than `Dict{AbstractString,Any}`.
 * Added docstrings, moved documentation to Documenter.jl
 
 ## Changes in release 0.4.0
