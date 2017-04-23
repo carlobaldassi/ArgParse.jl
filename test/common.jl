@@ -1,4 +1,5 @@
 using ArgParse
+using Compat
 using Base.Test
 
 macro ap_test_throws(args)
