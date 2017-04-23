@@ -13,6 +13,7 @@ as well.
 """
 module ArgParse
 
+using Compat
 using TextWrap
 
 export
