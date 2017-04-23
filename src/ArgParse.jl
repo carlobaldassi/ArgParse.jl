@@ -130,7 +130,7 @@ const cmd_dest_name = "%COMMAND%"
 const scmd_dest_name = :_COMMAND_
 
 function show(io::IO, s::ArgParseField)
-    p(x) = "  $x=$(s.(x))\n"
+    p(x) = "  $x=$(getfield(s, x))\n"
     str = "ArgParseField(\n"
     for f in fieldnames(ArgParseField)
         str *= p(f)
@@ -215,7 +215,7 @@ end
 ArgParseSettings(desc::AbstractString, add_help = true; kw...) = ArgParseSettings(;Any[(:description, desc), (:add_help, add_help), kw...]...)
 
 function show(io::IO, s::ArgParseSettings)
-    p(x) = "  $x=$(s.(x))\n"
+    p(x) = "  $x=$(getfield(s, x))\n"
     str = "ArgParseSettings(\n"
     for f in setdiff(fieldnames(ArgParseSettings), [:args_groups, :args_table])
         str *= p(f)
