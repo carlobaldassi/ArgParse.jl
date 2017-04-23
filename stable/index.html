@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · ArgParse.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.5.0/styles/default.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Ubuntu+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="assets/documenter.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script></head><body><nav class="toc"><h1>ArgParse.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">Home</a><ul class="internal"><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#Quick-overview-and-a-simple-example-1">Quick overview and a simple example</a></li><li><a class="toctext" href="#Contents-1">Contents</a></li></ul></li><li><span class="toctext">Manual</span><ul><li><a class="toctext" href="parse_args.html">The <code>parse_args</code> function</a></li><li><a class="toctext" href="settings.html">Settings</a></li><li><a class="toctext" href="arg_table.html">Argument table</a></li><li><a class="toctext" href="import.html">Importing settings</a></li><li><a class="toctext" href="conflicts.html">Conflicts and overrides</a></li><li><a class="toctext" href="custom.html">Parsing to custom types</a></li><li><a class="toctext" href="details.html">Parsing details</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">Home</a></li></ul><a class="edit-page" href="https://github.com/carlobaldassi/ArgParse.jl/tree/e914559e990c6c925a69ab71a0564c2c3cac66de/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/></header><h1><a class="nav-anchor" id="ArgParse.jl-documentation-1" href="#ArgParse.jl-documentation-1">ArgParse.jl documentation</a></h1><p>This <a href="http://julialang.org">Julia</a> package allows the creation of user-friendly command-line interfaces to Julia programs: the program defines which arguments, options and sub-commands it accepts, and the <code>ArgParse</code> module does the actual parsing, issues errors when the input is invalid, and automatically generates help and usage messages.</p><p>Users familiar with Python&#39;s <code>argparse</code> module will find many similarities, but some important differences as well.</p><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p>To install the module, use Julia&#39;s package manager:</p><pre><code class="language-none">julia&gt; Pkg.add(&quot;ArgParse&quot;)</code></pre><p>Dependencies will be installed automatically.</p><h2><a class="nav-anchor" id="Quick-overview-and-a-simple-example-1" href="#Quick-overview-and-a-simple-example-1">Quick overview and a simple example</a></h2><p>First of all, the module needs to be loaded:</p><pre><code class="language-julia">using ArgParse</code></pre><p>There are two main steps for defining a command-line interface: creating an <a href="settings.html#ArgParse.ArgParseSettings"><code>ArgParseSettings</code></a> object, and populating it with allowed arguments and options using either the macro <a href="arg_table.html#ArgParse.@add_arg_table"><code>@add_arg_table</code></a> or the function <a href="arg_table.html#ArgParse.add_arg_table"><code>add_arg_table</code></a> (see the <a href="arg_table.html#Argument-table-1">Argument table</a> section):</p><pre><code class="language-none">s = ArgParseSettings()
+@add_arg_table s begin
+    &quot;--opt1&quot;
+        help = &quot;an option with an argument&quot;
+    &quot;--opt2&quot;, &quot;-o&quot;
+        help = &quot;another option with an argument&quot;
+        arg_type = Int
+        default = 0
+    &quot;--flag1&quot;
+        help = &quot;an option without argument, i.e. a flag&quot;
+        action = :store_true
+    &quot;arg1&quot;
+        help = &quot;a positional argument&quot;
+        required = true
+end</code></pre><p>In the macro, options and positional arguments are specified within a <code>begin...end</code> block, by one or more names in a line, optionally followed by a list of settings. So, in the above example, there are three options:</p><ul><li><p>the first one, <code>&quot;--opt1&quot;</code> takes an argument, but doesn&#39;t check for its type, and it doesn&#39;t have a default value</p></li><li><p>the second one can be invoked in two different forms (<code>&quot;--opt2&quot;</code> and <code>&quot;-o&quot;</code>); it also takes an argument, but it must be of <code>Int</code> type (or convertible to it) and its default value is <code>0</code></p></li><li><p>the third one, <code>--flag1</code>, is a flag, i.e. it doesn&#39;t take any argument.</p></li></ul><p>There is also only one positional argument, <code>&quot;arg1&quot;</code>, which is declared as mandatory.</p><p>When the settings are in place, the actual argument parsing is performed via the <a href="parse_args.html#ArgParse.parse_args"><code>parse_args</code></a> function:</p><pre><code class="language-julia">parsed_args = parse_args(ARGS, s)</code></pre><p>The parameter <code>ARGS</code> can be omitted. In case no errors are found, the result will be a <code>Dict{String,Any}</code> object. In the above example, it will contain the keys <code>&quot;opt1&quot;</code>, <code>&quot;opt2&quot;</code>, <code>&quot;flag1&quot;</code> and <code>&quot;arg1&quot;</code>, so that e.g. <code>parsed_args[&quot;arg1&quot;]</code> will yield the value associated with the positional argument.</p><p>(The <code>parse_args</code> function also accepts an optional <code>as_symbols</code> keyword argument: when set to <code>true</code>, the result of the parsing will be a <code>Dict{Symbol,Any}</code>, which can be useful e.g. for passing it as the keywords to a Julia function.)</p><p>Putting all this together in a file, we can see how a basic command-line interface is created:</p><pre><code class="language-julia">using ArgParse
+
+function parse_commandline()
+    s = ArgParseSettings()
+
+    @add_arg_table s begin
+        &quot;--opt1&quot;
+            help = &quot;an option with an argument&quot;
+        &quot;--opt2&quot;, &quot;-o&quot;
+            help = &quot;another option with an argument&quot;
+            arg_type = Int
+            default = 0
+        &quot;--flag1&quot;
+            help = &quot;an option without argument, i.e. a flag&quot;
+            action = :store_true
+        &quot;arg1&quot;
+            help = &quot;a positional argument&quot;
+            required = true
+    end
+
+    return parse_args(s)
+end
+
+function main()
+    parsed_args = parse_commandline()
+    println(&quot;Parsed args:&quot;)
+    for (arg,val) in parsed_args
+        println(&quot;  $arg  =&gt;  $val&quot;)
+    end
+end
+
+main()</code></pre><p>If we save this as a file called <code>myprog1.jl</code>, we can see how a <code>--help</code> option is added by default, and a help message is automatically generated and formatted:</p><pre><code class="language-text">$ julia myprog1.jl --help
+usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
+
+positional arguments:
+  arg1             a positional argument
+
+optional arguments:
+  --opt1 OPT1      an option with an argument
+  -o, --opt2 OPT2  another option with an argument (type: Int64,
+                   default: 0)
+  --flag1          an option without argument, i.e. a flag
+  -h, --help       show this help message and exit</code></pre><p>Also, we can see how invoking it with the wrong arguments produces errors:</p><pre><code class="language-text">$ julia myprog1.jl
+required argument arg1 was not provided
+usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
+
+$ julia myprog1.jl somearg anotherarg
+too many arguments
+usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] [-h] arg1
+
+$ julia myprog1.jl --opt2 1.5 somearg
+invalid argument: 1.5 (conversion to type Int64 failed; you may need to overload ArgParse.parse_item;
+                  the error was: ArgumentError(&quot;invalid base 10 digit &#39;.&#39; in \&quot;1.5\&quot;&quot;))
+usage: myprog1.jl [--opt1 OPT1] [-o OPT2] [--flag1] arg1</code></pre><p>When everything goes fine instead, our program will print the resulting <code>Dict</code>:</p><pre><code class="language-text">$ julia myprog1.jl somearg
+Parsed args:
+  arg1  =&gt;  somearg
+  opt2  =&gt;  0
+  opt1  =&gt;  nothing
+  flag1  =&gt;  false
+
+$ julia myprog1.jl --opt1 &quot;2+2&quot; --opt2 &quot;4&quot; somearg --flag
+Parsed args:
+  arg1  =&gt;  somearg
+  opt2  =&gt;  4
+  opt1  =&gt;  2+2
+  flag1  =&gt;  true</code></pre><p>From these examples, a number of things can be noticed:</p><ul><li><p><code>opt1</code> defaults to <code>nothing</code>, since no <code>default</code> setting was used for it in <code>@add_arg_table</code></p></li><li><p><code>opt1</code> argument type, begin unspecified, defaults to <code>Any</code>, but in practice it&#39;s parsed as a string (e.g. <code>&quot;2+2&quot;</code>)</p></li><li><p><code>opt2</code> instead has <code>Int</code> argument type, so <code>&quot;4&quot;</code> will be parsed and converted to an integer, an error is emitted if the conversion fails</p></li><li><p>positional arguments can be passed in between options</p></li><li><p>long options can be passed in abbreviated form (e.g. <code>--flag</code> instead of <code>--flag1</code>) as long as there&#39;s no ambiguity</p></li></ul><p>More examples can be found in the <code>examples</code> directory, and the complete documentation in the manual pages.</p><h2><a class="nav-anchor" id="Contents-1" href="#Contents-1">Contents</a></h2><ul><li><a href="parse_args.html#The-parse_args-function-1">The <code>parse_args</code> function</a></li><li><a href="settings.html#Settings-1">Settings</a></li><li><a href="arg_table.html#Argument-table-1">Argument table</a></li><ul><li><a href="arg_table.html#Argument-names-1">Argument names</a></li><li><a href="arg_table.html#Argument-entry-settings-1">Argument entry settings</a></li><li><a href="arg_table.html#Available-actions-and-nargs-values-1">Available actions and nargs values</a></li><li><a href="arg_table.html#Commands-1">Commands</a></li><li><a href="arg_table.html#Argument-groups-1">Argument groups</a></li><li><a href="arg_table.html#Argument-table-styles-1">Argument table styles</a></li></ul><li><a href="import.html#Importing-settings-1">Importing settings</a></li><li><a href="conflicts.html#Conflicts-and-overrides-1">Conflicts and overrides</a></li><li><a href="custom.html#Parsing-to-custom-types-1">Parsing to custom types</a></li><li><a href="details.html#Parsing-details-1">Parsing details</a></li></ul><footer><hr/><a class="next" href="parse_args.html"><span class="direction">Next</span><span class="title">The <code>parse_args</code> function</span></a></footer></article></body></html>
