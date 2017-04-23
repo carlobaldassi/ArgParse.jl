@@ -1,47 +1,59 @@
-ArgParse.jl Overview
-====================
+# ArgParse.jl
+
+| **Documentation**                                                               | **PackageEvaluator**                                            | **Build Status**                                                                                |
+|:-------------------------------------------------------------------------------:|:---------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][pkg-0.5-img]][pkg-0.5-url] [![][pkg-0.6-img]][pkg-0.6-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
 
 ArgParse.jl is a package for parsing command-line arguments to
 [Julia][julia] programs.
 
-The documentation can be found at
-[this link][docs-latest], or in
-the [doc directory](doc).
+### Installation and usage
 
-See also the [examples directory](examples).
+To install the module, use Julia's package manager:
 
-[![Build Status][build-status-img]][build-status-url]
-[![Coverage Status][cov-status-img]][cov-status-url]
-[![Build status][appv-status-img]][appv-status-url]
+```
+julia> Pkg.add("ArgParse")
+```
 
-Changes in release 0.4.0
-========================
+Dependencies will be installed automatically.
+The module can then be loaded like any other Julia module:
 
-New features
-------------
+```
+julia> using ArgParse
+```
+
+### Documentation
+
+- [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
+- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
+
+See also the examples in the [examples directory](examples).
+
+## Changes in release 0.5.0
+
+* Added support for Julia v0.6, dropped support for Julia v0.4.
+* Added docstrings, moved documentation to Documenter.jl
+
+## Changes in release 0.4.0
+
+### New features
 
 * Added support for vectors of METAVAR names (see [#33][PR33])
 
-Other changes
--------------
+### Other changes
 
 * Support for Julia v0.3 was dropped.
 
-Changes in release 0.3.1
-========================
+## Changes in release 0.3.1
 
-New available settings
-----------------------
+### New available settings
 
 * `fromfile_prexif_chars` (see [#27][PR27])
 * `preformatted_desciption`/`preformatted_epilog` (see [#28][PR28])
 
+## Changes in release 0.3.0
 
-Changes in release 0.3.0
-========================
-
-Breaking changes
-----------------
+### Breaking changes
 
 Upgrading from versions 0.2.X to 0.3.X, the following API changes were made,
 which may break existing code:
@@ -54,8 +66,7 @@ which may break existing code:
   Options.jl module was removed. (The `@add_arg_table` macro is unchanged
   though.)
 
-Other changes
--------------
+### Other changes
 
 * Documented that overloading the function `ArgParse.parse_item` can be used to
   instruct ArgParse on how to parse custom types. Parse error reporting was
@@ -63,17 +74,27 @@ Other changes
 * Removed dependecy on the Options.jl module
 * Enabled precompilation on Julia 0.4
 
-[julia]: http://julialang.org
-[docs-latest]: http://argparsejl.readthedocs.org/en/latest/argparse.html
 
-[build-status-img]: https://api.travis-ci.org/carlobaldassi/ArgParse.jl.png?branch=master
-[build-status-url]: https://travis-ci.org/carlobaldassi/ArgParse.jl
+[Julia]: http://julialang.org
 
-[cov-status-img]: https://coveralls.io/repos/carlobaldassi/ArgParse.jl/badge.svg?branch=master&service=github
-[cov-status-url]: https://coveralls.io/github/carlobaldassi/ArgParse.jl?branch=master
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://carlobaldassi.github.io/ArgParse.jl/stable
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-latest-url]: https://carlobaldassi.github.io/ArgParse.jl/latest
 
-[appv-status-img]: https://ci.appveyor.com/api/projects/status/5c81omg867fu2gfy/branch/master?svg=true
-[appv-status-url]: https://ci.appveyor.com/project/carlobaldassi/argparse-jl/branch/master
+[travis-img]: https://travis-ci.org/carlobaldassi/ArgParse.jl.svg?branch=master
+[travis-url]: https://travis-ci.org/carlobaldassi/ArgParse.jl
+
+[appveyor-img]: https://ci.appveyor.com/api/projects/status/5c81omg867fu2gfy/branch/master?svg=true
+[appveyor-url]: https://ci.appveyor.com/project/carlobaldassi/argparse-jl/branch/master
+
+[codecov-img]: https://codecov.io/gh/carlobaldassi/ArgParse.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/carlobaldassi/ArgParse.jl
+
+[pkg-0.5-img]: http://pkg.julialang.org/badges/ArgParse.5.svg
+[pkg-0.5-url]: http://pkg.julialang.org/?pkg=ArgParse
+[pkg-0.6-img]: http://pkg.julialang.org/badges/ArgParse.6.svg
+[pkg-0.6-url]: http://pkg.julialang.org/?pkg=ArgParse
 
 [PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
 [PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
