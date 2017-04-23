@@ -1,5 +1,16 @@
 __precompile__()
 
+"""
+    ArgParse
+
+This module allows the creation of user-friendly command-line interfaces to Julia programs:
+the program defines which arguments, options and sub-commands it accepts, and the `ArgParse` module
+does the actual parsing, issues errors when the input is invalid, and automatically generates help
+and usage messages.
+
+Users familiar with Python's `argparse` module will find many similarities, but some important differences
+as well.
+"""
 module ArgParse
 
 using TextWrap
@@ -162,6 +173,96 @@ end
 
 # ArgParseSettings
 #{{{
+
+
+"""
+    ArgParseSettings
+
+The `ArgParseSettings` object contains all the settings to be used during argument parsing. Settings are divided
+in two groups: general settings and argument-table-related settings.
+While the argument table requires specialized functions such as [`@add_arg_table`](@ref) to be defined and manipulated,
+general settings are simply object fields (most of them are `Bool` or `String`) and can be passed to the
+constructor as keyword arguments, or directly set at any time.
+
+This is the list of general settings currently available:
+
+* `prog` (default = `""`): the name of the program, as displayed in the auto-generated help and usage screens.
+  If left empty, the source file name will be used.
+* `description` (default = `""`): a description of what the program does, to be displayed in the auto-generated
+  help-screen, between the usage lines and the arguments description. If `preformatted_description` is `false` (see below),
+  it will be automatically formatted, but you can still force newlines by using two consecutive newlines in the string, and
+  manually control spaces by using non-breakable spaces (the character `'\ua0'`).
+* `preformatted_description` (default = `false`): disable automatic formatting of `description`.
+* `epilog` (default = `""`): like `description`, but will be displayed at the end of the help-screen, after the
+  arguments description. The same formatting rules also apply.
+* `preformatted_epilog` (default = `false`): disable automatic formatting of `epilog`.
+* `usage` (default = `""`): the usage line(s) to be displayed in the help screen and when an error is found during parsing.
+  If left empty, it will be auto-generated.
+* `version` (default = `"Unknown version"`): version information. It's used by the `:show_version` action.
+* `add_help` (default = `true`): if `true`, a `--help, -h` option (triggering the `:show_help` action) is added
+  to the argument table.
+* `add_version` (default = `false`): if `true`, a `--version` option (triggering the `:show_version` action) is added
+  to the argument table.
+* `fromfile_prefix_chars` (default = `Set{Char}()`): an argument beginning with one of these characters will specify a file from which
+  arguments will be read, one argument read per line. Alphanumeric characters and the hyphen-minus (`"-"`) are prohibited.
+* `autofix_names` (default = `false`): if `true`, will try to automatically fix the uses of dashes (`-`) and underscores (`_`)
+  in option names and destinations: all underscores will be converted to dashes in long option names; also, associated destination names, if
+  auto-generated (see the [Argument names](@ref) section), will have dashes replaced with underscores, both for long options and for
+  positional arguments. For example, an option declared as `"--my-opt"` will be associated with the key `"my_opt"` by default.
+  It is especially advisable to turn this option on then parsing with the `as_symbols=true` argument to `parse_args`.
+* `error_on_conflict` (default = `true`): if `true`, throw an error in case conflicting entries are added to the argument table;
+  if `false`, later entries will silently take precedence.
+  See the [Conflicts and overrides](@ref) srction for a detailed description of what conflicts are and what is the exact behavior
+  when this setting is `false`.
+* `suppress_warnings` (default = `false`): is `true`, all warnings will be suppressed.
+* `allow_ambiguous_opts` (default = `false`): if `true`, ambiguous options such as `-1` will be accepted.
+* `commands_are_required` (default = `true`): if `true`, commands will be mandatory. See the [Commands](@ref) section.
+* `exc_handler` (default = `ArgParse.default_handler`): this is a function which is invoked when an error is detected
+  during parsing (e.g. an option is not recognized, a required argument is not passed etc.). It takes two arguments:
+  the `settings::ArgParseSettings` object and the `err::ArgParseError` exception. The default handler prints the error text
+  and the usage screen on standard error and exits with error code 1:
+
+  ```julia
+  function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
+      println(STDERR, err.text)
+      println(STDERR, usage_string(settings))
+      exit(err_code)
+  end
+  ```
+
+  The module also provides a function `ArgParse.debug_handler` (not exported) which will just rethrow the error.
+
+Here is a usage example:
+
+```julia
+settings = ArgParseSettings(description = "This program does something",
+                            commands_are_required = false,
+                            version = "1.0",
+                            add_version = true)
+```
+
+which is also equivalent to:
+
+```julia
+settings = ArgParseSettings()
+settings.description = "This program does something."
+settings.commands_are_required = false
+settings.version = "1.0"
+settings.add_version = true
+```
+
+As a shorthand, the `description` field can be passed without keyword, which makes this equivalent to the above::
+
+```julia
+settings = ArgParseSettings("This program does something",
+                            commands_are_required = false,
+                            version = "1.0",
+                            add_version = true)
+```
+
+Most settings won't take effect until `parse_args` is invoked, but a few will have immediate effects: `autofix_names`,
+`error_on_conflict`, `suppress_warnings`, `allow_ambiguous_opts`.
+"""
 type ArgParseSettings
     prog::AbstractString
     description::AbstractString
@@ -550,6 +651,29 @@ function get_cmd_prog_hint(arg::ArgParseField)
 end
 
 
+"""
+    add_arg_table(settings, [arg_name [,arg_options]]...)
+
+This function is very similar to the macro version [`@add_arg_table`](@ref). Its syntax is stricter: tuples and blocks are not allowed and argument options
+are explicitly specified as `Dict` objects. However, since it doesn't involve macros, it offers more flexibility in other respects,
+e.g. the `arg_name` entries need not be explicit, they can be anything which evaluates to a `String` or a `Vector{String}`.
+
+Example:
+
+```julia
+add_arg_table(settings,
+    ["--opt1", "-o"],
+    Dict(
+        :help => "an option with an argument"
+    ),
+    "--opt2",
+    "arg1",
+    Dict(
+        :help => "a positional argument"
+        :required => true
+    ))
+```
+"""
 function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Vector, Dict}...)
     has_name = false
     for i = 1:length(table)
@@ -568,6 +692,42 @@ function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Vector,
     end
 end
 
+"""
+    @add_arg_table(settings, table...)
+
+This macro adds a table of arguments and options to the given `settings`. It can be invoked multiple times. The arguments groups
+are determined automatically, or the current default group is used if specified (see the [Argument groups](@ref) section for
+more details).
+
+The `table` is a list in which each element can be either `String`, or a tuple or a vector of `String`, or an assigmment
+expression, or a block:
+
+* a `String`, a tuple or a vector introduces a new positional argument or option. Tuples and vectors are only allowed for options and
+  provide alternative names (e.g. `["--opt", "-o"]`)
+* assignment expressions (i.e. expressions using `=`, `:=` or `=>`) describe the previous argument behavior (e.g.
+  `help = "an option"` or `required => false`).  See the [Argument entry settings](@ref) section for a complete description
+* blocks (`begin...end` or lists of expressions in parentheses separated by semicolons) are useful to group entries and span
+  multiple lines.
+
+These rules allow for a variety usage styles, which are discussed in the [Argument table styles](@ref) section.
+In the rest of the documentation, we will mostly use this style:
+
+```julia
+@add_arg_table settings begin
+    "--opt1", "-o"
+        help = "an option with an argument"
+    "--opt2"
+    "arg1"
+        help = "a positional argument"
+        required = true
+end
+```
+
+In the above example, the `table` is put in a single `begin...end` block and the line `"--opt1", "-o"` is parsed as a tuple;
+indentation is used to help readability.
+
+See also the function [`add_arg_table`](@ref).
+"""
 macro add_arg_table(s, x...)
     # transform the tuple into a vector, so that
     # we can manipulate it
@@ -985,6 +1145,46 @@ autogen_group_name(desc::AbstractString) = "#$(hash(desc))"
 
 add_arg_group(settings::ArgParseSettings, desc::AbstractString) =
     _add_arg_group(settings, desc, autogen_group_name(desc), true)
+
+
+"""
+    add_arg_group(settings, description, [name , [set_as_default]])
+
+This function adds an argument group to the argument table in `settings`. The `description` is a `String` used in
+the help screen as a title for that group. The `name` is a unique name which can be provided to refer to that group
+at a later time.
+
+After invoking this function, all subsequent invocations of the [`@add_arg_table`](@ref) macro and [`add_arg_table`](@ref)
+function will use the new group as the default, unless `set_as_default` is set to `false` (the default is `true`, and the
+option can only be set if providing a `name`). Therefore, the most obvious usage pattern is: for each group, add it and
+populate the argument table of that group. Example:
+
+```
+julia> settings = ArgParseSettings();
+
+julia> add_arg_group(settings, "custom group");
+
+julia> @add_arg_table settings begin
+          "--opt"
+          "arg"
+       end;
+
+julia> parse_args(["--help"], settings)
+usage: <command> [--opt OPT] [-h] [arg]
+
+optional arguments:
+  -h, --help  show this help message and exit
+
+custom group:
+  --opt OPT
+  arg
+```
+
+As seen from the example, new groups are always added at the end of existing ones.
+
+The `name` can also be passed as a `Symbol`. Forbidden names are the standard groups names (`"command"`,
+`"positional"` and `"optional"`) and those beginning with a hash character `'#'`.
+"""
 function add_arg_group(settings::ArgParseSettings, desc::AbstractString,
                        tag::Union{AbstractString,Symbol}, set_as_default::Bool = true)
     name = string(tag)
@@ -1000,6 +1200,19 @@ function _add_arg_group(settings::ArgParseSettings, desc::AbstractString, name::
 end
 
 set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settings, "")
+
+"""
+    set_default_arg_group(settings, [name])
+
+Set the default group for subsequent invocations of the [`@add_arg_table`](@ref) macro and [`add_arg_table`](@ref)
+function. `name` is a `String`, and must be one of the standard group names (`"command"`, `"positional"` or
+`"optional"`) or one of the user-defined names given in `add_arg_group` (groups with no assigned name cannot be
+used with this function).
+
+If `name` is not provided or is the empty string `""`, then the default behavior is reset (i.e. arguments will be
+automatically assigned to the standard groups).
+The `name` can also be passed as a `Symbol`.
+"""
 function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol})
     name = string(name)
     startswith(name, '#') && error("invalid group name: $name (begins with #)")
@@ -1132,6 +1345,28 @@ function fix_commands_fields(fields::Vector{ArgParseField})
     end
 end
 
+"""
+    import_settings(settings, other_settings [,args_only])
+
+Imports `other_settings` into `settings`, where both are [`ArgParseSettings`](@ref) objects. If `args_only` is
+`true` (this is the default), only the argument table will be imported; otherwise, the default argument group
+will also be imported, and all general settings except `prog`, `description`, `epilog` and `usage`.
+
+Sub-settings associated with commands will also be imported recursively; the `args_only` setting applies to
+those as well. If there are common commands, their sub-settings will be merged.
+
+While importing, conflicts may arise: if `settings.error_on_conflict` is `true`, this will result in an error,
+otherwise conflicts will be resolved in favor of `other_settings` (see the [Conflicts and overrides](@ref) section
+for a detailed discussion of how conflicts are handled).
+
+Argument groups will also be imported; if two groups in `settings` and `other_settings` match, they are merged
+(groups match either by name, or, if unnamed, by their description).
+
+Note that the import will have effect immediately: any subsequent modification of `other_settings` will not have
+any effect on `settings`.
+
+This function can be used at any time.
+"""
 function import_settings(settings::ArgParseSettings, other::ArgParseSettings, args_only::Bool = true)
     check_settings_are_compatible(settings, other)
 
@@ -1586,6 +1821,44 @@ end
 
 parse_args(settings::ArgParseSettings; kw...) = parse_args(ARGS, settings; kw...)
 
+"""
+    parse_args([args,] settings; as_symbols::Bool = false)
+
+This is the central function of the `ArgParse` module. It takes a `Vector` of arguments and an
+[`ArgParseSettings`](@ref) object, and returns a `Dict{String,Any}`. If `args` is not provided,
+the global variable `ARGS` will be used.
+
+When the keyword argument `as_symbols` is `true`, the function will return a `Dict{Symbol,Any}` instead.
+
+The returned `Dict` keys are defined (possibly implicitly) in `settings`, and their associated values are parsed
+from `args`. Special keys are used for more advanced purposes; at the moment, one such key exists: `%COMMAND%`
+(`_COMMAND_` when using `as_symbols=true`; see the [Commands](@ref) section).
+
+Arguments are parsed in sequence and matched against the argument table in `settings` to determine whether they are
+long options, short options, option arguments or positional arguments:
+
+  * long options begin with a double dash `"--"`; if a `'='` character is found, the remainder is the option argument;
+    therefore, `["--opt=arg"]` and `["--opt", "arg"]` are equivalent if `--opt` takes at least one argument.
+    Long options can be abbreviated (e.g. `--opt` instead of `--option`) as long as there is no ambiguity.
+  * short options begin with a single dash `"-"` and their name consists of a single character; they can be grouped
+    togheter (e.g. `["-x", "-y"]` can become `["-xy"]`), but in that case only the last option in the group can
+    take an argument (which can also be grouped, e.g. `["-a", "-f", "file.txt"]` can be passed as
+    `["-affile.txt"]` if `-a` does not take an argument and `-f` does). The `'='` character can be used to
+    separate option names from option arguments as well (e.g. `-af=file.txt`).
+  * positional arguments are anything else; they can appear anywhere.
+
+The special string `"--"` can be used to signal the end of all options; after that, everything is considered as a
+positional argument (e.g. if `args = ["--opt1", "--", "--opt2"]`, the parser will recognize `--opt1` as a long
+option without argument, and `--opt2` as a positional argument).
+
+The special string `"-"` is always parsed as a positional argument.
+
+The parsing can stop early if a `:show_help` or `:show_version` action is triggered, or if a parsing error is
+found.
+
+Some ambiguities can arise in parsing, see the [Parsing details](@ref) section for a detailed description
+of how they're solved.
+"""
 function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::Bool = false)
     as_symbols && check_settings_can_use_symbols(settings)
     local parsed_args
