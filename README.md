@@ -91,9 +91,9 @@ which may break existing code:
 [codecov-img]: https://codecov.io/gh/carlobaldassi/ArgParse.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/ArgParse.jl
 
-[pkg-0.5-img]: http://pkg.julialang.org/badges/ArgParse.5.svg
+[pkg-0.5-img]: http://pkg.julialang.org/badges/ArgParse_0.5.svg
 [pkg-0.5-url]: http://pkg.julialang.org/?pkg=ArgParse
-[pkg-0.6-img]: http://pkg.julialang.org/badges/ArgParse.6.svg
+[pkg-0.6-img]: http://pkg.julialang.org/badges/ArgParse_0.6.svg
 [pkg-0.6-url]: http://pkg.julialang.org/?pkg=ArgParse
 
 [PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
