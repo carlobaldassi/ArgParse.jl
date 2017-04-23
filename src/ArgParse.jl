@@ -251,7 +251,7 @@ settings.version = "1.0"
 settings.add_version = true
 ```
 
-As a shorthand, the `description` field can be passed without keyword, which makes this equivalent to the above::
+As a shorthand, the `description` field can be passed without keyword, which makes this equivalent to the above:
 
 ```julia
 settings = ArgParseSettings("This program does something",
