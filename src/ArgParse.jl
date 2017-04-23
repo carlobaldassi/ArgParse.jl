@@ -326,8 +326,8 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-macro talias(T1, T2)
-    return Expr(VERSION < v"0.6-" ? :typealias : :(=), esc(T1), esc(T2))
+macro talias(T1, T2) # typealias deprecated by Julia PR #20500
+    return Expr(VERSION < v"0.6.0-dev.2782" ? :typealias : :(=), esc(T1), esc(T2))
 end
 
 @talias ArgName{T<:AbstractString} Union{T, Vector{T}}
@@ -1908,7 +1908,7 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     end
 end
 
-if VERSION < v"0.6-"
+if VERSION < v"0.6.0-dev.2043" # produce deprecated by Julia PR #19841
     cput!(c, args...) = produce(args...)
     chann(f, args...) = Task(()->f(Channel(), args...))
 else
