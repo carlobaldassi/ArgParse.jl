@@ -9,13 +9,13 @@ function ap_settings6()
     @add_arg_table s begin
         "--opt1"
             action = :append_const
-            arg_type = AbstractString
+            arg_type = String
             constant = "O1"
             dest_name = "O_stack"
             help = "append O1 to the stack"
         "--opt2"
             action = :append_const
-            arg_type = AbstractString
+            arg_type = String
             constant = "O2"
             dest_name = "O_stack"
             help = "append O2 to the stack"
@@ -30,7 +30,7 @@ function ap_settings6()
             nargs = '+'
             action = :append_arg
             dest_name = "awk"
-            arg_type = AbstractString
+            arg_type = String
             range_tester = (x->x=="X"||x=="Y")
             metavar = "XY"
             help = "either X or Y; all XY's are " *
@@ -92,13 +92,13 @@ let s = ap_settings6()
 
         """
 
-    @test ap_test6([]) == Dict{AbstractString,Any}("O_stack"=>AbstractString[], "k"=>0, "awk"=>Vector{Any}[], "şİłłÿ"=>Any[], "rest"=>[])
+    @test ap_test6([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "awk"=>Vector{Any}[], "şİłłÿ"=>Any[], "rest"=>[])
     @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł=-1", "-2", "-3"]) ==
-        Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>Any[Any["X", "X"], Any["Y", "X"]], "şİłłÿ"=>["-1", "-2", "-3"], "rest"=>[])
+        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "awk"=>Any[Any["X", "X"], Any["Y", "X"]], "şİłłÿ"=>["-1", "-2", "-3"], "rest"=>[])
     @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r", "-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
-        Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2"], "k"=>0, "awk"=>Any[Any["X", "X"]], "şİłłÿ"=>[], "rest"=>Any["-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"])
+        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2"], "k"=>0, "awk"=>Any[Any["X", "X"]], "şİłłÿ"=>[], "rest"=>Any["-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"])
     @test ap_test6(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "--r=-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"]) ==
-        Dict{AbstractString,Any}("O_stack"=>AbstractString["O1", "O2", "O2"], "k"=>0, "awk"=>Any[Any["X", "X"]], "şİłłÿ"=>[], "rest"=>Any["-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"])
+        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2"], "k"=>0, "awk"=>Any[Any["X", "X"]], "şİłłÿ"=>[], "rest"=>Any["-k", "--awkward-option=Y", "X", "--opt1", "--şİł", "-1", "-2", "-3"])
     @ap_test_throws ap_test6(["X"])
     @ap_test_throws ap_test6(["--awk"])
     @ap_test_throws ap_test6(["--awk", "Z"])

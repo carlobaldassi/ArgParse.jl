@@ -154,9 +154,9 @@ for s = [ap_settings10(), ap_settings10b()]
     @test stringversion(s) == "Version 1.0\n"
 
     @ap_test_throws ap_test10([])
-    @test ap_test10(["X", "Y"]) == Dict{AbstractString,Any}("opt1"=>[0, 1], "flag"=>false, "karma"=>0, "arg1"=>Any["X", "Y"], "arg2"=>Any["no_arg_given"])
-    @test ap_test10(["X", "Y", "-k", "-f", "Z", "--karma", "--opt1", "2", "3"]) == Dict{AbstractString,Any}("opt1"=>[2, 3], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
-    @test ap_test10(["--opt1", "-3", "-5", "X", "Y", "-k", "-f", "Z", "--karma"]) == Dict{AbstractString,Any}("opt1"=>[-3, -5], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
+    @test ap_test10(["X", "Y"]) == Dict{String,Any}("opt1"=>[0, 1], "flag"=>false, "karma"=>0, "arg1"=>Any["X", "Y"], "arg2"=>Any["no_arg_given"])
+    @test ap_test10(["X", "Y", "-k", "-f", "Z", "--karma", "--opt1", "2", "3"]) == Dict{String,Any}("opt1"=>[2, 3], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
+    @test ap_test10(["--opt1", "-3", "-5", "X", "Y", "-k", "-f", "Z", "--karma"]) == Dict{String,Any}("opt1"=>[-3, -5], "flag"=>true, "karma"=>2, "arg1"=>Any["X", "Y"], "arg2"=>Any["Z"])
     @ap_test_throws ap_test10(["--opt"])
     @ap_test_throws ap_test10(["--opt="])
     @ap_test_throws ap_test10(["--opt", "", "X", "Y"])

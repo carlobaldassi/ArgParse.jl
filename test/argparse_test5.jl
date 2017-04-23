@@ -105,16 +105,16 @@ let s = ap_settings5()
         """
 
     @ap_test_throws ap_test5([])
-    @test ap_test5(["run", "--speed", "3"]) == Dict{AbstractString,Any}("%COMMAND%"=>"run", "run"=>Dict{AbstractString,Any}("speed"=>3.0))
-    @test ap_test5(["jump"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>nothing))
-    @test ap_test5(["jump", "--higher", "--clap"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>Dict{AbstractString,Any}()))
+    @test ap_test5(["run", "--speed", "3"]) == Dict{String,Any}("%COMMAND%"=>"run", "run"=>Dict{String,Any}("speed"=>3.0))
+    @test ap_test5(["jump"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>nothing))
+    @test ap_test5(["jump", "--higher", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>Dict{String,Any}()))
     @ap_test_throws ap_test5(["jump", "--clap", "--higher"])
-    @test ap_test5(["jump", "--somersault"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{AbstractString,Any}("t"=>1, "b"=>false)))
-    @test ap_test5(["jump", "-s", "-t"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{AbstractString,Any}("t"=>1, "b"=>false)))
-    @test ap_test5(["jump", "-st"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{AbstractString,Any}("t"=>1, "b"=>false)))
-    @test ap_test5(["jump", "-sbt"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{AbstractString,Any}("t"=>1, "b"=>true)))
-    @test ap_test5(["jump", "-s", "-t2"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{AbstractString,Any}("t"=>2, "b"=>false)))
-    @test ap_test5(["jump", "-sbt2"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "jump"=>Dict{AbstractString,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{AbstractString,Any}("t"=>2, "b"=>true)))
+    @test ap_test5(["jump", "--somersault"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>false)))
+    @test ap_test5(["jump", "-s", "-t"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>false)))
+    @test ap_test5(["jump", "-st"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>false)))
+    @test ap_test5(["jump", "-sbt"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>true)))
+    @test ap_test5(["jump", "-s", "-t2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>false)))
+    @test ap_test5(["jump", "-sbt2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>true)))
     @ap_test_throws ap_test5(["jump", "-st2b"])
     @ap_test_throws ap_test5(["jump", "-stb"])
     @ap_test_throws ap_test5(["jump", "-sb-"])
@@ -152,7 +152,7 @@ function ap_settings5b()
             action = :command
             help = "start jumping mode"
         "--time"
-            arg_type = AbstractString
+            arg_type = String
             default = "now"
             metavar = "T"
             help = "time at which to " *
@@ -286,9 +286,9 @@ let s = ap_settings5b()
         """
 
     @ap_test_throws ap_test5b([])
-    @test ap_test5b(["fly"]) == Dict{AbstractString,Any}("%COMMAND%"=>"fly", "time"=>"now", "fly"=>Dict{AbstractString,Any}("glade"=>false))
-    @test ap_test5b(["jump", "--lower", "--clap"]) == Dict{AbstractString,Any}("%COMMAND%"=>"jump", "time"=>"now",
-        "jump"=>Dict{AbstractString,Any}("%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>Dict{AbstractString,Any}("whistle"=>false)))
+    @test ap_test5b(["fly"]) == Dict{String,Any}("%COMMAND%"=>"fly", "time"=>"now", "fly"=>Dict{String,Any}("glade"=>false))
+    @test ap_test5b(["jump", "--lower", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "time"=>"now",
+        "jump"=>Dict{String,Any}("%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>Dict{String,Any}("whistle"=>false)))
     @ap_test_throws ap_test5b(["jump"])
-    @test ap_test5b(["run", "--speed=3"]) == Dict{AbstractString,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{AbstractString,Any}("speed"=>3.0))
+    @test ap_test5b(["run", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
 end

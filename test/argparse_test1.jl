@@ -44,13 +44,13 @@ for s = [ap_settings1(), ap_settings1b()]
 
         """
 
-    @test ap_test1([]) == Dict{AbstractString,Any}("opt1"=>nothing, "opt2"=>nothing, "arg1"=>nothing)
-    @test ap_test1(["arg"]) == Dict{AbstractString,Any}("opt1"=>nothing, "opt2"=>nothing, "arg1"=>"arg")
-    @test ap_test1(["--opt1", "X", "-o=5", "--", "-arg"]) == Dict{AbstractString,Any}("opt1"=>"X", "opt2"=>"5", "arg1"=>"-arg")
-    @test ap_test1(["--opt1", ""]) == Dict{AbstractString,Any}("opt1"=>"", "opt2"=>nothing, "arg1"=>nothing)
+    @test ap_test1([]) == Dict{String,Any}("opt1"=>nothing, "opt2"=>nothing, "arg1"=>nothing)
+    @test ap_test1(["arg"]) == Dict{String,Any}("opt1"=>nothing, "opt2"=>nothing, "arg1"=>"arg")
+    @test ap_test1(["--opt1", "X", "-o=5", "--", "-arg"]) == Dict{String,Any}("opt1"=>"X", "opt2"=>"5", "arg1"=>"-arg")
+    @test ap_test1(["--opt1", ""]) == Dict{String,Any}("opt1"=>"", "opt2"=>nothing, "arg1"=>nothing)
     @ap_test_throws ap_test1(["--opt1", "X", "-o=5", "-arg"])
-    @test ap_test1(["--opt1=", "--opt2=5"]) == Dict{AbstractString,Any}("opt1"=>"", "opt2"=>"5", "arg1"=>nothing)
-    @test ap_test1(["-o", "-2"]) == Dict{AbstractString,Any}("opt1"=>nothing, "opt2"=>"-2", "arg1"=>nothing)
+    @test ap_test1(["--opt1=", "--opt2=5"]) == Dict{String,Any}("opt1"=>"", "opt2"=>"5", "arg1"=>nothing)
+    @test ap_test1(["-o", "-2"]) == Dict{String,Any}("opt1"=>nothing, "opt2"=>"-2", "arg1"=>nothing)
     @ap_test_throws ap_test1(["--opt", "3"]) # ambiguous
     @ap_test_throws ap_test1(["-o"])
     @ap_test_throws ap_test1(["--opt1"])

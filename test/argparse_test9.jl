@@ -62,5 +62,5 @@ let s = ap_settings9()
                            """
 
     @ap_test_throws ap_test7([])
-    @test ap_test7(["--opt=A"]) == Dict{AbstractString,Any}("opt"=>"A")
+    @test ap_test7(["--opt=A"]) == Dict{String,Any}("opt"=>"A")
 end
