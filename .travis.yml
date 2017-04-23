@@ -13,7 +13,10 @@ script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd()); Pkg.build("ArgParse"); Pkg.test("ArgParse"; coverage=true)'
 after_success:
-  - julia -e 'cd(Pkg.dir("ArgParse")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
+  - julia -e 'Pkg.add("Documenter", v"0.6.0")'
+  - julia -e 'cd(Pkg.dir("ArgParse")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'Pkg.add("Coverage", v"0.3")'
+  - julia -e 'cd(Pkg.dir("ArgParse")); include(joinpath("docs", "coverage.jl"))'
 branches:
   except:
     - release-0.1
