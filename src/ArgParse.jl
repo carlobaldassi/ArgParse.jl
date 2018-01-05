@@ -123,7 +123,7 @@ type ArgParseField
     required::Bool
     eval_arg::Bool
     help::AbstractString
-    metavar::Union{AbstractString, Vector}
+    metavar::Union{AbstractString,Vector}
     group::AbstractString
     fake::Bool
     function ArgParseField()
@@ -675,7 +675,7 @@ add_arg_table(settings,
     ))
 ```
 """
-function add_arg_table(settings::ArgParseSettings, table::Union{ArgName, Vector, Dict}...)
+function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,Dict}...)
     has_name = false
     for i = 1:length(table)
         !has_name && !isa(table[i], ArgName) && error("option field must be preceded by the arg name")
@@ -783,13 +783,13 @@ macro add_arg_table(s, x...)
             name = y
             exopt = Any[:Dict]
             i += 1
-        elseif isa(y,Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
+        elseif isa(y, Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
             # found an assignment: add it to the current options expression
             y.head = :(=>)
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
             #push!(exopt, esc(y.args[2]))
             i += 1
-        elseif isa(y, LineNumberNode) || (isa(y,Expr) && y.head == :line)
+        elseif isa(y, LineNumberNode) || (isa(y, Expr) && y.head == :line)
             # a line number node, ignore
             i += 1
             continue
@@ -862,11 +862,11 @@ macro defaults(opts, ex...)
             # and restart from the same position
             splice!(ex, i, y.args)
             continue
-        elseif isa(y, LineNumberNode) || (isa(y,Expr) && y.head == :line)
+        elseif isa(y, LineNumberNode) || (isa(y, Expr) && y.head == :line)
             # A line number node, ignore
             i += 1
             continue
-        elseif !isa(y,Expr) || !(y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
+        elseif !isa(y, Expr) || !(y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
             error("Arguments to @defaults following the options variable must be assignments, e.g., a=5 or a=>5")
         end
         y.head = :(=)
@@ -1568,9 +1568,9 @@ function usage_string(settings::ArgParseSettings)
             end
             if isa(f.nargs.desc, Int)
                 if isa(f.metavar, AbstractString)
-                    arg_str = string(ntuple(i->(i==1?f.metavar:(nbsps * f.metavar)), f.nargs.desc)...)
+                    arg_str = string(ntuple(i->(i==1 ? f.metavar : (nbsps * f.metavar)), f.nargs.desc)...)
                 elseif isa(f.metavar, Vector)
-                    arg_str = string(ntuple(i->(i==1?f.metavar[i]:(nbsps * f.metavar[i])), f.nargs.desc)...)
+                    arg_str = string(ntuple(i->(i==1 ? f.metavar[i] : (nbsps * f.metavar[i])), f.nargs.desc)...)
                 else
                     found_a_bug()
                 end
@@ -1690,7 +1690,7 @@ function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::I
     for l in lst
         l1len = length(l[1])
         if l1len <= lc_usable_len
-            rfill = " " ^ (lc_len - l1len)
+            rfill = " "^(lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
             ll_wrapped = wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
                               initial_indent = lmargin, subsequent_indent = sindent)
@@ -1759,10 +1759,10 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
     end
 
     lc_len = min(lc_usable_len, max_lc_len)
-    lmargin = " " ^ lc_left_indent
-    rmargin = " " ^ lc_right_margin
+    lmargin = " "^lc_left_indent
+    rmargin = " "^lc_right_margin
 
-    sindent = lmargin * " " ^ lc_len * rmargin
+    sindent = lmargin * " "^lc_len * rmargin
 
     println(io, usage_str)
     println(io)
@@ -2007,7 +2007,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
     end
     if settings.add_help
         settings.add_help = false
-        add_arg_field(settings, ["--help","-h"],
+        add_arg_field(settings, ["--help", "-h"],
             action = :show_help,
             help = "show this help message and exit",
             group = ""
@@ -2321,9 +2321,5 @@ function convert_to_symbols(parsed_args::Dict{String,Any})
 end
 #}}}
 #}}}
-
-
-include("../precompile/precompile.jl")
-_precompile_()
 
 end # module ArgParse
