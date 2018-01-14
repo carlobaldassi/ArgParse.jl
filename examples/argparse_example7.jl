@@ -12,13 +12,13 @@ function main(args)
                                       # will be assigned to the newly added group
         "--opt1"
             action = :append_const
-            arg_type = ByteString
+            arg_type = String
             constant = "O1"
             dest_name = "O_stack"
             help = "append O1 to the stack"
         "--opt2"
             action = :append_const
-            arg_type = ByteString
+            arg_type = String
             constant = "O2"
             dest_name = "O_stack"
             help = "append O2 to the stack"
@@ -34,7 +34,7 @@ function main(args)
             nargs = '+'
             action = :append_arg
             dest_name = "awk"
-            arg_type = ByteString
+            arg_type = String
             range_tester = (x->x=="X"||x=="Y")
             metavar = "XY"
             help = "either X or Y; all XY's are " *
