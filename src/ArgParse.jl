@@ -165,7 +165,7 @@ function check_prefix_chars(chars)
     result = Set{Char}()
     for c in chars
         if isalnum(c) || c == '-'
-            throw(ArgParseError("‘$c’ is not allowed as prefix character"))
+            throw(ArgParseError("‘$(c)’ is not allowed as prefix character"))
         end
         push!(result, c)
     end
