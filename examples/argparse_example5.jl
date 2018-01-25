@@ -10,11 +10,11 @@ function main(args)
     # So we just add a simple table
     @add_arg_table s0 begin
         "--parent-flag", "-o"
-            action=>"store_true"
-            help=>"parent flag"
+            action = "store_true"
+            help = "parent flag"
         "--flag"
-            action=>"store_true"
-            help=>"another parent flag"
+            action = "store_true"
+            help = "another parent flag"
         "parent-argument"
             help = "parent argument"
     end
