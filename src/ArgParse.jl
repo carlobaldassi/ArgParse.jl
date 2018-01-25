@@ -789,6 +789,12 @@ macro add_arg_table(s, x...)
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
             #push!(exopt, esc(y.args[2]))
             i += 1
+        elseif isa(y, Expr) && y.head == :(call) y.args[1] == :(=>)
+            # found an assignment: add it to the current options expression
+            y.head = :(=>)
+            push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[2]), esc(y.args[3])))
+            #push!(exopt, esc(y.args[2]))
+            i += 1
         elseif isa(y, LineNumberNode) || (isa(y, Expr) && y.head == :line)
             # a line number node, ignore
             i += 1
