@@ -26,5 +26,5 @@ when short option groups are being parsed. For example, if the option in questio
 `-y -x=-2 4 -y` and `-yx-2 4 -y` will parse `"-2"` and `"4"` as the arguments of `-x`.
 
 Finally, note that with the `eval_arg` setting expressions are evaluated during parsing, which means that there is no
-safeguard against passing things like `run(`rm -fr someimportantthing`)` and seeing your data evaporate
+safeguard against passing things like ```run(`rm -rf someimportantthing`)``` and seeing your data evaporate
 (don't try that!). Be careful and generally try to avoid using the `eval_arg` setting.
