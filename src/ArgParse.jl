@@ -1848,7 +1848,7 @@ long options, short options, option arguments or positional arguments:
     therefore, `["--opt=arg"]` and `["--opt", "arg"]` are equivalent if `--opt` takes at least one argument.
     Long options can be abbreviated (e.g. `--opt` instead of `--option`) as long as there is no ambiguity.
   * short options begin with a single dash `"-"` and their name consists of a single character; they can be grouped
-    togheter (e.g. `["-x", "-y"]` can become `["-xy"]`), but in that case only the last option in the group can
+    together (e.g. `["-x", "-y"]` can become `["-xy"]`), but in that case only the last option in the group can
     take an argument (which can also be grouped, e.g. `["-a", "-f", "file.txt"]` can be passed as
     `["-affile.txt"]` if `-a` does not take an argument and `-f` does). The `'='` character can be used to
     separate option names from option arguments as well (e.g. `-af=file.txt`).
