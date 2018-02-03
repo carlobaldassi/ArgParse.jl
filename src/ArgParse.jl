@@ -192,7 +192,7 @@ This is the list of general settings currently available:
 * `description` (default = `""`): a description of what the program does, to be displayed in the auto-generated
   help-screen, between the usage lines and the arguments description. If `preformatted_description` is `false` (see below),
   it will be automatically formatted, but you can still force newlines by using two consecutive newlines in the string, and
-  manually control spaces by using non-breakable spaces (the character `'\ua0'`).
+  manually control spaces by using non-breakable spaces (the character `'\\ua0'`).
 * `preformatted_description` (default = `false`): disable automatic formatting of `description`.
 * `epilog` (default = `""`): like `description`, but will be displayed at the end of the help-screen, after the
   arguments description. The same formatting rules also apply.
@@ -205,8 +205,8 @@ This is the list of general settings currently available:
 * `add_version` (default = `false`): if `true`, a `--version` option (triggering the `:show_version` action) is added
   to the argument table.
 * `fromfile_prefix_chars` (default = `Set{Char}()`): an argument beginning with one of these characters will specify a file from which
-  arguments will be read, one argument read per line. Alphanumeric characters and the hyphen-minus (`"-"`) are prohibited.
-* `autofix_names` (default = `false`): if `true`, will try to automatically fix the uses of dashes (`-`) and underscores (`_`)
+  arguments will be read, one argument read per line. Alphanumeric characters and the hyphen-minus (`'-'`) are prohibited.
+* `autofix_names` (default = `false`): if `true`, will try to automatically fix the uses of dashes (`'-'`) and underscores (`'_'`)
   in option names and destinations: all underscores will be converted to dashes in long option names; also, associated destination names, if
   auto-generated (see the [Argument names](@ref) section), will have dashes replaced with underscores, both for long options and for
   positional arguments. For example, an option declared as `"--my-opt"` will be associated with the key `"my_opt"` by default.
