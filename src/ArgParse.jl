@@ -36,8 +36,8 @@ import Base: show, getindex, setindex!, haskey
 found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
 const nbspc = '\u00a0'
 const nbsps = "$nbspc"
-print_unnbsp(io::IO, args...) = print(io, map(s->replace(s, nbspc, ' '), args)...)
-println_unnbsp(io::IO, args...) = println(io, map(s->replace(s, nbspc, ' '), args)...)
+print_unnbsp(io::IO, args...) = print(io, map(s->replace(s, nbspc => ' '), args)...)
+println_unnbsp(io::IO, args...) = println(io, map(s->replace(s, nbspc => ' '), args)...)
 
 # actions
 #{{{
@@ -62,7 +62,7 @@ is_command_action(a::Symbol) = a in command_actions
 
 # ArgConsumerType
 #{{{
-immutable ArgConsumerType
+struct ArgConsumerType
     desc::Union{Int,Symbol}
     function ArgConsumerType(n::Integer)
         n >= 0 || error("nargs can't be negative")
@@ -94,7 +94,7 @@ default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 
 # ArgParseGroup
 #{{{
-type ArgParseGroup
+mutable struct ArgParseGroup
     name::AbstractString
     desc::AbstractString
     ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
@@ -110,7 +110,7 @@ const std_groups = [cmd_group, pos_group, opt_group]
 
 # ArgParseField
 #{{{
-type ArgParseField
+mutable struct ArgParseField
     dest_name::AbstractString
     long_opt_name::Vector{AbstractString}
     short_opt_name::Vector{AbstractString}
@@ -154,7 +154,7 @@ end
 
 # ArgParseTable
 #{{{
-type ArgParseTable
+mutable struct ArgParseTable
     fields::Vector{ArgParseField}
     subsettings::Dict{AbstractString,Any} # this in fact will be a Dict{AbstractString,ArgParseSettings}
     ArgParseTable() = new(ArgParseField[], Dict{AbstractString,Any}())
@@ -264,7 +264,7 @@ settings = ArgParseSettings("This program does something",
 Most settings won't take effect until `parse_args` is invoked, but a few will have immediate effects: `autofix_names`,
 `error_on_conflict`, `suppress_warnings`, `allow_ambiguous_opts`.
 """
-type ArgParseSettings
+mutable struct ArgParseSettings
     prog::AbstractString
     description::AbstractString
     epilog::AbstractString
@@ -385,7 +385,7 @@ end
 
 function check_long_opt_name(name::AbstractString, settings::ArgParseSettings)
     '=' in name           && error("illegal option name: $name (contains '=')")
-    ismatch(r"\s", name)  && error("illegal option name: $name (contains whitespace)")
+    contains(name, r"\s") && error("illegal option name: $name (contains whitespace)")
     nbspc in name         && error("illegal option name: $name (contains non-breakable-space)")
     settings.add_help     &&
         name == "help"    && error("option --help is reserved in the current settings")
@@ -397,21 +397,21 @@ end
 function check_short_opt_name(name::AbstractString, settings::ArgParseSettings)
     length(name) != 1                && error("short options must use a single character")
     name == "="                      && error("illegal short option name: $name")
-    ismatch(r"\s", name)             && error("illegal option name: $name (contains whitespace)")
+    contains(name, r"\s")            && error("illegal option name: $name (contains whitespace)")
     nbspc in name                    && error("illegal option name: $name (contains non-breakable-space)")
     !settings.allow_ambiguous_opts   &&
-        ismatch(r"[0-9.(]", name)    && error("ambiguous option name: $name (disabled in the current settings)")
+        contains(name, r"[0-9.(]")   && error("ambiguous option name: $name (disabled in the current settings)")
     settings.add_help && name == "h" && error("option -h is reserved for help in the current settings")
     return true
 end
 
 function check_arg_name(name::AbstractString)
-    ismatch(r"^%[A-Z]*%$", name) && error("invalid positional arg name: $name (is reserved)")
+    contains(name, r"^%[A-Z]*%$") && error("invalid positional arg name: $name (is reserved)")
     return true
 end
 
 function check_dest_name(name::AbstractString)
-    ismatch(r"^%[A-Z]*%$", name) && error("invalid dest_name: $name (is reserved)")
+    contains(name, r"^%[A-Z]*%$") && error("invalid dest_name: $name (is reserved)")
     return true
 end
 
@@ -495,13 +495,13 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
     return true
 end
 
-check_default_type(default::Void, arg_type::Type) = true
+check_default_type(default::Nothing, arg_type::Type) = true
 function check_default_type(default, arg_type::Type)
     isa(default, arg_type) && return true
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), arg_type=$arg_type)")
 end
 
-check_default_type_multi_action(default::Void, arg_type::Type) = true
+check_default_type_multi_action(default::Nothing, arg_type::Type) = true
 check_default_type_multi_action(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_action(default, arg_type::Type)
     (isa(default, Vector) && (arg_type <: eltype(default))) ||
@@ -510,7 +510,7 @@ function check_default_type_multi_action(default, arg_type::Type)
     return true
 end
 
-check_default_type_multi_nargs(default::Void, arg_type::Type) = true
+check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
 check_default_type_multi_nargs(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_nargs(default::Vector, arg_type::Type)
     all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type")
@@ -519,7 +519,7 @@ end
 check_default_type_multi_nargs(default, arg_type::Type) =
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector)")
 
-check_default_type_multi2(default::Void, arg_type::Type) = true
+check_default_type_multi2(default::Nothing, arg_type::Type) = true
 check_default_type_multi2(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
     (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
@@ -528,7 +528,7 @@ function check_default_type_multi2(default, arg_type::Type)
     return true
 end
 
-check_range_default(default::Void, range_tester::Function) = true
+check_range_default(default::Nothing, range_tester::Function) = true
 function check_range_default(default, range_tester::Function)
     local res::Bool
     try
@@ -540,7 +540,7 @@ function check_range_default(default, range_tester::Function)
     return true
 end
 
-check_range_default_multi(default::Void, range_tester::Function) = true
+check_range_default_multi(default::Nothing, range_tester::Function) = true
 function check_range_default_multi(default::Vector, range_tester::Function)
     for d in default
         local res::Bool
@@ -554,7 +554,7 @@ function check_range_default_multi(default::Vector, range_tester::Function)
     return true
 end
 
-check_range_default_multi2(default::Void, range_tester::Function) = true
+check_range_default_multi2(default::Nothing, range_tester::Function) = true
 function check_range_default_multi2(default::Vector, range_tester::Function)
     for dl in default, d in dl
         local res::Bool
@@ -571,12 +571,12 @@ end
 function check_metavar(metavar::AbstractString)
     isempty(metavar)         && error("empty metavar")
     startswith(metavar, '-') && error("metavars cannot begin with -")
-    ismatch(r"\s", metavar)  && error("illegal metavar name: $metavar (contains whitespace)")
+    contains(metavar, r"\s") && error("illegal metavar name: $metavar (contains whitespace)")
     nbspc in metavar         && error("illegal metavar name: $metavar (contains non-breakable-space)")
     return true
 end
 
-function check_metavar{T<:AbstractString}(metavar::Vector{T})
+function check_metavar(metavar::Vector{T}) where T<:AbstractString
     for single_value in metavar
         check_metavar(single_value)
     end
@@ -596,7 +596,7 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     pos_arg = ""
     long_opts = AbstractString[]
     short_opts = AbstractString[]
-    r(n) = settings.autofix_names ? replace(n, '_', '-') : n
+    r(n) = settings.autofix_names ? replace(n, '_' => '-') : n
     if isa(name, Vector)
         for n in name
             if startswith(n, "--")
@@ -632,7 +632,7 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
 end
 
 function auto_dest_name(pos_arg::AbstractString, long_opts::Vector{AbstractString}, short_opts::Vector{AbstractString}, autofix_names::Bool)
-    r(n) = autofix_names ? replace(n, '-', '_') : n
+    r(n) = autofix_names ? replace(n, '-' => '_') : n
     isempty(pos_arg) || return r(pos_arg)
     isempty(long_opts) || return r(long_opts[1])
     @assert !isempty(short_opts)
@@ -641,7 +641,7 @@ end
 
 function auto_metavar(dest_name::AbstractString, is_opt::Bool)
     is_opt || return dest_name
-    prefix = ismatch(r"^[[:alpha:]_]", dest_name) ? "" : "_"
+    prefix = contains(dest_name, r"^[[:alpha:]_]") ? "" : "_"
     return prefix * uppercase(dest_name)
 end
 
@@ -1438,7 +1438,7 @@ end
 
 # ArgParseError
 #{{{
-type ArgParseError <: Exception
+mutable struct ArgParseError <: Exception
     text::AbstractString
 end
 
@@ -1499,8 +1499,8 @@ function parse_item_wrapper(it_type::Type, x::AbstractString)
 end
 
 parse_item(it_type::Type{Any}, x::AbstractString) = x
-parse_item{T<:AbstractString}(it_type::Type{T}, x::AbstractString) = convert(T, x)
-parse_item{T<:Number}(it_type::Type{T}, x::AbstractString) = parse(it_type, x)
+parse_item(it_type::Type{T}, x::AbstractString) where T<:AbstractString = convert(T, x)
+parse_item(it_type::Type{T}, x::AbstractString) where T<:Number = parse(it_type, x)
 parse_item(it_type::Type, x::AbstractString) = it_type(x)
 
 function parse_item_eval(it_type::Type, x::AbstractString)
@@ -1534,7 +1534,7 @@ function looks_like_an_option(arg::AbstractString, settings::ArgParseSettings)
     startswith(arg, '-') || return false
     # begins with '-'
     # check if it's a number:
-    ismatch(number_regex, arg) || return true
+    contains(arg, number_regex) || return true
     # looks like a number; but is it overridden by an option?
     d = arg[2:2]
     for a in settings.args_table.fields, s in a.short_opt_name
@@ -1659,7 +1659,7 @@ function usage_string(settings::ArgParseSettings)
     str_wrapped = wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
                                        subsequent_indent = min(usage_len, lc_len_limit))
 
-    out_str = replace(str_wrapped, nbspc, ' ')
+    out_str = replace(str_wrapped, nbspc => ' ')
     return out_str
 end
 
@@ -1879,15 +1879,15 @@ function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::B
     return parsed_args
 end
 
-type ParserState
+mutable struct ParserState
     args_list::Vector
     arg_delim_found::Bool
-    token::Union{AbstractString,Void}
-    token_arg::Union{AbstractString,Void}
+    token::Union{AbstractString,Nothing}
+    token_arg::Union{AbstractString,Nothing}
     arg_consumed::Bool
     last_arg::Int
     found_args::Set{AbstractString}
-    command::Union{AbstractString,Void}
+    command::Union{AbstractString,Nothing}
     truncated_shopts::Bool
     out_dict::Dict{String,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
@@ -1937,10 +1937,10 @@ function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
             state.arg_delim_found = true
             state.token = nothing
             state.token_arg = nothing
-            shift!(args_list)
+            popfirst!(args_list)
             continue
         elseif startswith(arg, "--")
-            eq = search(arg, '=')
+            eq = findfirst(equalto('='), arg)
             if eq != 0
                 opt_name = arg[3:eq-1]
                 arg_after_eq = arg[eq+1:end]
@@ -1949,13 +1949,13 @@ function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
                 arg_after_eq = nothing
             end
             isempty(opt_name) && argparse_error("illegal option: $arg")
-            shift!(args_list)
+            popfirst!(args_list)
             state.token = opt_name
             state.token_arg = arg_after_eq
             cput!(c, :long_option)
         elseif looks_like_an_option(arg, settings)
             shopts_lst = arg[2:end]
-            shift!(args_list)
+            popfirst!(args_list)
             state.token = shopts_lst
             state.token_arg = nothing
             cput!(c, :short_option_list)
@@ -2110,7 +2110,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             arg_consumed = true
         end
         for i = (1+corr):num
-            a = parse_function(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, popfirst!(args_list))
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
@@ -2124,7 +2124,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             if isempty(args_list)
                 argparse_error("option $name requires an argument")
             end
-            a = parse_function(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, popfirst!(args_list))
             test_range(f.range_tester, a, name)
             opt_arg = a
         end
@@ -2138,7 +2138,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             if isempty(args_list)
                 opt_arg = deepcopy(f.constant)
             else
-                a = parse_function(f.arg_type, shift!(args_list))
+                a = parse_function(f.arg_type, popfirst!(args_list))
                 test_range(f.range_tester, a, name)
                 opt_arg = a
             end
@@ -2156,7 +2156,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             if !arg_delim_found && looks_like_an_option(args_list[1], settings)
                 break
             end
-            a = parse_function(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, popfirst!(args_list))
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
             arg_found = true
@@ -2172,7 +2172,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             arg_consumed = true
         end
         while !isempty(args_list)
-            a = parse_function(f.arg_type, shift!(args_list))
+            a = parse_function(f.arg_type, popfirst!(args_list))
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
         end
@@ -2261,7 +2261,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
 
         local f::ArgParseField
         found = false
-        for f in settings.args_table.fields
+        for outer f in settings.args_table.fields
             found |= any(sn->sn==opt_name, f.short_opt_name)
             found && break
         end
@@ -2276,7 +2276,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         if found_command(state)
             if rest_as_arg !== nothing && !isempty(rest_as_arg)
                 startswith(rest_as_arg, '-') && argparse_error("illegal short options sequence after command $(state.command): $rest_as_arg")
-                unshift!(state.args_list, "-" * rest_as_arg)
+                pushfirst!(state.args_list, "-" * rest_as_arg)
                 state.truncated_shopts = true
             end
             return
