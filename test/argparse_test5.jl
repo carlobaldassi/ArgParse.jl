@@ -205,8 +205,9 @@ function ap_settings5b()
         "fly"
             action = :command
             help = "start flying mode"
-        "-T" # will be overridden (same dest_name as s0's --time,
-             # incompatible arg_type)
+        # next opt will be overridden (same dest_name as s0's --time,
+        # incompatible arg_type)
+        "-T"
             dest_name = "time"
             arg_type = Int
     end

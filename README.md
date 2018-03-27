@@ -29,6 +29,10 @@ julia> using ArgParse
 
 See also the examples in the [examples directory](examples).
 
+## Changes in release 0.6.0-
+
+* Added support for Julia v0.7, dropped support for Julia v0.5.
+
 ## Changes in release 0.5.0
 
 * Added support for Julia v0.6, dropped support for Julia v0.4.

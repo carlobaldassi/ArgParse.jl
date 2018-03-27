@@ -1,6 +1,10 @@
 using ArgParse
 using Compat
-using Base.Test
+if VERSION < v"0.7.0-DEV.1995"
+    using Base.Test
+else
+    using Test
+end
 
 macro ap_test_throws(args)
     :(@test_throws ArgParseError $(esc(args)))

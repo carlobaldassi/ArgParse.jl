@@ -1,7 +1,7 @@
 # test 3: dest_name, metavar, range_tester, alternative
 #         actions, custom parser
 
-immutable CustomType
+struct CustomType
 end
 
 function ArgParse.parse_item(::Type{CustomType}, x::AbstractString)
@@ -9,8 +9,8 @@ function ArgParse.parse_item(::Type{CustomType}, x::AbstractString)
     return CustomType()
 end
 
-Base.showcompact(io::IO, ::Type{CustomType}) = print(io, "CustomType") # not called on 0.4 due to dispatch bug?
-Base.showcompact(io::IO, c::CustomType) = print(io, "CustomType()")
+Base.show(io::IO, ::Type{CustomType}) = print(io, "CustomType") # not called on 0.4 due to dispatch bug?
+Base.show(io::IO, c::CustomType) = print(io, "CustomType()")
 
 function ap_settings3()
 
