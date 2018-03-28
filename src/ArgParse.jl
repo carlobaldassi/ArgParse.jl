@@ -233,6 +233,8 @@ This is the list of general settings currently available:
   ```
 
   The module also provides a function `ArgParse.debug_handler` (not exported) which will just rethrow the error.
+* `dont_prefill_defaults` (default = `false`): if `true`, the dictionary returned by [`parse_args`](@ref)
+  will only contain the entries corresponding to the options present in the given argument list.
 
 Here is a usage example:
 
@@ -285,6 +287,7 @@ mutable struct ArgParseSettings
     exc_handler::Function
     preformatted_description::Bool
     preformatted_epilog::Bool
+    dont_prefill_defaults::Bool
 
     function ArgParseSettings(;prog::AbstractString = Base.source_path() != nothing ? basename(Base.source_path()) : "",
                                description::AbstractString = "",
@@ -302,6 +305,7 @@ mutable struct ArgParseSettings
                                exc_handler::Function = default_handler,
                                preformatted_description::Bool=false,
                                preformatted_epilog::Bool=false,
+                               dont_prefill_defaults::Bool=false,
                                )
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
@@ -310,6 +314,7 @@ mutable struct ArgParseSettings
             suppress_warnings, allow_ambiguous_opts, commands_are_required,
             copy(std_groups), "", ArgParseTable(), exc_handler,
             preformatted_description, preformatted_epilog,
+            dont_prefill_defaults
             )
     end
 end
@@ -1893,9 +1898,11 @@ mutable struct ParserState
     out_dict::Dict{String,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
         out_dict = Dict{String,Any}()
-        for f in settings.args_table.fields
-            (f.action == :show_help || f.action == :show_version) && continue
-            out_dict[f.dest_name] = deepcopy(f.default)
+        if !settings.dont_prefill_defaults
+          for f in settings.args_table.fields
+              (f.action == :show_help || f.action == :show_version) && continue
+              out_dict[f.dest_name] = deepcopy(f.default)
+          end
         end
         new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, out_dict)
     end
