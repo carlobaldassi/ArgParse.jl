@@ -2136,7 +2136,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             opt_arg = a
             arg_consumed = true
         else
-            if isempty(args_list)
+            if isempty(args_list) || looks_like_an_option(args_list[1], settings)
                 opt_arg = deepcopy(f.constant)
             else
                 a = parse_function(f.arg_type, popfirst!(args_list))
