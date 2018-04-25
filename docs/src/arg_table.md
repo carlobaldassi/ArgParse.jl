@@ -361,7 +361,7 @@ By default, the auto-generated help screen divides arguments into three groups: 
 arguments, displayed in that order. Example:
 
 ```@repl args
-settings = ArgParseSettings();
+settings = ArgParseSettings(exit_after_help = false);
 
 @add_arg_table settings begin
    "--opt"
