@@ -233,6 +233,8 @@ This is the list of general settings currently available:
   ```
 
   The module also provides a function `ArgParse.debug_handler` (not exported) which will just rethrow the error.
+* `exit_after_help` (default = `true`): exits Julia (with error code `0`) when the `:show_help` or `:show_version` actions
+  are triggered. If `false`, those actions will just stop the parsing and make `parse_args` return `nothing`.
 
 Here is a usage example:
 
@@ -285,6 +287,7 @@ mutable struct ArgParseSettings
     exc_handler::Function
     preformatted_description::Bool
     preformatted_epilog::Bool
+    exit_after_help::Bool
 
     function ArgParseSettings(;prog::AbstractString = Base.source_path() != nothing ? basename(Base.source_path()) : "",
                                description::AbstractString = "",
@@ -300,8 +303,9 @@ mutable struct ArgParseSettings
                                allow_ambiguous_opts::Bool = false,
                                commands_are_required::Bool = true,
                                exc_handler::Function = default_handler,
-                               preformatted_description::Bool=false,
-                               preformatted_epilog::Bool=false,
+                               preformatted_description::Bool = false,
+                               preformatted_epilog::Bool = false,
+                               exit_after_help::Bool = true
                                )
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
@@ -310,6 +314,7 @@ mutable struct ArgParseSettings
             suppress_warnings, allow_ambiguous_opts, commands_are_required,
             copy(std_groups), "", ArgParseTable(), exc_handler,
             preformatted_description, preformatted_epilog,
+            exit_after_help
             )
     end
 end
@@ -1135,16 +1140,20 @@ function add_command(settings::ArgParseSettings, command::AbstractString, prog_h
     ss = settings[command]
     ss.prog = "$(isempty(settings.prog) ? "<PROGRAM>" : settings.prog) $prog_hint"
     ss.description = ""
+    ss.preformatted_description = settings.preformatted_description
     ss.epilog = ""
+    ss.preformatted_epilog = settings.preformatted_epilog
     ss.usage = ""
     ss.version = settings.version
     ss.add_help = settings.add_help
     ss.add_version = settings.add_version
+    ss.autofix_names = settings.autofix_names
     ss.fromfile_prefix_chars = settings.fromfile_prefix_chars
     ss.error_on_conflict = settings.error_on_conflict
     ss.suppress_warnings = settings.suppress_warnings
     ss.allow_ambiguous_opts = settings.allow_ambiguous_opts
     ss.exc_handler = settings.exc_handler
+    ss.exit_after_help = settings.exit_after_help
 
     return ss
 end
@@ -1358,7 +1367,7 @@ end
 
 Imports `other_settings` into `settings`, where both are [`ArgParseSettings`](@ref) objects. If `args_only` is
 `true` (this is the default), only the argument table will be imported; otherwise, the default argument group
-will also be imported, and all general settings except `prog`, `description`, `epilog` and `usage`.
+will also be imported, and all general settings except `prog`, `description`, `epilog`, `usage` and `version`.
 
 Sub-settings associated with commands will also be imported recursively; the `args_only` setting applies to
 those as well. If there are common commands, their sub-settings will be merged.
@@ -1417,6 +1426,11 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
         settings.allow_ambiguous_opts = other.allow_ambiguous_opts
         settings.commands_are_required = other.commands_are_required
         settings.default_group = other.default_group
+        settings.preformatted_description = other.preformatted_description
+        settings.preformatted_epilog = other.preformatted_epilog
+        settings.fromfile_prefix_chars = other.fromfile_prefix_chars
+        settings.autofix_names = other.autofix_names
+        settings.exit_after_help = other.exit_after_help
     end
     for (subk, subs) in other.args_table.subsettings
         cmd_prog_hint = ""
@@ -1890,6 +1904,7 @@ mutable struct ParserState
     found_args::Set{AbstractString}
     command::Union{AbstractString,Nothing}
     truncated_shopts::Bool
+    abort::Bool
     out_dict::Dict{String,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
         out_dict = Dict{String,Any}()
@@ -1897,7 +1912,7 @@ mutable struct ParserState
             (f.action == :show_help || f.action == :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
-        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, out_dict)
+        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, false, out_dict)
     end
 end
 
@@ -1914,6 +1929,7 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     finally
         state.truncated_shopts = false
     end
+    return state.out_dict[cmd]
 end
 
 if VERSION < v"0.6.0-dev.2043" # produce deprecated by Julia PR #19841
@@ -2036,11 +2052,13 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
             else
                 found_a_bug()
             end
+            state.abort && return nothing
             found_command(state) && break
         end
         test_required_args(settings, state.found_args)
         if found_command(state)
-            parse_command_args(state, settings)
+            cmd_dict = parse_command_args(state, settings)
+            cmd_dict ≡ nothing && return nothing
         elseif settings.commands_are_required && has_cmd(settings)
             argparse_error("no command given")
         end
@@ -2080,9 +2098,11 @@ function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParse
         out_dict[f.dest_name] = f.constant
         command = f.constant
     elseif f.action == :show_help
-        show_help(settings)
+        show_help(settings, exit_when_done = settings.exit_after_help)
+        state.abort = true
     elseif f.action == :show_version
-        show_version(settings)
+        show_version(settings, exit_when_done = settings.exit_after_help)
+        state.abort = true
     end
     state.command = command
     return
@@ -2311,6 +2331,7 @@ end
 
 # convert_to_symbols
 #{{{
+convert_to_symbols(::Nothing) = nothing
 function convert_to_symbols(parsed_args::Dict{String,Any})
     new_parsed_args = Dict{Symbol,Any}()
     cmd = nothing

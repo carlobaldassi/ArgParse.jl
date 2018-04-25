@@ -14,6 +14,15 @@ macro ee_test_throws(args)
     :(@test_throws ErrorException $(esc(args)))
 end
 
+macro noout_test(args)
+    quote
+        oo = stdout
+        redirect_stdout()
+        @test $(esc(args))
+        redirect_stdout(oo)
+    end
+end
+
 macro tostring(ex)
     @assert ex.head == :call
     f = esc(ex.args[1])

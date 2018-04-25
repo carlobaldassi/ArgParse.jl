@@ -3,7 +3,8 @@
 function ap_settings5()
 
     s = ArgParseSettings("Test 5 for ArgParse.jl",
-                         exc_handler = ArgParse.debug_handler)
+                         exc_handler = ArgParse.debug_handler,
+                         exit_after_help = false)
 
     @add_arg_table s begin
         "run"
@@ -105,9 +106,13 @@ let s = ap_settings5()
         """
 
     @ap_test_throws ap_test5([])
+    @noout_test ap_test5(["--help"]) ≡ nothing
     @test ap_test5(["run", "--speed", "3"]) == Dict{String,Any}("%COMMAND%"=>"run", "run"=>Dict{String,Any}("speed"=>3.0))
+    @noout_test ap_test5(["jump", "--help"]) ≡ nothing
     @test ap_test5(["jump"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>nothing))
     @test ap_test5(["jump", "--higher", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>Dict{String,Any}()))
+    @noout_test ap_test5(["jump", "--higher", "--clap", "--help"]) ≡ nothing
+    @noout_test ap_test5(["jump", "--higher", "--clap", "--help"], as_symbols = true) ≡ nothing
     @ap_test_throws ap_test5(["jump", "--clap", "--higher"])
     @test ap_test5(["jump", "--somersault"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>false)))
     @test ap_test5(["jump", "-s", "-t"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>false)))
@@ -115,6 +120,7 @@ let s = ap_settings5()
     @test ap_test5(["jump", "-sbt"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>true)))
     @test ap_test5(["jump", "-s", "-t2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>false)))
     @test ap_test5(["jump", "-sbt2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>true)))
+    @noout_test ap_test5(["jump", "-sbht2"]) ≡ nothing
     @ap_test_throws ap_test5(["jump", "-st2b"])
     @ap_test_throws ap_test5(["jump", "-stb"])
     @ap_test_throws ap_test5(["jump", "-sb-"])
@@ -142,7 +148,8 @@ function ap_settings5b()
     s0 = ArgParseSettings()
 
     s = ArgParseSettings(error_on_conflict = false,
-                         exc_handler = ArgParse.debug_handler)
+                         exc_handler = ArgParse.debug_handler,
+                         exit_after_help = false)
 
     @add_arg_table s0 begin
         "run"
@@ -243,6 +250,8 @@ function ap_settings5b()
             help = "glade mode"
     end
 
+    s["jump"]["clap_feet"].add_version = true
+
     @add_arg_table s["jump"]["clap_feet"] begin
         "--whistle"
             action = :store_true
@@ -290,6 +299,8 @@ let s = ap_settings5b()
     @test ap_test5b(["fly"]) == Dict{String,Any}("%COMMAND%"=>"fly", "time"=>"now", "fly"=>Dict{String,Any}("glade"=>false))
     @test ap_test5b(["jump", "--lower", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "time"=>"now",
         "jump"=>Dict{String,Any}("%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>Dict{String,Any}("whistle"=>false)))
+    @noout_test ap_test5b(["jump", "--lower", "--help"]) ≡ nothing
+    @noout_test ap_test5b(["jump", "--lower", "--clap", "--version"]) ≡ nothing
     @ap_test_throws ap_test5b(["jump"])
     @test ap_test5b(["run", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
 end

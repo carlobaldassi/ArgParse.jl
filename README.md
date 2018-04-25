@@ -32,6 +32,8 @@ See also the examples in the [examples directory](examples).
 ## Changes in release 0.6.0-
 
 * Added support for Julia v0.7, dropped support for Julia v0.5.
+* Added `exit_after_help` setting to control whether to exit julia after help/version info is displayed
+  (which is still the defult) or to just abort the parsing and return `nothing` instead.
 
 ## Changes in release 0.5.0
 
