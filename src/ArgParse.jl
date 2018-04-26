@@ -755,13 +755,15 @@ macro add_arg_table(s, x...)
             # Was parsed as doc syntax. Split into components
             splice!(x, i, y.args[2:end])
             continue
-        elseif isa(y, AbstractString) || Meta.isexpr(y, (:vcat, :tuple))
-            # found a string, or a vector expression, or a tuple:
-            # this must be the option name
-            if Meta.isexpr(y, :tuple)
-                # transform tuples into vectors
-                y.head = :vcat
+        elseif isa(y, AbstractString) || Meta.isexpr(y, (:vect, :tuple))
+            Meta.isexpr(y, :tuple) && (y.head = :vect) # transform tuples into vectors
+            if Meta.isexpr(y, :vect) && (isempty(y.args) || !all(x->x isa AbstractString, y.args))
+                # heterogeneous elements: splice it in place, just like blocks
+                splice!(x, i, y.args)
+                continue
             end
+            # found a string, or a vector/tuple of strings:
+            # this must be the option name
             if name ≢ nothing
                 # there was a previous arg field on hold
                 # first, concretely build the options
