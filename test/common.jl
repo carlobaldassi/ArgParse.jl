@@ -24,6 +24,22 @@ macro noout_test(args)
     end
 end
 
+macro test_addtable_failure(ex...)
+    VERSION ≥ v"0.7-DEV.357" && (ex = [nothing, ex...])
+    ex = Expr(:call, :macroexpand, @__MODULE__, Expr(:quote, Expr(:macrocall, Symbol("@add_arg_table"), ex...)))
+    if VERSION ≥ v"0.7-DEV.1676"
+        quote
+            @test_throws LoadError $ex
+        end
+    else
+        quote
+            ex = $ex
+            @test Meta.isexpr(ex, :error)
+            @test isa(ex.args[1], ErrorException)
+        end
+    end
+end
+
 macro tostring(ex)
     @assert ex.head == :call
     f = esc(ex.args[1])

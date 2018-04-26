@@ -58,3 +58,29 @@ for s = [ap_settings1(), ap_settings1b()]
     @ee_test_throws @add_arg_table(s, "--opt1") # long option already added
     @ee_test_throws @add_arg_table(s, "-o") # short option already added
 end
+
+# test malformed tables
+function ap_settings1c()
+
+    @ee_test_throws @add_arg_table begin
+        "-a"
+    end
+
+    s = ArgParseSettings(exc_handler = ArgParse.debug_handler)
+
+    @ee_test_throws add_arg_table(s, Dict(:action => :store_true), "-a")
+    @test_addtable_failure s begin
+        action = :store_true
+        "-a"
+    end
+    @test_addtable_failure s begin
+        action => :store_true
+    end
+    @ee_test_throws add_arg_table(s, "-a", Dict(:wat => :store_true))
+    @ee_test_throws @add_arg_table s begin
+        "-a"
+            wat => :store_true
+    end
+end
+
+ap_settings1c()

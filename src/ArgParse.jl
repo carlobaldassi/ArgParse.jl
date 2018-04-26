@@ -781,10 +781,12 @@ macro add_arg_table(s, x...)
             i += 1
         elseif Meta.isexpr(y, (:(=), :(:=), :kw))
             # found an assignment: add it to the current options expression
+            name ≢ nothing || error("malformed table: description fields must be preceded by the arg name")
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
             i += 1
         elseif Meta.isexpr(y, :call) && y.args[1] == :(=>)
             # found an assignment: add it to the current options expression
+            name ≢ nothing || error("malformed table: description fields must be preceded by the arg name")
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[2]), esc(y.args[3])))
             i += 1
         elseif isa(y, LineNumberNode) || Meta.isexpr(y, :line)
@@ -855,16 +857,18 @@ macro defaults(opts, ex...)
     i = 1
     while i ≤ length(ex)
         y = ex[i]
-        if isa(y, Expr) && y.head == :block
+        if Meta.isexpr(y, :block)
             # Found a begin..end block: expand its contents in-place
             # and restart from the same position
             splice!(ex, i, y.args)
             continue
-        elseif isa(y, LineNumberNode) || (isa(y, Expr) && y.head == :line)
+        elseif isa(y, LineNumberNode) || Meta.isexpr(y, :line)
             # A line number node, ignore
             i += 1
             continue
-        elseif !isa(y, Expr) || !(y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
+        elseif Meta.isexpr(y, :call) && y.args[1] == :(=>)
+            y = Expr(:(=), y.args[2:end]...)
+        elseif !Meta.isexpr(y, (:(=), :(:=), :kw))
             error("Arguments to @defaults following the options variable must be assignments, e.g., a=5 or a=>5")
         end
         y.head = :(=)
