@@ -16,10 +16,11 @@ end
 
 macro noout_test(args)
     quote
-        oo = stdout
-        redirect_stdout()
-        @test $(esc(args))
-        redirect_stdout(oo)
+        mktemp() do _,io
+            redirect_stdout(io) do
+                @test $(esc(args))
+            end
+        end
     end
 end
 
