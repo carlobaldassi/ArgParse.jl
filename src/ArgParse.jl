@@ -66,7 +66,7 @@ is_command_action(a::Symbol) = a in command_actions
 struct ArgConsumerType
     desc::Union{Int,Symbol}
     function ArgConsumerType(n::Integer)
-        n >= 0 || error("nargs can't be negative")
+        n ≥ 0 || error("nargs can't be negative")
         new(n)
     end
     function ArgConsumerType(s::Symbol)
@@ -333,11 +333,7 @@ function show(io::IO, s::ArgParseSettings)
     print(io, str)
 end
 
-macro talias(T1, T2) # typealias deprecated by Julia PR #20500
-    return Expr(VERSION < v"0.6.0-dev.2782" ? :typealias : :(=), esc(T1), esc(T2))
-end
-
-@talias ArgName{T<:AbstractString} Union{T, Vector{T}}
+ArgName{T<:AbstractString} = Union{T, Vector{T}}
 
 getindex(s::ArgParseSettings, c::AbstractString) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::AbstractString) = haskey(s.args_table.subsettings, c)
@@ -688,8 +684,8 @@ function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,D
         has_name = true
     end
     i = 1
-    while i <= length(table)
-        if i+1 <= length(table) && !isa(table[i+1], ArgName)
+    while i ≤ length(table)
+        if i+1 ≤ length(table) && !isa(table[i+1], ArgName)
             add_arg_field(settings, table[i]; table[i+1]...)
             i += 2
         else
@@ -751,28 +747,27 @@ macro add_arg_table(s, x...)
 
     # iterate over the arguments
     i = 1
-    while i <= length(x)
+    while i ≤ length(x)
         y = x[i]
-        if isa(y, Expr) && y.head == :block
+        if Meta.isexpr(y, :block)
             # found a begin..end block: expand its contents
             # in-place and restart from the same position
             splice!(x, i, y.args)
             continue
-        elseif isa(y, Expr) && y.head == :macrocall &&
-            ((y.args[1] == GlobalRef(Core, Symbol("@doc"))) ||
-             (isa(y.args[1], Expr) && y.args[1].head == :core &&
-              y.args[1].args[1] == Symbol("@doc")))
+        elseif Meta.isexpr(y, :macrocall) &&
+               ((y.args[1] == GlobalRef(Core, Symbol("@doc"))) ||
+               (Meta.isexpr(y.args[1], :core) && y.args[1].args[1] == Symbol("@doc")))
             # Was parsed as doc syntax. Split into components
             splice!(x, i, y.args[2:end])
             continue
-        elseif isa(y, AbstractString) || (isa(y, Expr) && (y.head == :vcat || y.head == :tuple))
+        elseif isa(y, AbstractString) || Meta.isexpr(y, (:vcat, :tuple))
             # found a string, or a vector expression, or a tuple:
             # this must be the option name
-            if isa(y, Expr) && y.head == :tuple
+            if Meta.isexpr(y, :tuple)
                 # transform tuples into vectors
                 y.head = :vcat
             end
-            if name !== nothing
+            if name ≢ nothing
                 # there was a previous arg field on hold
                 # first, concretely build the options
                 opt = Expr(:call, exopt...)
@@ -789,19 +784,15 @@ macro add_arg_table(s, x...)
             name = y
             exopt = Any[:Dict]
             i += 1
-        elseif isa(y, Expr) && (y.head == :(=) || y.head == :(=>) || y.head == :(:=) || y.head == :kw)
+        elseif Meta.isexpr(y, (:(=), :(:=), :kw))
             # found an assignment: add it to the current options expression
-            y.head = :(=>)
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
-            #push!(exopt, esc(y.args[2]))
             i += 1
-        elseif isa(y, Expr) && y.head == :(call) y.args[1] == :(=>)
+        elseif Meta.isexpr(y, :call) && y.args[1] == :(=>)
             # found an assignment: add it to the current options expression
-            y.head = :(=>)
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[2]), esc(y.args[3])))
-            #push!(exopt, esc(y.args[2]))
             i += 1
-        elseif isa(y, LineNumberNode) || (isa(y, Expr) && y.head == :line)
+        elseif isa(y, LineNumberNode) || Meta.isexpr(y, :line)
             # a line number node, ignore
             i += 1
             continue
@@ -811,7 +802,7 @@ macro add_arg_table(s, x...)
             i += 1
         end
     end
-    if name !== nothing
+    if name ≢ nothing
         # there is an arg field on hold
         # same as above
         opt = Expr(:call, exopt...)
@@ -867,7 +858,7 @@ macro defaults(opts, ex...)
 
     # Check each argument in the assignment list
     i = 1
-    while i <= length(ex)
+    while i ≤ length(ex)
         y = ex[i]
         if isa(y, Expr) && y.head == :block
             # Found a begin..end block: expand its contents in-place
@@ -1066,7 +1057,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
                     new_arg.arg_type = Any
                 end
             end
-            if action == :append_const && (new_arg.default === nothing || new_arg.default == [])
+            if action == :append_const && (new_arg.default ≡ nothing || new_arg.default == [])
                 new_arg.default = Array{new_arg.arg_type}(undef, 0)
             end
         elseif action == :command_flag
@@ -1094,9 +1085,9 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
             check_default_type_multi2(default, arg_type)
             check_range_default_multi2(default, range_tester)
         end
-        if (is_multi_action(new_arg.action) && is_multi_nargs(new_arg.nargs)) && (default === nothing || default == [])
+        if (is_multi_action(new_arg.action) && is_multi_nargs(new_arg.nargs)) && (default ≡ nothing || default == [])
             new_arg.default = Array{Vector{arg_type}}(undef, 0)
-        elseif (is_multi_action(new_arg.action) || is_multi_nargs(new_arg.nargs)) && (default === nothing || default == [])
+        elseif (is_multi_action(new_arg.action) || is_multi_nargs(new_arg.nargs)) && (default ≡ nothing || default == [])
             new_arg.default = Array{arg_type}(undef, 0)
         end
 
@@ -1514,9 +1505,8 @@ function parse_item_wrapper(it_type::Type, x::AbstractString)
 end
 
 parse_item(it_type::Type{Any}, x::AbstractString) = x
-parse_item(it_type::Type{T}, x::AbstractString) where {T<:AbstractString} = convert(T, x)
 parse_item(it_type::Type{T}, x::AbstractString) where {T<:Number} = parse(it_type, x)
-parse_item(it_type::Type, x::AbstractString) = it_type(x)
+parse_item(it_type::Type{T}, x::AbstractString) where {T} = convert(T, x)
 
 function parse_item_eval(it_type::Type, x::AbstractString)
     local r::it_type
@@ -1590,8 +1580,6 @@ function usage_string(settings::ArgParseSettings)
             if isa(f.nargs.desc, Int)
                 if isa(f.metavar, AbstractString)
                     arg_str = string(ntuple(i->(i==1 ? f.metavar : (nbsps * f.metavar)), f.nargs.desc)...)
-                elseif isa(f.metavar, Vector)
-                    arg_str = string(ntuple(i->(i==1 ? f.metavar[i] : (nbsps * f.metavar[i])), f.nargs.desc)...)
                 else
                     found_a_bug()
                 end
@@ -1691,7 +1679,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
         if arg.arg_type != Any && !(arg.arg_type <: AbstractString)
             type_str = pre * "(type: " * string_compact(arg.arg_type)
         end
-        if arg.default !== nothing && !isequal(arg.default, [])
+        if arg.default ≢ nothing && !isequal(arg.default, [])
             mid = isempty(type_str) ? " (" : ", "
             default_str = mid * "default: " * string_compact(arg.default)
         end
@@ -1710,7 +1698,7 @@ function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::I
     println(io, desc, ":")
     for l in lst
         l1len = length(l[1])
-        if l1len <= lc_usable_len
+        if l1len ≤ lc_usable_len
             rfill = " "^(lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
             ll_wrapped = wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
@@ -1916,7 +1904,7 @@ mutable struct ParserState
     end
 end
 
-found_command(state::ParserState) = state.command !== nothing
+found_command(state::ParserState) = state.command ≢ nothing
 function parse_command_args(state::ParserState, settings::ArgParseSettings)
     cmd = state.command
     haskey(settings, cmd) || argparse_error("unknown command: $cmd")
@@ -1932,18 +1920,10 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     return state.out_dict[cmd]
 end
 
-if VERSION < v"0.6.0-dev.2043" # produce deprecated by Julia PR #19841
-    cput!(c, args...) = produce(args...)
-    chann(f, args...) = Task(()->f(Channel(), args...))
-else
-    const cput! = put!
-    chann(f, args...) = Channel((c->f(c, args...)))
-end
-
 function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
     args_list = state.args_list
     while !isempty(args_list)
-        state.arg_delim_found && (cput!(c, :pos_arg); continue)
+        state.arg_delim_found && (put!(c, :pos_arg); continue)
         arg = args_list[1]
         if state.truncated_shopts
             @assert arg[1] == '-'
@@ -1969,17 +1949,17 @@ function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
             popfirst!(args_list)
             state.token = opt_name
             state.token_arg = arg_after_eq
-            cput!(c, :long_option)
+            put!(c, :long_option)
         elseif looks_like_an_option(arg, settings)
             shopts_lst = arg[2:end]
             popfirst!(args_list)
             state.token = shopts_lst
             state.token_arg = nothing
-            cput!(c, :short_option_list)
+            put!(c, :short_option_list)
         else
             state.token = nothing
             state.token_arg = nothing
-            cput!(c, :pos_arg)
+            put!(c, :pos_arg)
         end
     end
 end
@@ -2039,7 +2019,7 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
     end
 
     state = ParserState(args_list, settings, truncated_shopts)
-    preparser = chann(preparse, state, settings)
+    preparser = Channel(c->preparse(c, state, settings))
 
     try
         for tag in preparser
@@ -2120,11 +2100,11 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     if isa(f.nargs.desc, Int)
         num::Int = f.nargs.desc
         num > 0 || found_a_bug()
-        corr = (rest === nothing) ? 0 : 1
+        corr = (rest ≡ nothing) ? 0 : 1
         if length(args_list) + corr < num
             argparse_error("$name requires $num argument", num > 1 ? "s" : "")
         end
-        if rest !== nothing
+        if rest ≢ nothing
             a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
@@ -2136,7 +2116,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             push!(opt_arg, a)
         end
     elseif f.nargs.desc == :A
-        if rest !== nothing
+        if rest ≢ nothing
             a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             opt_arg = a
@@ -2150,7 +2130,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             opt_arg = a
         end
     elseif f.nargs.desc == :?
-        if rest !== nothing
+        if rest ≢ nothing
             a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             opt_arg = a
@@ -2166,7 +2146,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
         end
     elseif f.nargs.desc == :* || f.nargs.desc == :+
         arg_found = false
-        if rest !== nothing
+        if rest ≢ nothing
             a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
@@ -2186,7 +2166,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             argparse_error("option $name requires at least one (not-looking-like-an-option) argument")
         end
     elseif f.nargs.desc == :R
-        if rest !== nothing
+        if rest ≢ nothing
             a = parse_function(f.arg_type, rest)
             test_range(f.range_tester, a, name)
             push!(opt_arg, a)
@@ -2247,7 +2227,7 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
     opt_name = fln
 
     if is_flag(f)
-        parse1_flag(state, settings, f, arg_after_eq !== nothing, "--"*opt_name)
+        parse1_flag(state, settings, f, arg_after_eq ≢ nothing, "--"*opt_name)
     else
         parse1_optarg(state, settings, f, arg_after_eq, "--"*opt_name)
         push!(state.found_args, idstring(f))
@@ -2295,7 +2275,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         end
         state.arg_consumed && break
         if found_command(state)
-            if rest_as_arg !== nothing && !isempty(rest_as_arg)
+            if rest_as_arg ≢ nothing && !isempty(rest_as_arg)
                 startswith(rest_as_arg, '-') && argparse_error("illegal short options sequence after command $(state.command): $rest_as_arg")
                 pushfirst!(state.args_list, "-" * rest_as_arg)
                 state.truncated_shopts = true
@@ -2342,7 +2322,7 @@ function convert_to_symbols(parsed_args::Dict{String,Any})
         new_parsed_args[scmd_dest_name] = scmd
     end
     for (k,v) in parsed_args
-        (k == cmd_dest_name || k === cmd) && continue
+        (k == cmd_dest_name || k ≡ cmd) && continue
         new_parsed_args[Symbol(k)] = v
     end
     return new_parsed_args
