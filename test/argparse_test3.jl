@@ -54,6 +54,11 @@ function ap_settings3()
             arg_type = Int
             range_tester = x->(isodd(x) || error("not odd")) # range error ≡ false
             help = "an odd integer"
+        "--collect"
+            action = :append_arg
+            arg_type = Int
+            metavar = "C"
+            help = "collect things"
         "--awkward-option"
             nargs = '+'                         # eats up as many argument as found (at least 1)
             action = :append_arg                # argument chunks are appended when the option is
@@ -75,7 +80,7 @@ let s = ap_settings3()
     @test stringhelp(s) == """
         usage: $(basename(Base.source_path())) [--opt1] [--opt2] [-k] [-u] [--array ARRAY]
                                 [--custom CUSTOM] [--oddint ODDINT]
-                                [--awkward-option XY [XY...]]
+                                [--collect C] [--awkward-option XY [XY...]]
 
         Test 3 for ArgParse.jl
 
@@ -89,21 +94,23 @@ let s = ap_settings3()
           --custom CUSTOM       the only accepted argument is "custom" (type:
                                 CustomType, default: CustomType())
           --oddint ODDINT       an odd integer (type: $Int, default: 1)
+          --collect C           collect things (type: $Int)
           --awkward-option XY [XY...]
                                 either X or Y; all XY's are stored in chunks
                                 (default: Any[Any["X"]])
 
         """
 
-    @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "awk"=>Any[Any["X"]])
-    @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "-u", "--array=[4]", "--custom", "custom", "--awkward-option=Y", "X", "--opt1", "--oddint", "-1"]) ==
-        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "array"=>[4], "custom"=>CustomType(), "oddint"=>-1, "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
+    @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"]])
+    @test ap_test3(["--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--coll", "5", "-u", "--array=[4]", "--custom", "custom", "--collect", "3", "--awkward-option=Y", "X", "--opt1", "--oddint", "-1"]) ==
+    Dict{String,Any}("O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "array"=>[4], "custom"=>CustomType(), "oddint"=>-1, "collect"=>[5, 3], "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
     @ap_test_throws ap_test3(["X"])
     @ap_test_throws ap_test3(["--awk", "Z"])
     @ap_test_throws ap_test3(["--awk", "-2"])
     @ap_test_throws ap_test3(["--array", "7"])
     @ap_test_throws ap_test3(["--custom", "default"])
     @ap_test_throws ap_test3(["--oddint", "0"])
+    @ap_test_throws ap_test3(["--collect", "0.5"])
 
     # invalid option name
     @ee_test_throws @add_arg_table(s, "-2", action = :store_true)
@@ -114,6 +121,7 @@ let s = ap_settings3()
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_arg, arg_type = Int, default = Float64[])
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, default = Vector{Float64}[])
     @ee_test_throws @add_arg_table(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = [1.5])
+    @ee_test_throws @add_arg_table(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = 1)
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->x<=1, default = Int[0, 1, 2])
     @ee_test_throws @add_arg_table(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->x<=1, default = Vector{Int}[[1,1],[0,2]])
     @ee_test_throws @add_arg_table(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->x<=1, default = [1.5])
@@ -132,9 +140,9 @@ let s = ap_settings3()
     # allow ambiguous options
     s.allow_ambiguous_opts = true
     @add_arg_table(s, "-2", action = :store_true)
-    @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "awk"=>Any[Any["X"]], "2"=>false)
-    @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "awk"=>Any[["X"]], "2"=>true)
-    @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
+    @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"]], "2"=>false)
+    @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[["X"]], "2"=>true)
+    @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
 
 end

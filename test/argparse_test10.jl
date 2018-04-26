@@ -11,29 +11,29 @@ function ap_settings10()
 
     @add_arg_table s begin
         "--opt1"
-            nargs = 2              # exactly 2 arguments must be specified
-            arg_type = Int           # only Int arguments allowed
-            default = [0, 1]              # this is used when the option is not passed
-            metavar = ["A", "B"]          # two metavars for two arguments
-            help = "an option"
+            nargs => 2                             # exactly 2 arguments must be specified
+            arg_type => Int                        # only Int arguments allowed
+            default => [0, 1]                      # this is used when the option is not passed
+            metavar => ["A", "B"]                  # two metavars for two arguments
+            help => "an option"
         "--flag", "-f"
-            action = :store_true   # this makes it a flag
-            help = "a flag"
+            action := :store_true                  # this makes it a flag
+            help := "a flag"
         "--karma", "-k"
-            action = :count_invocations  # increase a counter each time the option is given
-            help = "increase karma"
+            action => :count_invocations           # increase a counter each time the option is given
+            help => "increase karma"
         "arg1"
-            nargs = 2                        # eats up two arguments; puts the result in a Vector
-            help = "first argument, two " *
+            nargs => 2                             # eats up two arguments; puts the result in a Vector
+            help => "first argument, two " *
                    "entries at once"
-            required = true
+            required => true
         "arg2"
-            nargs = '*'                            # eats up as many arguments as possible before an option
-            default = Any["no_arg_given"]          # since the result will be a Vector{Any}, the default must
+            nargs => '*'                           # eats up as many arguments as possible before an option
+            default => Any["no_arg_given"]         # since the result will be a Vector{Any}, the default must
                                                    # also be (or it can be [] or nothing)
-            help = "second argument, eats up " *
-                   "as many items as possible " *
-                   "before an option"
+            help => "second argument, eats up " *
+                    "as many items as possible " *
+                    "before an option"
     end
 
     return s

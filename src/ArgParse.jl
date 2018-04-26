@@ -37,7 +37,6 @@ import Base: show, getindex, setindex!, haskey
 found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
 const nbspc = '\u00a0'
 const nbsps = "$nbspc"
-print_unnbsp(io::IO, args...) = print(io, map(s->replace(s, nbspc => ' '), args)...)
 println_unnbsp(io::IO, args...) = println(io, map(s->replace(s, nbspc => ' '), args)...)
 
 # actions
@@ -100,7 +99,6 @@ mutable struct ArgParseGroup
     desc::AbstractString
     ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
 end
-ArgParseGroup(n::Symbol, d::AbstractString) = new(string(n), d)
 
 const cmd_group = ArgParseGroup("commands", "commands")
 const pos_group = ArgParseGroup("positional", "positional arguments")
@@ -504,7 +502,6 @@ function check_default_type(default, arg_type::Type)
 end
 
 check_default_type_multi_action(default::Nothing, arg_type::Type) = true
-check_default_type_multi_action(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_action(default, arg_type::Type)
     (isa(default, Vector) && (arg_type <: eltype(default))) ||
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T)")
@@ -513,7 +510,6 @@ function check_default_type_multi_action(default, arg_type::Type)
 end
 
 check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
-check_default_type_multi_nargs(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi_nargs(default::Vector, arg_type::Type)
     all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type")
     return true
@@ -522,7 +518,6 @@ check_default_type_multi_nargs(default, arg_type::Type) =
     error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector)")
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
-check_default_type_multi2(default::Vector{Union{}}, arg_type::Type) = true
 function check_default_type_multi2(default, arg_type::Type)
     (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
         error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
