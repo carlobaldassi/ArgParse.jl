@@ -163,7 +163,7 @@ end
 function check_prefix_chars(chars)
     result = Set{Char}()
     for c in chars
-        if isalpha(c) || isnumeric(c) || c == '-'
+        if isletter(c) || isnumeric(c) || c == '-'
             throw(ArgParseError("‘$(c)’ is not allowed as prefix character"))
         end
         push!(result, c)
@@ -1663,6 +1663,7 @@ function usage_string(settings::ArgParseSettings)
     str_wrapped = wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
                                        subsequent_indent = min(usage_len, lc_len_limit))
 
+
     out_str = replace(str_wrapped, nbspc => ' ')
     return out_str
 end
@@ -1938,7 +1939,7 @@ function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
             popfirst!(args_list)
             continue
         elseif startswith(arg, "--")
-            eq = coalesce(findfirst(isequal('='), arg), 0)
+            eq = something(findfirst(isequal('='), arg), 0)
             if eq ≠ 0
                 opt_name = arg[3:prevind(arg,eq)]
                 arg_after_eq = arg[nextind(arg,eq):end]
@@ -2237,16 +2238,21 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
 end
 #}}}
 
+if VERSION < v"0.7.0-DEV.5126" # TODO: remove after 0.6 support is dropped
+    # very crude hack to avoid deprecation warning
+    const iterate = next
+end
+
 # parse short opts
 #{{{
 function parse_short_opt(state::ParserState, settings::ArgParseSettings)
     shopts_lst = state.token
     rest_as_arg = nothing
-    sind = start(shopts_lst)
-    while !done(shopts_lst, sind)
-        opt_char, next_sind = next(shopts_lst, sind)
-        if !done(shopts_lst, next_sind)
-            next_opt_char, next2_sind = next(shopts_lst, next_sind)
+    sind = firstindex(shopts_lst)
+    while sind ≤ ncodeunits(shopts_lst)
+        opt_char, next_sind = iterate(shopts_lst, sind)
+        if next_sind ≤ ncodeunits(shopts_lst)
+            next_opt_char, next2_sind = iterate(shopts_lst, next_sind)
             if next_opt_char == '='
                 next_is_eq = true
                 rest_as_arg = shopts_lst[next2_sind:end]
