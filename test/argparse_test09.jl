@@ -1,4 +1,6 @@
-# test 9: preformatted desc/epilog
+# test 09: preformatted desc/epilog
+
+@testset "test 09" begin
 
 function ap_settings9()
 
@@ -63,4 +65,6 @@ let s = ap_settings9()
 
     @ap_test_throws ap_test7([])
     @test ap_test7(["--opt=A"]) == Dict{String,Any}("opt"=>"A")
+end
+
 end

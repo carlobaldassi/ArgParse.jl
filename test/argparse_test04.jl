@@ -1,4 +1,6 @@
-# test 4: manual help/version, import another parser
+# test 04: manual help/version, import another parser
+
+@testset "test O4" begin
 
 function ap_settings4()
 
@@ -172,4 +174,6 @@ let s = ap_settings4_base()
     for s0 = [ap_settings4_conflict1(), ap_settings4_conflict2()]
         @ee_test_throws import_settings(s, s0)
     end
+end
+
 end

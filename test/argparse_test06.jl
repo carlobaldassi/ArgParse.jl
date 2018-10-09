@@ -1,4 +1,6 @@
-# test 6: argument groups
+# test 06: argument groups
+
+@testset "test 06" begin
 
 function ap_settings6()
 
@@ -109,4 +111,6 @@ let s = ap_settings6()
     @ee_test_throws add_arg_group(s, "invalid commands", "")
     @ee_test_throws add_arg_group(s, "invalid commands", "#invalid")
     @ee_test_throws @add_arg_table(s, "--opt", action = :store_true, group = "none")
+end
+
 end

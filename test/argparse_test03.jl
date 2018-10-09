@@ -1,8 +1,10 @@
-# test 3: dest_name, metavar, range_tester, alternative
+# test 03: dest_name, metavar, range_tester, alternative
 #         actions, custom parser
 
 struct CustomType
 end
+
+@testset "test 03" begin
 
 function ArgParse.parse_item(::Type{CustomType}, x::AbstractString)
     @assert x == "custom"
@@ -144,5 +146,7 @@ let s = ap_settings3()
     @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[["X"]], "2"=>true)
     @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
+
+end
 
 end

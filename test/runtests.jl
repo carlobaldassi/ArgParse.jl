@@ -3,9 +3,9 @@ module ArgParseTests
 include("common.jl")
 
 for i = 1:10
-    print("\rRunning argparse_test$i")
     try
-        include("argparse_test$i.jl")
+        s_i = lpad(string(i), 2, "0")
+        include("argparse_test$s_i.jl")
     catch err
         println()
         rethrow(err)
