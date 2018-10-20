@@ -1,21 +1,32 @@
 # Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
+
 os:
-  - linux
   - osx
+  - linux
+
 julia:
   - 0.6
+  - 0.7
+  - 1.0
   - nightly
+
+# # Uncomment the following lines to allow failures on nightly julia
+# # (tests will run but not make your overall status red)
+# matrix:
+#   allow_failures:
+#   - julia: nightly
+
 notifications:
   email: false
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes --inline=no -e 'Pkg.clone(pwd()); Pkg.checkout("TextWrap"); Pkg.build("ArgParse"); Pkg.test("ArgParse"; coverage=true)'
+
+#script: # the default script is equivalent to the following
+#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#  - julia -e 'Pkg.clone(pwd()); Pkg.build("Example"); Pkg.test("Example"; coverage=true)';
+
 after_success:
-  - julia -e 'Pkg.add("Documenter", v"0.6.0")'
-  - julia -e 'cd(Pkg.dir("ArgParse")); include(joinpath("docs", "make.jl"))'
-  - julia -e 'Pkg.add("Coverage", v"0.3")'
-  - julia -e 'cd(Pkg.dir("ArgParse")); include(joinpath("docs", "coverage.jl"))'
+  - julia -e 'if VERSION >= v"0.7.0-DEV.5183"; using Pkg; end; using ArgParse; Pkg.add("Coverage"); using Coverage; get(ENV,"TRAVIS_OS_NAME","")=="linux" && get(ENV,"TRAVIS_JULIA_VERSION","")=="0.7" && Codecov.submit(Codecov.process_folder())'
+
 branches:
   except:
     - release-0.1
