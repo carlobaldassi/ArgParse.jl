@@ -1,4 +1,6 @@
-# test 9: preformatted desc/epilog
+# test 09: preformatted desc/epilog
+
+@testset "test 09" begin
 
 function ap_settings9()
 
@@ -38,7 +40,7 @@ let s = ap_settings9()
     ap_test7(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-                           usage: argparse_test9.jl --opt OPT
+                           usage: $(basename(Base.source_path())) --opt OPT
 
                            Test 9 for ArgParse.jl
                            Testing preformatted description/epilog
@@ -63,4 +65,6 @@ let s = ap_settings9()
 
     @ap_test_throws ap_test7([])
     @test ap_test7(["--opt=A"]) == Dict{String,Any}("opt"=>"A")
+end
+
 end

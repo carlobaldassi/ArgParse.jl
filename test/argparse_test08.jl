@@ -1,4 +1,6 @@
-# test 8: read args from file
+# test 08: read args from file
+
+@testset "test 08" begin
 
 function ap_settings8a()
 
@@ -60,3 +62,5 @@ end
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['-'])
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['Å'])
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['8'])
+
+end

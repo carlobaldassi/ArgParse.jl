@@ -1,7 +1,9 @@
-# test 2: version information, default values, flags,
-#         options with types, optional arguments, variable
-#         number of arguments;
-#         function version of add_arg_table
+# test 02: version information, default values, flags,
+#          options with types, optional arguments, variable
+#          number of arguments;
+#          function version of add_arg_table
+
+@testset "test 02" begin
 
 function ap_settings2()
 
@@ -206,7 +208,8 @@ for s = [ap_settings2(), ap_settings2b(), ap_settings2c(), ap_settings2d(), ap_s
     ap_test2(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-        usage: $(basename(Base.source_path())) [--opt1 [OPT1]] [-f] [-k] arg1 arg1 [arg2...]
+        usage: $(basename(Base.source_path())) [--opt1 [OPT1]] [-f] [-k] arg1 arg1
+                                [arg2...]
 
         Test 2 for ArgParse.jl
 
@@ -243,4 +246,6 @@ for s = [ap_settings2(), ap_settings2b(), ap_settings2c(), ap_settings2d(), ap_s
     # wrong range tester
     @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
     @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
+end
+
 end

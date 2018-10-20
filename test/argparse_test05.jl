@@ -1,4 +1,6 @@
- # test 5: commands & subtables
+# test 05: commands & subtables
+
+@testset "test 05" begin
 
 function ap_settings5()
 
@@ -303,4 +305,6 @@ let s = ap_settings5b()
     @noout_test ap_test5b(["jump", "--lower", "--clap", "--version"]) ≡ nothing
     @ap_test_throws ap_test5b(["jump"])
     @test ap_test5b(["run", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
+end
+
 end

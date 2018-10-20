@@ -1,5 +1,7 @@
-# test 2: multiple metavars
+# test 10: multiple metavars
 #         function version of add_arg_table
+
+@testset "test 10" begin
 
 function ap_settings10()
 
@@ -171,4 +173,6 @@ for s = [ap_settings10(), ap_settings10b()]
     # wrong range tester
     @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
     @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
+end
+
 end

@@ -1,4 +1,6 @@
-# test 7: required options, line breaks in desc/epilog
+# test 07: required options, line breaks in desc/epilog
+
+@testset "test 07" begin
 
 function ap_settings7()
 
@@ -37,7 +39,8 @@ let s = ap_settings7()
     ap_test7(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-        usage: $(basename(Base.source_path())) --oxymoronic OXYMORONIC [--opt OPT] [-f] -o O
+        usage: $(basename(Base.source_path())) --oxymoronic OXYMORONIC [--opt OPT] [-f]
+                                -o O
 
         Test 7 for ArgParse.jl
         Testing oxymoronic options
@@ -62,4 +65,6 @@ let s = ap_settings7()
     @test ap_test7(["--oxymoronic=A", "-o=B"]) == Dict{String,Any}("oxymoronic"=>"A", "opt"=>nothing, "o"=>"B", "flag"=>false)
     @ap_test_throws ap_test7(["--oxymoronic=A", "--opt=B"])
     @ap_test_throws ap_test7(["--opt=A, -o=B"])
+end
+
 end

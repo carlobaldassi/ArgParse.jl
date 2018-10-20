@@ -1,5 +1,7 @@
-# test 1: minimal options/arguments, auto-generated help/version;
-#         function version of add_arg_table
+# test 01: minimal options/arguments, auto-generated help/version;
+#          function version of add_arg_table
+
+@testset "test 01" begin
 
 function ap_settings1()
 
@@ -84,3 +86,5 @@ function ap_settings1c()
 end
 
 ap_settings1c()
+
+end
