@@ -1,5 +1,5 @@
 # test 01: minimal options/arguments, auto-generated help/version;
-#         function version of add_arg_table
+#          function version of add_arg_table
 
 @testset "test 01" begin
 

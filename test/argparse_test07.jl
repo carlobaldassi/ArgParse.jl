@@ -39,7 +39,8 @@ let s = ap_settings7()
     ap_test7(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-        usage: $(basename(Base.source_path())) --oxymoronic OXYMORONIC [--opt OPT] [-f] -o O
+        usage: $(basename(Base.source_path())) --oxymoronic OXYMORONIC [--opt OPT] [-f]
+                                -o O
 
         Test 7 for ArgParse.jl
         Testing oxymoronic options

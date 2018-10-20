@@ -40,7 +40,7 @@ let s = ap_settings9()
     ap_test7(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-                           usage: argparse_test9.jl --opt OPT
+                           usage: $(basename(Base.source_path())) --opt OPT
 
                            Test 9 for ArgParse.jl
                            Testing preformatted description/epilog

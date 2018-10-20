@@ -1,5 +1,5 @@
 # test 03: dest_name, metavar, range_tester, alternative
-#         actions, custom parser
+#          actions, custom parser
 
 struct CustomType
 end
