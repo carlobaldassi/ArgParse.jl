@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Installation",
     "category": "section",
-    "text": "To install the module, use Julia\'s package manager:julia> Pkg.add(\"ArgParse\")Dependencies will be installed automatically."
+    "text": "To install the module, use Julia\'s package manager. In Julia 0.7/1.0 and later, start pkg mode by pressing ] and then enter:(v1.0) pkg> add ArgParseIn Julia 0.6, enter this instead:julia> Pkg.add(\"ArgParse\")Dependencies will be installed automatically."
 },
 
 {
