@@ -26,6 +26,7 @@ notifications:
 
 after_success:
   - julia -e 'if VERSION >= v"0.7.0-DEV.5183"; using Pkg; end; using ArgParse; Pkg.add("Coverage"); using Coverage; get(ENV,"TRAVIS_OS_NAME","")=="linux" && get(ENV,"TRAVIS_JULIA_VERSION","")=="0.7" && Codecov.submit(Codecov.process_folder())'
+  - DOCUMENTER_DEBUG=true julia -e 'if VERSION >= v"0.7.0-DEV.5183"; using Pkg; end; Pkg.add("Documenter"); get(ENV,"TRAVIS_OS_NAME","")=="linux" && include("docs/make.jl")'
 
 branches:
   except:
