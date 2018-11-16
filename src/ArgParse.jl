@@ -33,6 +33,10 @@ export
 
 import Base: show, getindex, setindex!, haskey
 
+@static if VERSION >= v"0.7.0" 
+    @nospecialize # use only declared type signatures, helps with compile time
+end
+
 # auxiliary functions/constants
 found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
 const nbspc = '\u00a0'
