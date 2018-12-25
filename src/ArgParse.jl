@@ -368,7 +368,7 @@ end
 function warn_extra_opts(opts, valid_keys::Vector{Symbol})
 
     for k in opts
-        k in valid_keys || warn("ignored option: $k")
+        k in valid_keys || @warn "ignored option: $k"
     end
     return true
 end
@@ -801,7 +801,7 @@ macro add_arg_table(s, x...)
             continue
         else
             # anything else: ignore, but issue a warning
-            warn("@add_arg_table: ignoring expression $y")
+            @warn "@add_arg_table: ignoring expression $y"
             i += 1
         end
     end
@@ -1489,7 +1489,7 @@ function check_settings_can_use_symbols(settings::ArgParseSettings)
     end
     settings.suppress_warnings && return true
     for f in args_table.fields
-        '-' in f.dest_name && warn("dest_name=$(f.dest_name) contains an hyphen; use the autofix_names=true setting to have it converted to an underscore")
+        '-' in f.dest_name && @warn "dest_name=$(f.dest_name) contains an hyphen; use the autofix_names=true setting to have it converted to an underscore"
     end
     return true
 end
