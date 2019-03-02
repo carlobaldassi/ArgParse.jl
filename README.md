@@ -36,6 +36,10 @@ julia> using ArgParse
 
 See also the examples in the [examples directory](examples).
 
+## Changes in release 0.6.2
+
+* Fix a remaining compatibility issue (`@warn`)
+
 ## Changes in release 0.6.1
 
 * Testing infrastructure update, tiny docs fixes
