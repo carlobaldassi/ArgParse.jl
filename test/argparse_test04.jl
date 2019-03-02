@@ -1,6 +1,6 @@
 # test 04: manual help/version, import another parser
 
-@testset "test O4" begin
+@testset "test 04" begin
 
 function ap_settings4()
 
