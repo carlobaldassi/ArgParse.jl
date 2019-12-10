@@ -2334,7 +2334,7 @@ function convert_to_symbols(parsed_args::Dict{String,Any})
         new_parsed_args[scmd_dest_name] = scmd
     end
     for (k,v) in parsed_args
-        (k == cmd_dest_name || k ≡ cmd) && continue
+        (k == cmd_dest_name || k == cmd) && continue
         new_parsed_args[Symbol(k)] = v
     end
     return new_parsed_args
