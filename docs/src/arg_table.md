@@ -106,9 +106,10 @@ line and what action will be performed on them.
 
 The `nargs` setting can be a number or a character; the possible values are:
 
-* `'A'`: automatic, i.e. inferred from the action (this is the default). In practice, it means `0` for flag-like options and `1`
-  for non-flag-like options (but it's different from using an explicit `1` because the result is not stored in a `Vector`).
-* `0`: this is the only possibility (besides `'A'`) for flag-like actions (see below), and it means no extra tokens will be parsed from
+* `'A'`: automatic, i.e. inferred from the action (this is the default). In practice, it means `0` for options with flag actions
+(see the actions categorization below, in this section) and `1` for options with non-flag actions (but it's different from
+using an explicit `1` because the result is not stored in a `Vector`).
+* `0`: this is the only possibility (besides `'A'`) for flag actions, and it means no extra tokens will be parsed from
   the command line. If `action` is not specified, setting `nargs` to `0` will make `action` default to `:store_true`.
 * a positive integer number `N`: exactly `N` tokens will be parsed from the command-line, and the result stored into a `Vector`
   of length `N` (even for `N=1`).
@@ -125,6 +126,9 @@ argument (i.e. flags), all others (except `command`, which is special) are for o
 
 * flag actions are only compatible with `nargs = 0` or `nargs = 'A'`
 * non-flag actions are not compatible with `nargs = 0`.
+
+In other words, all flags (takes no argument) are options (starts with a dash), but not all options (starts with a dash)
+are flags (takes no argument).
 
 This is the list of all available actions (in each example, suppose we defined `settings = ArgParseSettings()`):
 
@@ -269,7 +273,7 @@ using ArgParse
 
 Commands are a special kind of arguments which introduce sub-parsing sessions as soon as they are encountered by `parse_args`
 (and are therefore mutually exclusive).
-The `ArgParse` module allows commands to look both as positional arguments or as flags, with minor differences between the two.
+The `ArgParse` module allows commands to look both as positional arguments or as options, with minor differences between the two.
 
 Commands are introduced by the `action = :command` setting in the argument table. Suppose we save the following script in
 a file called `cmd_example.jl`:
@@ -348,11 +352,11 @@ By default, if commands exist, they are required; this can be avoided by setting
 The only meaningful settings for commands in an argument entry besides `action` are `help`, `force_override`, `group` and
 (for flags only) `dest_name`.
 
-The only differences between positional-arguments-like and flag-like commands are in the way they are parsed, the fact that flags
-accept a `dest_name` setting, and that flags can have multiple names (e.g. a long and short form).
+The only differences between positional-arguments-like and option-like commands are in the way they are parsed, the fact that options
+accept a `dest_name` setting, and that options can have multiple names (e.g. a long and short form).
 
-Note that short-form flag-like commands will be still be recognized in the middle of a short options group and trigger a sub-parsing
-session: for example, if a flag `-c` is associated to a command, then `-xch` will parse option `-x` according to the parent
+Note that short-form option-like commands will be still be recognized in the middle of a short options group and trigger a sub-parsing
+session: for example, if an option `-c` is associated to a command, then `-xch` will parse option `-x` according to the parent
 settings, and option `-h` according to the command sub-settings.
 
 ## Argument groups
