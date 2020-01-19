@@ -1,8 +1,8 @@
 # ArgParse.jl
 
-| **Documentation**                                                               | **Build Status**                                                                                |
-|:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
+| **Documentation**                                                               | **Build Status**                                             |
+|:-------------------------------------------------------------------------------:|:------------------------------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][travis-img]][travis-url][![][codecov-img]][codecov-url] |
 
 ArgParse.jl is a package for parsing command-line arguments to
 [Julia][julia] programs.
@@ -105,16 +105,8 @@ which may break existing code:
 [travis-img]: https://travis-ci.org/carlobaldassi/ArgParse.jl.svg?branch=master
 [travis-url]: https://travis-ci.org/carlobaldassi/ArgParse.jl
 
-[appveyor-img]: https://ci.appveyor.com/api/projects/status/5c81omg867fu2gfy/branch/master?svg=true
-[appveyor-url]: https://ci.appveyor.com/project/carlobaldassi/argparse-jl/branch/master
-
 [codecov-img]: https://codecov.io/gh/carlobaldassi/ArgParse.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/ArgParse.jl
-
-[pkg-0.5-img]: http://pkg.julialang.org/badges/ArgParse_0.5.svg
-[pkg-0.5-url]: http://pkg.julialang.org/?pkg=ArgParse
-[pkg-0.6-img]: http://pkg.julialang.org/badges/ArgParse_0.6.svg
-[pkg-0.6-url]: http://pkg.julialang.org/?pkg=ArgParse
 
 [PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
 [PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
