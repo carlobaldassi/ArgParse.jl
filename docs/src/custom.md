@@ -7,7 +7,7 @@ the Julia's built-in `parse` function. In order to extend this functionality to 
 custom types, you need to overload the `ArgParse.parse_item` function. Example:
 
 ```julia
-type CustomType
+struct CustomType
     val::Int
 end
 
@@ -18,4 +18,4 @@ end
 
 Note that the second argument needs to be of type `AbstractString` to avoid ambiguity warnings. Also note that if your
 type is parametric (e.g. `CustomType{T}`), you need to overload the function like this:
-`function ArgParse.parse_item{T}(::Type{CustomType{T}, x::AbstractString)`.
+`function ArgParse.parse_item(::Type{CustomType{T}}, x::AbstractString) where {T}`.

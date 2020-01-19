@@ -1,10 +1,5 @@
 using ArgParse
-using Compat
-if VERSION < v"0.7.0-DEV.1995"
-    using Base.Test
-else
-    using Test
-end
+using Test
 
 macro ap_test_throws(args)
     :(@test_throws ArgParseError $(esc(args)))
@@ -25,18 +20,10 @@ macro noout_test(args)
 end
 
 macro test_addtable_failure(ex...)
-    VERSION ≥ v"0.7-DEV.357" && (ex = [nothing, ex...])
+    ex = [nothing, ex...]
     ex = Expr(:call, :macroexpand, @__MODULE__, Expr(:quote, Expr(:macrocall, Symbol("@add_arg_table"), ex...)))
-    if VERSION ≥ v"0.7-DEV.1676"
-        quote
-            @test_throws LoadError $ex
-        end
-    else
-        quote
-            ex = $ex
-            @test Meta.isexpr(ex, :error)
-            @test isa(ex.args[1], ErrorException)
-        end
+    quote
+        @test_throws LoadError $ex
     end
 end
 

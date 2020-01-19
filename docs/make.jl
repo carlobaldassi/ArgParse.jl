@@ -2,7 +2,7 @@ using Documenter, ArgParse
 
 makedocs(
     modules  = [ArgParse],
-    format   = :html,
+    format = Documenter.HTML(prettyurls = "--local" ∉ ARGS),
     sitename = "ArgParse.jl",
     pages    = [
         "Home" => "index.md",
@@ -20,8 +20,4 @@ makedocs(
 
 deploydocs(
     repo   = "github.com/carlobaldassi/ArgParse.jl.git",
-    target = "build",
-    deps = nothing,
-    make = nothing,
-    julia  = "0.7"
 )

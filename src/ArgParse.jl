@@ -13,9 +13,6 @@ as well.
 """
 module ArgParse
 
-using Compat
-using Compat.Unicode
-using Compat: @warn
 using TextWrap
 
 export
@@ -34,9 +31,7 @@ export
 
 import Base: show, getindex, setindex!, haskey
 
-@static if VERSION >= v"0.7.0"
-    @nospecialize # use only declared type signatures, helps with compile time
-end
+@nospecialize # use only declared type signatures, helps with compile time
 
 # auxiliary functions/constants
 found_a_bug() = error("you just found a bug in the ArgParse module, please report it.")
@@ -2242,11 +2237,6 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
     return
 end
 #}}}
-
-if VERSION < v"0.7.0-DEV.5126" # TODO: remove after 0.6 support is dropped
-    # very crude hack to avoid deprecation warning
-    const iterate = next
-end
 
 # parse short opts
 #{{{

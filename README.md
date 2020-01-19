@@ -1,25 +1,18 @@
 # ArgParse.jl
 
-| **Documentation**                                                               | **PackageEvaluator**                                            | **Build Status**                                                                                |
-|:-------------------------------------------------------------------------------:|:---------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][pkg-0.5-img]][pkg-0.5-url] [![][pkg-0.6-img]][pkg-0.6-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
+| **Documentation**                                                               | **Build Status**                                                                                |
+|:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][travis-img]][travis-url] [![][appveyor-img]][appveyor-url] [![][codecov-img]][codecov-url] |
 
 ArgParse.jl is a package for parsing command-line arguments to
 [Julia][julia] programs.
 
 ### Installation and usage
 
-To install the module, use Julia's package manager. In Julia 0.7/1.0 and later, start pkg mode by pressing `]`
-and then enter:
+To install the module, use Julia's package manager: start pkg mode by pressing `]` and then enter:
 
 ```
-(v1.0) pkg> add ArgParse
-```
-
-In Julia 0.6, enter this instead:
-
-```
-julia> Pkg.add("ArgParse")
+(v1.3) pkg> add ArgParse
 ```
 
 Dependencies will be installed automatically.
@@ -35,6 +28,10 @@ julia> using ArgParse
 - [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
 
 See also the examples in the [examples directory](examples).
+
+## Changes in release 1.0.0
+
+* Drop support for Julia versions v0.6/v0.7
 
 ## Changes in release 0.6.2
 

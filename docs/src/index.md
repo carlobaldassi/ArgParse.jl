@@ -14,17 +14,10 @@ as well.
 
 ## Installation
 
-To install the module, use Julia's package manager. In Julia 0.7/1.0 and later, start pkg mode by pressing `]`
-and then enter:
+To install the module, use Julia's package manager: start pkg mode by pressing `]` and then enter:
 
 ```
 (v1.0) pkg> add ArgParse
-```
-
-In Julia 0.6, enter this instead:
-
-```
-julia> Pkg.add("ArgParse")
 ```
 
 Dependencies will be installed automatically.
