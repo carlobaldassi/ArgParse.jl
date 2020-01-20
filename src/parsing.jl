@@ -115,9 +115,9 @@ function usage_string(settings::ArgParseSettings)
 
     lc_len_limit = 24
 
-    cmd_lst = Any[]
-    pos_lst = Any[]
-    opt_lst = Any[]
+    cmd_lst = String[]
+    pos_lst = String[]
+    opt_lst = String[]
     for f in settings.args_table.fields
         if is_cmd(f)
             if !isempty(f.short_opt_name)
