@@ -2,7 +2,7 @@ module ArgParseTests
 
 include("common.jl")
 
-for i = 1:10
+for i = 1:11
     try
         s_i = lpad(string(i), 2, "0")
         include("argparse_test$s_i.jl")
