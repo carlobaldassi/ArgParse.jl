@@ -23,7 +23,7 @@ export
     @add_arg_table,
     add_arg_group,
     set_default_arg_group,
-    import_settings,
+    import_settings!,
     usage_string,
     parse_args
 

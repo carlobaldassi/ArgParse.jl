@@ -25,7 +25,7 @@ function ap_settings4()
                          error_on_conflict = false,  # do not error-out when trying to override an option
                          exc_handler = ArgParse.debug_handler)
 
-    import_settings(s, s0)       # now s has all of s0 arguments (except help/version)
+    import_settings!(s, s0)        # now s has all of s0 arguments (except help/version)
 
     @add_arg_table s begin
         "-o"                       # this will partially override s0's --parent-flag
@@ -69,7 +69,7 @@ function ap_settings4b()
     s = ArgParseSettings("Test 4 for ArgParse.jl",
                          version = "Version 1.0")
 
-    import_settings(s, s0, false)  # args_only set to false
+    import_settings!(s, s0, false)  # args_only set to false
 
     @add_arg_table s begin
         "-o"
@@ -172,7 +172,7 @@ end
 let s = ap_settings4_base()
 
     for s0 = [ap_settings4_conflict1(), ap_settings4_conflict2()]
-        @ee_test_throws import_settings(s, s0)
+        @ee_test_throws import_settings!(s, s0)
     end
 end
 
