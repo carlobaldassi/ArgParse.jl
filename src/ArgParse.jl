@@ -1,5 +1,3 @@
-__precompile__()
-
 """
     ArgParse
 
@@ -8,8 +6,8 @@ the program defines which arguments, options and sub-commands it accepts, and th
 does the actual parsing, issues errors when the input is invalid, and automatically generates help
 and usage messages.
 
-Users familiar with Python's `argparse` module will find many similarities, but some important differences
-as well.
+Users familiar with Python's `argparse` module will find many similarities, but some important
+differences as well.
 """
 module ArgParse
 
@@ -40,7 +38,6 @@ const nbsps = "$nbspc"
 println_unnbsp(io::IO, args...) = println(io, map(s->replace(s, nbspc => ' '), args)...)
 
 # actions
-#{{{
 const all_actions = [:store_arg, :store_true, :store_false, :store_const,
                      :append_arg, :append_const, :count_invocations,
                      :command, :show_help, :show_version]
@@ -51,25 +48,24 @@ const internal_actions = [:store_arg, :store_true, :store_false, :store_const,
                           :show_help, :show_version]
 
 const nonflag_actions = [:store_arg, :append_arg, :command_arg]
-is_flag_action(a::Symbol) = !(a in nonflag_actions)
+is_flag_action(a::Symbol) = a ∉ nonflag_actions
 
 const multi_actions = [:append_arg, :append_const]
-is_multi_action(a::Symbol) = a in multi_actions
+is_multi_action(a::Symbol) = a ∈ multi_actions
 
 const command_actions = [:command_arg, :command_flag]
-is_command_action(a::Symbol) = a in command_actions
-#}}}
+is_command_action(a::Symbol) = a ∈ command_actions
 
 # ArgConsumerType
-#{{{
 struct ArgConsumerType
     desc::Union{Int,Symbol}
     function ArgConsumerType(n::Integer)
-        n ≥ 0 || error("nargs can't be negative")
+        n ≥ 0 || throw(ArgumentError("nargs can't be negative"))
         new(n)
     end
     function ArgConsumerType(s::Symbol)
-        s in [:A, :?, :*, :+, :R] || error("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
+        s ∈ [:A, :?, :*, :+, :R] ||
+            throw(ArgumentError("nargs must be an integer or one of 'A', '?', '*', '+', 'R'"))
         new(s)
     end
 end
@@ -77,23 +73,18 @@ ArgConsumerType(c::Char) = ArgConsumerType(Symbol(c))
 ArgConsumerType() = ArgConsumerType(:A)
 
 function show(io::IO, nargs::ArgConsumerType)
-    print(io, isa(nargs.desc, Int) ? nargs.desc : "'"*string(nargs.desc)*"'")
+    print(io, nargs.desc isa Int ? nargs.desc : "'" * string(nargs.desc) * "'")
 end
 
-is_multi_nargs(nargs::ArgConsumerType) = (nargs.desc != 0 && nargs.desc != :A && nargs.desc != :?)
+is_multi_nargs(nargs::ArgConsumerType) = nargs.desc ∉ (0, :A, :?)
 
-function default_action(nargs::Integer)
-    nargs == 0 && return :store_true
-    return :store_arg
-end
+default_action(nargs::Integer) = nargs == 0 ? :store_true : :store_arg
 default_action(nargs::Char) = :store_arg
 default_action(nargs::Symbol) = :store_arg
 
 default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
-#}}}
 
 # ArgParseGroup
-#{{{
 mutable struct ArgParseGroup
     name::AbstractString
     desc::AbstractString
@@ -105,10 +96,8 @@ const pos_group = ArgParseGroup("positional", "positional arguments")
 const opt_group = ArgParseGroup("optional", "optional arguments")
 
 const std_groups = [cmd_group, pos_group, opt_group]
-#}}}
 
 # ArgParseField
-#{{{
 mutable struct ArgParseField
     dest_name::AbstractString
     long_opt_name::Vector{AbstractString}
@@ -125,10 +114,9 @@ mutable struct ArgParseField
     metavar::Union{AbstractString,Vector}
     group::AbstractString
     fake::Bool
-    function ArgParseField()
-        return new("", AbstractString[], AbstractString[], Any, :store_true, ArgConsumerType(),
-                   nothing, nothing, x->true, false, false, "", "", "", false)
-    end
+    ArgParseField() = new("", AbstractString[], AbstractString[], Any, :store_true,
+                          ArgConsumerType(), nothing, nothing, _->true, false, false, "", "", "",
+                          false)
 end
 
 is_flag(arg::ArgParseField) = is_flag_action(arg.action)
@@ -142,20 +130,17 @@ const scmd_dest_name = :_COMMAND_
 
 function show(io::IO, s::ArgParseField)
     p(x) = "  $x=$(getfield(s, x))\n"
-    str = "ArgParseField(\n"
+    println(io, "ArgParseField(")
     for f in fieldnames(ArgParseField)
-        str *= p(f)
+        println(io, "  ", x, "=", getfield(s, x))
     end
-    str *= "  )"
-    print(io, str)
+    print(io, "  )")
 end
-#}}}
 
 # ArgParseTable
-#{{{
 mutable struct ArgParseTable
     fields::Vector{ArgParseField}
-    subsettings::Dict{AbstractString,Any} # this in fact will be a Dict{AbstractString,ArgParseSettings}
+    subsettings::Dict{AbstractString,Any} # will actually be a Dict{AbstractString,ArgParseSettings}
     ArgParseTable() = new(ArgParseField[], Dict{AbstractString,Any}())
 end
 
@@ -172,55 +157,60 @@ function check_prefix_chars(chars)
 end
 
 # ArgParseSettings
-#{{{
-
-
 """
     ArgParseSettings
 
-The `ArgParseSettings` object contains all the settings to be used during argument parsing. Settings are divided
-in two groups: general settings and argument-table-related settings.
-While the argument table requires specialized functions such as [`@add_arg_table`](@ref) to be defined and manipulated,
-general settings are simply object fields (most of them are `Bool` or `String`) and can be passed to the
-constructor as keyword arguments, or directly set at any time.
+The `ArgParseSettings` object contains all the settings to be used during argument parsing. Settings
+are divided in two groups: general settings and argument-table-related settings.
+While the argument table requires specialized functions such as [`@add_arg_table`](@ref) to be
+defined and manipulated, general settings are simply object fields (most of them are `Bool` or
+`String`) and can be passed to the constructor as keyword arguments, or directly set at any time.
 
 This is the list of general settings currently available:
 
-* `prog` (default = `""`): the name of the program, as displayed in the auto-generated help and usage screens.
-  If left empty, the source file name will be used.
-* `description` (default = `""`): a description of what the program does, to be displayed in the auto-generated
-  help-screen, between the usage lines and the arguments description. If `preformatted_description` is `false` (see below),
-  it will be automatically formatted, but you can still force newlines by using two consecutive newlines in the string, and
-  manually control spaces by using non-breakable spaces (the character `'\\ua0'`).
+* `prog` (default = `""`): the name of the program, as displayed in the auto-generated help and
+  usage screens. If left empty, the source file name will be used.
+* `description` (default = `""`): a description of what the program does, to be displayed in the
+  auto-generated help-screen, between the usage lines and the arguments description. If
+  `preformatted_description` is `false` (see below), it will be automatically formatted, but you can
+  still force newlines by using two consecutive newlines in the string, and manually control spaces
+  by using non-breakable spaces (the character `'\\ua0'`).
 * `preformatted_description` (default = `false`): disable automatic formatting of `description`.
-* `epilog` (default = `""`): like `description`, but will be displayed at the end of the help-screen, after the
-  arguments description. The same formatting rules also apply.
+* `epilog` (default = `""`): like `description`, but will be displayed at the end of the
+  help-screen, after the arguments description. The same formatting rules also apply.
 * `preformatted_epilog` (default = `false`): disable automatic formatting of `epilog`.
-* `usage` (default = `""`): the usage line(s) to be displayed in the help screen and when an error is found during parsing.
-  If left empty, it will be auto-generated.
-* `version` (default = `"Unknown version"`): version information. It's used by the `:show_version` action.
-* `add_help` (default = `true`): if `true`, a `--help, -h` option (triggering the `:show_help` action) is added
-  to the argument table.
-* `add_version` (default = `false`): if `true`, a `--version` option (triggering the `:show_version` action) is added
-  to the argument table.
-* `fromfile_prefix_chars` (default = `Set{Char}()`): an argument beginning with one of these characters will specify a file from which
-  arguments will be read, one argument read per line. Alphanumeric characters and the hyphen-minus (`'-'`) are prohibited.
-* `autofix_names` (default = `false`): if `true`, will try to automatically fix the uses of dashes (`'-'`) and underscores (`'_'`)
-  in option names and destinations: all underscores will be converted to dashes in long option names; also, associated destination names, if
-  auto-generated (see the [Argument names](@ref) section), will have dashes replaced with underscores, both for long options and for
-  positional arguments. For example, an option declared as `"--my-opt"` will be associated with the key `"my_opt"` by default.
-  It is especially advisable to turn this option on then parsing with the `as_symbols=true` argument to `parse_args`.
-* `error_on_conflict` (default = `true`): if `true`, throw an error in case conflicting entries are added to the argument table;
-  if `false`, later entries will silently take precedence.
-  See the [Conflicts and overrides](@ref) srction for a detailed description of what conflicts are and what is the exact behavior
-  when this setting is `false`.
+* `usage` (default = `""`): the usage line(s) to be displayed in the help screen and when an error
+  is found during parsing. If left empty, it will be auto-generated.
+* `version` (default = `"Unknown version"`): version information. It's used by the `:show_version`
+  action.
+* `add_help` (default = `true`): if `true`, a `--help, -h` option (triggering the `:show_help`
+  action) is added to the argument table.
+* `add_version` (default = `false`): if `true`, a `--version` option (triggering the `:show_version`
+  action) is added to the argument table.
+* `fromfile_prefix_chars` (default = `Set{Char}()`): an argument beginning with one of these
+  characters will specify a file from which arguments will be read, one argument read per line.
+  Alphanumeric characters and the hyphen-minus (`'-'`) are prohibited.
+* `autofix_names` (default = `false`): if `true`, will try to automatically fix the uses of dashes
+  (`'-'`) and underscores (`'_'`) in option names and destinations: all underscores will be
+  converted to dashes in long option names; also, associated destination names, if auto-generated
+  (see the [Argument names](@ref) section), will have dashes replaced with underscores, both for
+  long options and for positional arguments. For example, an option declared as `"--my-opt"` will be
+  associated with the key `"my_opt"` by default. It is especially advisable to turn this option on
+  then parsing with the `as_symbols=true` argument to `parse_args`.
+* `error_on_conflict` (default = `true`): if `true`, throw an error in case conflicting entries are
+  added to the argument table; if `false`, later entries will silently take precedence. See the
+  [Conflicts and overrides](@ref) srction for a detailed description of what conflicts are and what
+  is the exact behavior when this setting is `false`.
 * `suppress_warnings` (default = `false`): is `true`, all warnings will be suppressed.
-* `allow_ambiguous_opts` (default = `false`): if `true`, ambiguous options such as `-1` will be accepted.
-* `commands_are_required` (default = `true`): if `true`, commands will be mandatory. See the [Commands](@ref) section.
-* `exc_handler` (default = `ArgParse.default_handler`): this is a function which is invoked when an error is detected
-  during parsing (e.g. an option is not recognized, a required argument is not passed etc.). It takes two arguments:
-  the `settings::ArgParseSettings` object and the `err::ArgParseError` exception. The default handler prints the error text
-  and the usage screen on standard error and exits with error code 1:
+* `allow_ambiguous_opts` (default = `false`): if `true`, ambiguous options such as `-1` will be
+  accepted.
+* `commands_are_required` (default = `true`): if `true`, commands will be mandatory. See the
+  [Commands](@ref) section.
+* `exc_handler` (default = `ArgParse.default_handler`): this is a function which is invoked when an
+  error is detected during parsing (e.g. an option is not recognized, a required argument is not
+  passed etc.). It takes two arguments: the `settings::ArgParseSettings` object and the
+  `err::ArgParseError` exception. The default handler prints the error text and the usage screen on
+  standard error and exits with error code 1:
 
   ```julia
   function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
@@ -229,10 +219,11 @@ This is the list of general settings currently available:
       exit(err_code)
   end
   ```
-
-  The module also provides a function `ArgParse.debug_handler` (not exported) which will just rethrow the error.
-* `exit_after_help` (default = `true`): exits Julia (with error code `0`) when the `:show_help` or `:show_version` actions
-  are triggered. If `false`, those actions will just stop the parsing and make `parse_args` return `nothing`.
+  The module also provides a function `ArgParse.debug_handler` (not exported) which will just
+  rethrow the error.
+* `exit_after_help` (default = `true`): exits Julia (with error code `0`) when the `:show_help` or
+  `:show_version` actions are triggered. If `false`, those actions will just stop the parsing and
+  make `parse_args` return `nothing`.
 
 Here is a usage example:
 
@@ -253,7 +244,8 @@ settings.version = "1.0"
 settings.add_version = true
 ```
 
-As a shorthand, the `description` field can be passed without keyword, which makes this equivalent to the above:
+As a shorthand, the `description` field can be passed without keyword, which makes this equivalent
+to the above:
 
 ```julia
 settings = ArgParseSettings("This program does something",
@@ -262,8 +254,8 @@ settings = ArgParseSettings("This program does something",
                             add_version = true)
 ```
 
-Most settings won't take effect until `parse_args` is invoked, but a few will have immediate effects: `autofix_names`,
-`error_on_conflict`, `suppress_warnings`, `allow_ambiguous_opts`.
+Most settings won't take effect until `parse_args` is invoked, but a few will have immediate
+effects: `autofix_names`, `error_on_conflict`, `suppress_warnings`, `allow_ambiguous_opts`.
 """
 mutable struct ArgParseSettings
     prog::AbstractString
@@ -287,7 +279,9 @@ mutable struct ArgParseSettings
     preformatted_epilog::Bool
     exit_after_help::Bool
 
-    function ArgParseSettings(;prog::AbstractString = Base.source_path() != nothing ? basename(Base.source_path()) : "",
+    function ArgParseSettings(;prog::AbstractString = Base.source_path() ≢ nothing ?
+                                                          basename(Base.source_path()) :
+                                                          "",
                                description::AbstractString = "",
                                epilog::AbstractString = "",
                                usage::AbstractString = "",
@@ -317,33 +311,29 @@ mutable struct ArgParseSettings
     end
 end
 
-# the "add_help" is kept for backwards compatibility and is now undocumented
-ArgParseSettings(desc::AbstractString, add_help = true; kw...) = ArgParseSettings(;Any[(:description, desc), (:add_help, add_help), kw...]...)
+ArgParseSettings(desc::AbstractString; kw...) = ArgParseSettings(; description = desc, kw...)
 
 function show(io::IO, s::ArgParseSettings)
-    p(x) = "  $x=$(getfield(s, x))\n"
-    str = "ArgParseSettings(\n"
-    for f in setdiff(fieldnames(ArgParseSettings), [:args_groups, :args_table])
-        str *= p(f)
+    println(io, "ArgParseSettings(")
+    for f in setdiff(fieldnames(ArgParseSettings), )
+        f ∈ [:args_groups, :args_table] && continue
+        println(io, "  ", f, "=", getfield(s, f))
     end
-    str *= "  >> " * usage_string(s) * "\n"
-    str *= "  )"
-    print(io, str)
+    println(io, "  >> ", usage_string(s))
+    print(io, "  )")
 end
 
 ArgName{T<:AbstractString} = Union{T, Vector{T}}
 
 getindex(s::ArgParseSettings, c::AbstractString) = s.args_table.subsettings[c]
 haskey(s::ArgParseSettings, c::AbstractString) = haskey(s.args_table.subsettings, c)
-setindex!(s::ArgParseSettings, x::ArgParseSettings, c::AbstractString) = setindex!(s.args_table.subsettings, x, c)
-
-#}}}
+setindex!(s::ArgParseSettings, x::ArgParseSettings, c::AbstractString) =
+    setindex!(s.args_table.subsettings, x, c)
 
 # fields declarations sanity checks
-#{{{
 function check_name_format(name::ArgName)
     isempty(name) && error("empty name")
-    isa(name, Vector) || return true
+    name isa Vector || return true
     for n in name
         isempty(n)         && error("empty name")
         startswith(n, '-') || error("only options can have multiple names")
@@ -352,7 +342,7 @@ function check_name_format(name::ArgName)
 end
 
 function check_type(opt, T::Type, message::AbstractString)
-    isa(opt, T) || error(message)
+    opt isa T || error(message)
     return true
 end
 
@@ -362,21 +352,20 @@ function check_eltype(opt, T::Type, message::AbstractString)
 end
 
 function warn_extra_opts(opts, valid_keys::Vector{Symbol})
-
     for k in opts
-        k in valid_keys || @warn "ignored option: $k"
+        k ∈ valid_keys || @warn "ignored option: $k"
     end
     return true
 end
 
 function check_action_is_valid(action::Symbol)
-    action in all_actions || error("invalid action: $action")
+    action ∈ all_actions || error("invalid action: $action")
 end
 
 function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
-    is_flag_action(action) && nargs.desc != 0 && nargs.desc != :A &&
+    is_flag_action(action) && nargs.desc ≠ 0 && nargs.desc ≠ :A &&
         error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
-    is_command_action(action) && nargs.desc != :A &&
+    is_command_action(action) && nargs.desc ≠ :A &&
         error("incompatible nargs and action (command action, nargs=$nargs)")
     !is_flag_action(action) && nargs.desc == 0 &&
         error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
@@ -384,9 +373,9 @@ function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
 end
 
 function check_long_opt_name(name::AbstractString, settings::ArgParseSettings)
-    '=' in name           && error("illegal option name: $name (contains '=')")
+    '=' ∈ name            && error("illegal option name: $name (contains '=')")
     occursin(r"\s", name) && error("illegal option name: $name (contains whitespace)")
-    nbspc in name         && error("illegal option name: $name (contains non-breakable-space)")
+    nbspc ∈ name          && error("illegal option name: $name (contains non-breakable-space)")
     settings.add_help     &&
         name == "help"    && error("option --help is reserved in the current settings")
     settings.add_version  &&
@@ -395,13 +384,14 @@ function check_long_opt_name(name::AbstractString, settings::ArgParseSettings)
 end
 
 function check_short_opt_name(name::AbstractString, settings::ArgParseSettings)
-    length(name) != 1                && error("short options must use a single character")
-    name == "="                      && error("illegal short option name: $name")
-    occursin(r"\s", name)            && error("illegal option name: $name (contains whitespace)")
-    nbspc in name                    && error("illegal option name: $name (contains non-breakable-space)")
-    !settings.allow_ambiguous_opts   &&
-        occursin(r"[0-9.(]", name)   && error("ambiguous option name: $name (disabled in the current settings)")
-    settings.add_help && name == "h" && error("option -h is reserved for help in the current settings")
+    length(name) ≠ 1      && error("short options must use a single character")
+    name == "="           && error("illegal short option name: $name")
+    occursin(r"\s", name) && error("illegal option name: $name (contains whitespace)")
+    nbspc ∈ name          && error("illegal option name: $name (contains non-breakable-space)")
+    !settings.allow_ambiguous_opts && occursin(r"[0-9.(]", name) &&
+                             error("ambiguous option name: $name (disabled in current settings)")
+    settings.add_help && name == "h" &&
+                             error("option -h is reserved for help in the current settings")
     return true
 end
 
@@ -430,22 +420,21 @@ function check_arg_makes_sense(settings::ArgParseSettings, arg::ArgParseField)
     is_arg(arg) || return true
     is_command_action(arg.action) && return true
 
-    has_cmd = false
-    has_nonreq = false
     for f in settings.args_table.fields
-        if is_arg(f)
-            is_command_action(f.action) && (has_cmd = true)
-            f.required || (has_nonreq = true)
-        end
+        is_arg(f) || continue
+        is_command_action(f.action) && error("non-command $(idstring(arg)) can't follow commands")
+        !f.required && arg.required &&
+            error("required $(idstring(arg)) can't follow non-required arguments")
     end
-    has_cmd && error("non-command $(idstring(arg)) can't follow commands")
-    has_nonreq && arg.required && error("required $(idstring(arg)) can't follow non-required arguments")
     return true
 end
 
-function check_conflicts_with_commands(settings::ArgParseSettings, new_arg::ArgParseField, allow_future_merge::Bool)
+function check_conflicts_with_commands(settings::ArgParseSettings,
+                                       new_arg::ArgParseField,
+                                       allow_future_merge::Bool)
     for (cmd, ss) in settings.args_table.subsettings
-        cmd == new_arg.dest_name && error("$(idstring(new_arg)) has the same destination of a command: $cmd")
+        cmd == new_arg.dest_name &&
+            error("$(idstring(new_arg)) has the same destination of a command: $cmd")
     end
     for a in settings.args_table.fields
         if is_cmd(a) && !is_cmd(new_arg)
@@ -467,7 +456,8 @@ end
 
 function check_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
     for a in settings.args_table.fields
-        new_cmd == a.dest_name && error("command $new_cmd has the same destination of $(idstring(a))")
+        new_cmd == a.dest_name &&
+            error("command $new_cmd has the same destination of $(idstring(a))")
     end
     return true
 end
@@ -485,10 +475,12 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
         end
         if a.dest_name == new_arg.dest_name
             a.arg_type == new_arg.arg_type ||
-                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination but different arg types")
+                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination " *
+                      "but different arg types")
             if (is_multi_action(a.action) && !is_multi_action(new_arg.action)) ||
                (!is_multi_action(a.action) && is_multi_action(new_arg.action))
-                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination but incompatible actions")
+                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination " *
+                      "but incompatible actions")
             end
         end
     end
@@ -496,34 +488,45 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
 end
 
 check_default_type(default::Nothing, arg_type::Type) = true
-function check_default_type(default, arg_type::Type)
-    isa(default, arg_type) && return true
-    error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), arg_type=$arg_type)")
+function check_default_type(default::D, arg_type::Type) where D
+    D <: arg_type || error("typeof(default)=$D is incompatible with arg_type=$arg_type)")
+    return true
 end
 
 check_default_type_multi_action(default::Nothing, arg_type::Type) = true
-function check_default_type_multi_action(default, arg_type::Type)
-    (isa(default, Vector) && (arg_type <: eltype(default))) ||
-        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with $arg_type<:T)")
-    all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type)")
+function check_default_type_multi_action(default::Vector{D}, arg_type::Type) where D
+    arg_type <: D || error("typeof(default)=Vector{$D} can't hold arguments " *
+                           "of type arg_type=$arg_type)")
+    all(x->(x isa arg_type), default) || error("all elements of the default value " *
+                                               "must be of type $arg_type)")
     return true
 end
+check_default_type_multi_action(default::D, arg_type::Type) where D =
+    error("typeof(default)=$D is incompatible with the action, it should be a Vector")
 
 check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
 function check_default_type_multi_nargs(default::Vector, arg_type::Type)
-    all(x->isa(x, arg_type), default) || error("all elements of the default value must be of type $arg_type")
+    all(x->(x isa arg_type), default) || error("all elements of the default value " *
+                                               "must be of type $arg_type")
     return true
 end
-check_default_type_multi_nargs(default, arg_type::Type) =
-    error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector)")
+check_default_type_multi_nargs(default::D, arg_type::Type) where D =
+    error("typeof(default)=$D is incompatible with nargs, it should be a Vector")
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
-function check_default_type_multi2(default, arg_type::Type)
-    (isa(default, Vector) && (Vector{arg_type} <: eltype(default))) ||
-        error("the default value is of the incorrect type (typeof(default)=$(typeof(default)), should be a Vector{T} with Vector{$arg_type}<:T)")
-    all(y->all(x->isa(x, arg_type), y), default) || error("all elements of the default value must be of type $arg_type")
+function check_default_type_multi2(default::Vector{D}, arg_type::Type) where D
+    Vector{arg_type} <: D || error("typeof(default)=Vector{$D} can't hold Vectors of arguments " *
+                                   "of type arg_type=$arg_type)")
+    all(y->(y isa Vector), default) ||
+        error("the default $(default) is incompatible with the action and nargs, " *
+              "it should be a Vector of Vectors")
+    all(y->all(x->(x isa arg_type), y), default) || error("all elements of the default value " *
+                                                          "must be of type $arg_type")
     return true
 end
+check_default_type_multi2(default::D, arg_type::Type) where D =
+    error("the default $(default) is incompatible with the action and nargs, " *
+          "it should be a Vector of Vectors")
 
 check_range_default(default::Nothing, range_tester::Function) = true
 function check_range_default(default, range_tester::Function)
@@ -531,7 +534,7 @@ function check_range_default(default, range_tester::Function)
     try
         res = range_tester(default)
     catch err
-        error("the range_tester function must be defined for the default value and return a Bool")
+        error("the range_tester function must be defined for the default value, and return a Bool")
     end
     res || error("the default value must pass the range_tester function")
     return true
@@ -544,7 +547,8 @@ function check_range_default_multi(default::Vector, range_tester::Function)
         try
             res = range_tester(d)
         catch err
-            error("the range_tester function must be a defined for all the default values and return a Bool")
+            error("the range_tester function must be defined for all the default values, " *
+                  "and return a Bool")
         end
         res || error("all of the default values must pass the range_tester function")
     end
@@ -558,7 +562,8 @@ function check_range_default_multi2(default::Vector, range_tester::Function)
         try
             res = range_tester(d)
         catch err
-            error("the range_tester function must be a defined for all the default values and return a Bool")
+            error("the range_tester function must be defined for all the default values, " *
+                  "and return a Bool")
         end
         res || error("all of the default values must pass the range_tester function")
     end
@@ -569,14 +574,13 @@ function check_metavar(metavar::AbstractString)
     isempty(metavar)         && error("empty metavar")
     startswith(metavar, '-') && error("metavars cannot begin with -")
     occursin(r"\s", metavar) && error("illegal metavar name: $metavar (contains whitespace)")
-    nbspc in metavar         && error("illegal metavar name: $metavar (contains non-breakable-space)")
+    nbspc ∈ metavar          && error("illegal metavar name: $metavar " *
+                                      "(contains non-breakable-space)")
     return true
 end
 
 function check_metavar(metavar::Vector{<:AbstractString})
-    for single_value in metavar
-        check_metavar(single_value)
-    end
+    foreach(check_metavar, metavar)
     return true
 end
 
@@ -585,16 +589,14 @@ function check_group_name(name::AbstractString)
     startswith(name, '#') && error("invalid group name (starts with #)")
     return true
 end
-#}}}
 
 # add_arg_table and related
-#{{{
 function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     pos_arg = ""
     long_opts = AbstractString[]
     short_opts = AbstractString[]
     r(n) = settings.autofix_names ? replace(n, '_' => '-') : n
-    if isa(name, Vector)
+    if name isa Vector
         for n in name
             if startswith(n, "--")
                 n == "--" && error("illegal option name: --")
@@ -628,7 +630,10 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     return pos_arg, long_opts, short_opts
 end
 
-function auto_dest_name(pos_arg::AbstractString, long_opts::Vector{AbstractString}, short_opts::Vector{AbstractString}, autofix_names::Bool)
+function auto_dest_name(pos_arg::AbstractString,
+                        long_opts::Vector{AbstractString},
+                        short_opts::Vector{AbstractString},
+                        autofix_names::Bool)
     r(n) = autofix_names ? replace(n, '-' => '_') : n
     isempty(pos_arg) || return r(pos_arg)
     isempty(long_opts) || return r(long_opts[1])
@@ -652,9 +657,11 @@ end
 """
     add_arg_table(settings, [arg_name [,arg_options]]...)
 
-This function is very similar to the macro version [`@add_arg_table`](@ref). Its syntax is stricter: tuples and blocks are not allowed and argument options
-are explicitly specified as `Dict` objects. However, since it doesn't involve macros, it offers more flexibility in other respects,
-e.g. the `arg_name` entries need not be explicit, they can be anything which evaluates to a `String` or a `Vector{String}`.
+This function is very similar to the macro version [`@add_arg_table`](@ref). Its syntax is stricter:
+tuples and blocks are not allowed and argument options are explicitly specified as `Dict` objects.
+However, since it doesn't involve macros, it offers more flexibility in other respects, e.g. the
+`arg_name` entries need not be explicit, they can be anything which evaluates to a `String` or a
+`Vector{String}`.
 
 Example:
 
@@ -675,12 +682,13 @@ add_arg_table(settings,
 function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,Dict}...)
     has_name = false
     for i = 1:length(table)
-        !has_name && !isa(table[i], ArgName) && error("option field must be preceded by the arg name")
+        !has_name && !(table[i] isa ArgName) &&
+            error("option field must be preceded by the arg name")
         has_name = true
     end
     i = 1
     while i ≤ length(table)
-        if i+1 ≤ length(table) && !isa(table[i+1], ArgName)
+        if i+1 ≤ length(table) && !(table[i+1] isa ArgName)
             add_arg_field(settings, table[i]; table[i+1]...)
             i += 2
         else
@@ -693,22 +701,24 @@ end
 """
     @add_arg_table(settings, table...)
 
-This macro adds a table of arguments and options to the given `settings`. It can be invoked multiple times. The arguments groups
-are determined automatically, or the current default group is used if specified (see the [Argument groups](@ref) section for
-more details).
+This macro adds a table of arguments and options to the given `settings`. It can be invoked multiple
+times. The arguments groups are determined automatically, or the current default group is used if
+specified (see the [Argument groups](@ref) section for more details).
 
-The `table` is a list in which each element can be either `String`, or a tuple or a vector of `String`, or an assigmment
-expression, or a block:
+The `table` is a list in which each element can be either `String`, or a tuple or a vector of
+`String`, or an assigmment expression, or a block:
 
-* a `String`, a tuple or a vector introduces a new positional argument or option. Tuples and vectors are only allowed for options and
-  provide alternative names (e.g. `["--opt", "-o"]`)
-* assignment expressions (i.e. expressions using `=`, `:=` or `=>`) describe the previous argument behavior (e.g.
-  `help = "an option"` or `required => false`).  See the [Argument entry settings](@ref) section for a complete description
-* blocks (`begin...end` or lists of expressions in parentheses separated by semicolons) are useful to group entries and span
-  multiple lines.
+* a `String`, a tuple or a vector introduces a new positional argument or option. Tuples and vectors
+  are only allowed for options and provide alternative names (e.g. `["--opt", "-o"]`)
+* assignment expressions (i.e. expressions using `=`, `:=` or `=>`) describe the previous argument
+  behavior (e.g.  `help = "an option"` or `required => false`).  See the
+  [Argument entry settings](@ref) section for a complete description
+* blocks (`begin...end` or lists of expressions in parentheses separated by semicolons) are useful
+  to group entries and span multiple lines.
 
-These rules allow for a variety usage styles, which are discussed in the [Argument table styles](@ref) section.
-In the rest of the documentation, we will mostly use this style:
+These rules allow for a variety usage styles, which are discussed in the
+[Argument table styles](@ref) section. In the rest of the documentation, we will mostly use this
+style:
 
 ```julia
 @add_arg_table settings begin
@@ -721,8 +731,8 @@ In the rest of the documentation, we will mostly use this style:
 end
 ```
 
-In the above example, the `table` is put in a single `begin...end` block and the line `"--opt1", "-o"` is parsed as a tuple;
-indentation is used to help readability.
+In the above example, the `table` is put in a single `begin...end` block and the line
+`"--opt1", "-o"` is parsed as a tuple; indentation is used to help readability.
 
 See also the function [`add_arg_table`](@ref).
 """
@@ -734,7 +744,8 @@ macro add_arg_table(s, x...)
     s = esc(s)
     # start building the return expression
     exret = quote
-        isa($s, ArgParseSettings) || error("first argument to @add_arg_table must be of type ArgParseSettings")
+        $s isa ArgParseSettings ||
+            error("first argument to @add_arg_table must be of type ArgParseSettings")
     end
     # initialize the name and the options expression
     name = nothing
@@ -755,7 +766,7 @@ macro add_arg_table(s, x...)
             # Was parsed as doc syntax. Split into components
             splice!(x, i, y.args[2:end])
             continue
-        elseif isa(y, AbstractString) || Meta.isexpr(y, (:vect, :tuple))
+        elseif (y isa AbstractString) || Meta.isexpr(y, (:vect, :tuple))
             Meta.isexpr(y, :tuple) && (y.head = :vect) # transform tuples into vectors
             if Meta.isexpr(y, :vect) && (isempty(y.args) || !all(x->x isa AbstractString, y.args))
                 # heterogeneous elements: splice it in place, just like blocks
@@ -783,15 +794,17 @@ macro add_arg_table(s, x...)
             i += 1
         elseif Meta.isexpr(y, (:(=), :(:=), :kw))
             # found an assignment: add it to the current options expression
-            name ≢ nothing || error("malformed table: description fields must be preceded by the arg name")
+            name ≢ nothing ||
+                error("malformed table: description fields must be preceded by the arg name")
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
             i += 1
         elseif Meta.isexpr(y, :call) && y.args[1] == :(=>)
             # found an assignment: add it to the current options expression
-            name ≢ nothing || error("malformed table: description fields must be preceded by the arg name")
+            name ≢ nothing ||
+                error("malformed table: description fields must be preceded by the arg name")
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[2]), esc(y.args[3])))
             i += 1
-        elseif isa(y, LineNumberNode) || Meta.isexpr(y, :line)
+        elseif (y isa LineNumberNode) || Meta.isexpr(y, :line)
             # a line number node, ignore
             i += 1
             continue
@@ -852,7 +865,7 @@ macro defaults(opts, ex...)
     used = esc(gensym("opts"))
     exret = quote
         $exret
-        $used = Dict{Symbol,Bool}([(k,false) for (k,v) in $opts])
+        $used = Dict{Symbol,Bool}(k => false for (k,v) in $opts)
     end
 
     # Check each argument in the assignment list
@@ -864,14 +877,15 @@ macro defaults(opts, ex...)
             # and restart from the same position
             splice!(ex, i, y.args)
             continue
-        elseif isa(y, LineNumberNode) || Meta.isexpr(y, :line)
+        elseif (y isa LineNumberNode) || Meta.isexpr(y, :line)
             # A line number node, ignore
             i += 1
             continue
         elseif Meta.isexpr(y, :call) && y.args[1] == :(=>)
             y = Expr(:(=), y.args[2:end]...)
         elseif !Meta.isexpr(y, (:(=), :(:=), :kw))
-            error("Arguments to @defaults following the options variable must be assignments, e.g., a=5 or a=>5")
+            error("Arguments to @defaults following the options variable must be assignments, " *
+                  "e.g., a=5 or a=>5")
         end
         y.head = :(=)
 
@@ -900,7 +914,7 @@ end
 function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     check_name_format(name)
 
-    supplied_opts = Symbol[k for (k,v) in desc]
+    supplied_opts = keys(desc)
 
     @defaults desc begin
         nargs = ArgConsumerType()
@@ -945,7 +959,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
 
     check_action_is_valid(action)
 
-    action == :command && (action = is_opt ? (:command_flag) : (:command_arg))
+    action == :command && (action = is_opt ? :command_flag : :command_arg)
 
     check_nargs_and_action(nargs, action)
 
@@ -969,49 +983,47 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     new_arg.action = action
 
     group = string(group)
-    if (:group in supplied_opts) && !isempty(group)
+    if :group ∈ supplied_opts && !isempty(group)
         check_group_name(group)
     end
     new_arg.group = get_group_name(group, new_arg, settings)
 
-    if (action == :store_const || action == :append_const) &&
-           !(:constant in supplied_opts)
+    if action ∈ (:store_const, :append_const) && :constant ∉ supplied_opts
         error("action $action requires the 'constant' field")
     end
 
     valid_keys = [:nargs, :action, :help, :force_override, :group]
     if is_flag
-        if action == :store_const || action == :append_const
+        if action ∈ (:store_const, :append_const)
             append!(valid_keys, [:default, :constant, :arg_type, :dest_name])
-        elseif action == :store_true || action == :store_false ||
-               action == :count_invocations || action == :command_flag
+        elseif action ∈ (:store_true, :store_false, :count_invocations, :command_flag)
             push!(valid_keys, :dest_name)
-        elseif action == :show_help || action == :show_version
         else
-            found_a_bug()
+            action ∈ (:show_help, :show_version) || found_a_bug()
         end
     elseif is_opt
-        append!(valid_keys, [:arg_type, :default, :range_tester, :dest_name, :required, :metavar, :eval_arg])
+        append!(valid_keys,
+                [:arg_type, :default, :range_tester, :dest_name, :required, :metavar, :eval_arg])
         nargs.desc == :? && push!(valid_keys, :constant)
-    elseif action != :command_arg
+    elseif action ≠ :command_arg
         append!(valid_keys, [:arg_type, :default, :range_tester, :required, :metavar])
     end
     settings.suppress_warnings || warn_extra_opts(supplied_opts, valid_keys)
 
     if is_command_action(action)
-        if (:dest_name in supplied_opts) && (:dest_name in valid_keys)
+        if (:dest_name ∈ supplied_opts) && (:dest_name ∈ valid_keys)
             cmd_name = dest_name
         else
             cmd_name = new_arg.dest_name
         end
     end
-    if (:dest_name in supplied_opts) && (:dest_name in valid_keys) && (action != :command_flag)
+    if (:dest_name ∈ supplied_opts) && (:dest_name ∈ valid_keys) && (action ≠ :command_flag)
         new_arg.dest_name = dest_name
     end
 
     check_dest_name(dest_name)
 
-    set_if_valid(k, x) = k in valid_keys && setfield!(new_arg, k, x)
+    set_if_valid(k, x) = k ∈ valid_keys && setfield!(new_arg, k, x)
 
     set_if_valid(:arg_type, arg_type)
     set_if_valid(:default, deepcopy(default))
@@ -1047,8 +1059,8 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
         elseif action == :count_invocations
             new_arg.arg_type = Int
             new_arg.default = 0
-        elseif action == :store_const || action == :append_const
-            if :arg_type in supplied_opts
+        elseif action ∈ (:store_const, :append_const)
+            if :arg_type ∈ supplied_opts
                 check_default_type(new_arg.default, new_arg.arg_type)
                 check_default_type(new_arg.constant, new_arg.arg_type)
             else
@@ -1086,9 +1098,11 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
             check_default_type_multi2(default, arg_type)
             check_range_default_multi2(default, range_tester)
         end
-        if (is_multi_action(new_arg.action) && is_multi_nargs(new_arg.nargs)) && (default ≡ nothing || default == [])
+        if (is_multi_action(new_arg.action) && is_multi_nargs(new_arg.nargs)) &&
+                (default ≡ nothing || default == [])
             new_arg.default = Array{Vector{arg_type}}(undef, 0)
-        elseif (is_multi_action(new_arg.action) || is_multi_nargs(new_arg.nargs)) && (default ≡ nothing || default == [])
+        elseif (is_multi_action(new_arg.action) || is_multi_nargs(new_arg.nargs)) &&
+                (default ≡ nothing || default == [])
             new_arg.default = Array{arg_type}(undef, 0)
         end
 
@@ -1121,7 +1135,10 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     return
 end
 
-function add_command(settings::ArgParseSettings, command::AbstractString, prog_hint::AbstractString, force_override::Bool)
+function add_command(settings::ArgParseSettings,
+                     command::AbstractString,
+                     prog_hint::AbstractString,
+                     force_override::Bool)
     haskey(settings, command) && error("command $command already added")
     if force_override
         override_conflicts_with_commands(settings, command)
@@ -1159,14 +1176,15 @@ add_arg_group(settings::ArgParseSettings, desc::AbstractString) =
 """
     add_arg_group(settings, description, [name , [set_as_default]])
 
-This function adds an argument group to the argument table in `settings`. The `description` is a `String` used in
-the help screen as a title for that group. The `name` is a unique name which can be provided to refer to that group
-at a later time.
+This function adds an argument group to the argument table in `settings`. The `description` is a
+`String` used in the help screen as a title for that group. The `name` is a unique name which can be
+provided to refer to that group at a later time.
 
-After invoking this function, all subsequent invocations of the [`@add_arg_table`](@ref) macro and [`add_arg_table`](@ref)
-function will use the new group as the default, unless `set_as_default` is set to `false` (the default is `true`, and the
-option can only be set if providing a `name`). Therefore, the most obvious usage pattern is: for each group, add it and
-populate the argument table of that group. Example:
+After invoking this function, all subsequent invocations of the [`@add_arg_table`](@ref) macro and
+[`add_arg_table`](@ref) function will use the new group as the default, unless `set_as_default` is
+set to `false` (the default is `true`, and the option can only be set if providing a `name`).
+Therefore, the most obvious usage pattern is: for each group, add it and populate the argument
+table of that group. Example:
 
 ```
 julia> settings = ArgParseSettings();
@@ -1191,17 +1209,22 @@ custom group:
 
 As seen from the example, new groups are always added at the end of existing ones.
 
-The `name` can also be passed as a `Symbol`. Forbidden names are the standard groups names (`"command"`,
-`"positional"` and `"optional"`) and those beginning with a hash character `'#'`.
+The `name` can also be passed as a `Symbol`. Forbidden names are the standard groups names
+(`"command"`, `"positional"` and `"optional"`) and those beginning with a hash character `'#'`.
 """
-function add_arg_group(settings::ArgParseSettings, desc::AbstractString,
-                       tag::Union{AbstractString,Symbol}, set_as_default::Bool = true)
+function add_arg_group(settings::ArgParseSettings,
+                       desc::AbstractString,
+                       tag::Union{AbstractString,Symbol},
+                       set_as_default::Bool = true)
     name = string(tag)
     check_group_name(name)
     _add_arg_group(settings, desc, name, set_as_default)
 end
 
-function _add_arg_group(settings::ArgParseSettings, desc::AbstractString, name::AbstractString, set_as_default::Bool)
+function _add_arg_group(settings::ArgParseSettings,
+                        desc::AbstractString,
+                        name::AbstractString,
+                        set_as_default::Bool)
     already_added = any(ag->ag.name==name, settings.args_groups)
     already_added || push!(settings.args_groups, ArgParseGroup(name, desc))
     set_as_default && (settings.default_group = name)
@@ -1213,14 +1236,14 @@ set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settin
 """
     set_default_arg_group(settings, [name])
 
-Set the default group for subsequent invocations of the [`@add_arg_table`](@ref) macro and [`add_arg_table`](@ref)
-function. `name` is a `String`, and must be one of the standard group names (`"command"`, `"positional"` or
-`"optional"`) or one of the user-defined names given in `add_arg_group` (groups with no assigned name cannot be
-used with this function).
+Set the default group for subsequent invocations of the [`@add_arg_table`](@ref) macro and
+[`add_arg_table`](@ref) function. `name` is a `String`, and must be one of the standard group names
+(`"command"`, `"positional"` or `"optional"`) or one of the user-defined names given in
+`add_arg_group` (groups with no assigned name cannot be used with this function).
 
-If `name` is not provided or is the empty string `""`, then the default behavior is reset (i.e. arguments will be
-automatically assigned to the standard groups).
-The `name` can also be passed as a `Symbol`.
+If `name` is not provided or is the empty string `""`, then the default behavior is reset (i.e.
+arguments will be automatically assigned to the standard groups). The `name` can also be passed as a
+`Symbol`.
 """
 function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol})
     name = string(name)
@@ -1231,10 +1254,8 @@ function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractS
     settings.default_group = name
     return
 end
-#}}}
 
 # import_settings & friends
-#{{{
 function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
     ids0 = Int[]
     for ia in 1:length(settings.args_table.fields)
@@ -1250,7 +1271,7 @@ function override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField
     for ia in 1:length(args)
         a = args[ia]
         if (a.dest_name == new_arg.dest_name) &&
-            ((a.arg_type != new_arg.arg_type) ||
+            ((a.arg_type ≠ new_arg.arg_type) ||
              (is_multi_action(a.action) && !is_multi_action(new_arg.action)) ||
              (!is_multi_action(a.action) && is_multi_action(new_arg.action)))
             # unsolvable conflict, mark for deletion
@@ -1329,10 +1350,10 @@ function merge_commands(fields::Vector{ArgParseField}, ofields::Vector{ArgParseF
         if is_cmd(a) && is_cmd(oa) && a.constant == oa.constant && !is_arg(a)
             @assert !is_arg(oa) # this is ensured by check_settings_are_compatible
             for l in oa.long_opt_name
-                l in a.long_opt_name || push!(a.long_opt_name, l)
+                l ∈ a.long_opt_name || push!(a.long_opt_name, l)
             end
             for s in oa.short_opt_name
-                s in a.short_opt_name || push!(a.short_opt_name, s)
+                s ∈ a.short_opt_name || push!(a.short_opt_name, s)
             end
             a.group = oa.group # note: the group may not be present yet, but it will be
                                #       added later
@@ -1357,26 +1378,29 @@ end
 """
     import_settings(settings, other_settings [,args_only])
 
-Imports `other_settings` into `settings`, where both are [`ArgParseSettings`](@ref) objects. If `args_only` is
-`true` (this is the default), only the argument table will be imported; otherwise, the default argument group
-will also be imported, and all general settings except `prog`, `description`, `epilog`, `usage` and `version`.
+Imports `other_settings` into `settings`, where both are [`ArgParseSettings`](@ref) objects. If
+`args_only` is `true` (this is the default), only the argument table will be imported; otherwise,
+the default argument group will also be imported, and all general settings except `prog`,
+`description`, `epilog`, `usage` and `version`.
 
-Sub-settings associated with commands will also be imported recursively; the `args_only` setting applies to
-those as well. If there are common commands, their sub-settings will be merged.
+Sub-settings associated with commands will also be imported recursively; the `args_only` setting
+applies to those as well. If there are common commands, their sub-settings will be merged.
 
-While importing, conflicts may arise: if `settings.error_on_conflict` is `true`, this will result in an error,
-otherwise conflicts will be resolved in favor of `other_settings` (see the [Conflicts and overrides](@ref) section
-for a detailed discussion of how conflicts are handled).
+While importing, conflicts may arise: if `settings.error_on_conflict` is `true`, this will result in
+an error, otherwise conflicts will be resolved in favor of `other_settings` (see the
+[Conflicts and overrides](@ref) section for a detailed discussion of how conflicts are handled).
 
-Argument groups will also be imported; if two groups in `settings` and `other_settings` match, they are merged
-(groups match either by name, or, if unnamed, by their description).
+Argument groups will also be imported; if two groups in `settings` and `other_settings` match, they
+are merged (groups match either by name, or, if unnamed, by their description).
 
-Note that the import will have effect immediately: any subsequent modification of `other_settings` will not have
-any effect on `settings`.
+Note that the import will have effect immediately: any subsequent modification of `other_settings`
+will not have any effect on `settings`.
 
 This function can be used at any time.
 """
-function import_settings(settings::ArgParseSettings, other::ArgParseSettings, args_only::Bool = true)
+function import_settings(settings::ArgParseSettings,
+                         other::ArgParseSettings,
+                         args_only::Bool = true)
     check_settings_are_compatible(settings, other)
 
     fields = settings.args_table.fields
@@ -1441,19 +1465,15 @@ function import_settings(settings::ArgParseSettings, other::ArgParseSettings, ar
     end
     return settings
 end
-#}}}
 
 # ArgParseError
-#{{{
 struct ArgParseError <: Exception
     text::AbstractString
 end
 
 argparse_error(x...) = throw(ArgParseError(string(x...)))
-#}}}
 
 # parsing checks
-#{{{
 function test_range(range_tester::Function, arg, name::AbstractString)
     local rng_chk::Bool
     try
@@ -1467,7 +1487,7 @@ end
 
 function test_required_args(settings::ArgParseSettings, found_args::Set{AbstractString})
     for f in settings.args_table.fields
-        !is_cmd(f) && f.required && !(idstring(f) in found_args) &&
+        !is_cmd(f) && f.required && (idstring(f) ∉ found_args) &&
             argparse_error("required $(idstring(f)) was not provided")
     end
     return true
@@ -1477,7 +1497,9 @@ function check_settings_can_use_symbols(settings::ArgParseSettings)
     args_table = settings.args_table
     if !isempty(args_table.subsettings)
         for f in args_table.fields
-            f.dest_name == string(scmd_dest_name) && error("the dest_name $(string(scmd_dest_name)) cannot be used with the as_symbols option")
+            if f.dest_name == string(scmd_dest_name)
+                error("the dest_name $scmd_dest_name cannot be used with the as_symbols option")
+            end
         end
         for subs in values(args_table.subsettings)
             check_settings_can_use_symbols(subs)
@@ -1485,22 +1507,23 @@ function check_settings_can_use_symbols(settings::ArgParseSettings)
     end
     settings.suppress_warnings && return true
     for f in args_table.fields
-        '-' in f.dest_name && @warn "dest_name=$(f.dest_name) contains an hyphen; use the autofix_names=true setting to have it converted to an underscore"
+        if '-' in f.dest_name
+            @warn "dest_name=$(f.dest_name) contains an hyphen; " *
+                  "use the autofix_names=true setting to have it converted to an underscore"
+        end
     end
     return true
 end
-#}}}
 
 # parsing aux functions
-#{{{
 function parse_item_wrapper(it_type::Type, x::AbstractString)
     local r::it_type
     try
         r = parse_item(it_type, x)
     catch err
         argparse_error("""
-            invalid argument: $x (conversion to type $it_type failed; you may need to overload ArgParse.parse_item;
-                              the error was: $err)""")
+            invalid argument: $x (conversion to type $it_type failed; you may need to overload
+                              ArgParse.parse_item; the error was: $err)""")
     end
     return r
 end
@@ -1579,8 +1602,8 @@ function usage_string(settings::ArgParseSettings)
                 bra_post = ""
             end
             if isa(f.nargs.desc, Int)
-                if isa(f.metavar, AbstractString)
-                    arg_str = string(ntuple(i->(i==1 ? f.metavar : (nbsps * f.metavar)), f.nargs.desc)...)
+                if f.metavar isa AbstractString
+                    arg_str = join(repeat([f.metavar], f.nargs.desc), nbsps)
                 else
                     found_a_bug()
                 end
@@ -1610,10 +1633,10 @@ function usage_string(settings::ArgParseSettings)
             if is_flag(f)
                 opt_str2 = ""
             else
-                if isa(f.nargs.desc, Int)
-                    if isa(f.metavar, AbstractString)
+                if f.nargs.desc isa Int
+                    if f.metavar isa AbstractString
                         opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
-                    elseif isa(f.metavar, Vector)
+                    elseif f.metavar isa Vector
                         opt_str2 = string(ntuple(i->(nbsps * f.metavar[i]), f.nargs.desc)...)
                     else
                         found_a_bug()
@@ -1668,7 +1691,11 @@ function usage_string(settings::ArgParseSettings)
     return out_str
 end
 
-string_compact(x...) = (io = IOBuffer(); show(IOContext(io, :compact=>true), x...); String(take!(io)))
+function string_compact(x...)
+    io = IOBuffer()
+    show(IOContext(io, :compact=>true), x...)
+    return String(take!(io))
+end
 
 function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     is_flag(arg) && return arg.help
@@ -1678,7 +1705,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     default_str = ""
     const_str = ""
     if !is_command_action(arg.action)
-        if arg.arg_type != Any && !(arg.arg_type <: AbstractString)
+        if arg.arg_type ≠ Any && !(arg.arg_type <: AbstractString)
             type_str = pre * "(type: " * string_compact(arg.arg_type)
         end
         if arg.default ≢ nothing && !isequal(arg.default, [])
@@ -1690,7 +1717,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
             const_str = mid * "without arg: " * string_compact(arg.constant)
         end
     end
-    post = (isempty(type_str) && isempty(default_str) && isempty(const_str)) ? "" : ")"
+    post = all(isempty, (type_str, default_str, const_str)) ? "" : ")"
     return arg.help * type_str * default_str * const_str * post
 end
 
@@ -1739,12 +1766,14 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
             push!(dest_lst, Any[f.metavar, gen_help_text(f, settings)])
             max_lc_len = max(max_lc_len, length(f.metavar))
         else
-            opt_str1 = join([["-"*x for x in f.short_opt_name]; ["--"*x for x in f.long_opt_name]], ", ")
+            opt_str1 = join([["-"*x for x in f.short_opt_name];
+                             ["--"*x for x in f.long_opt_name]],
+                            ", ")
             if is_flag(f)
                 opt_str2 = ""
             else
-                if isa(f.nargs.desc, Int)
-                    if isa(f.metavar, AbstractString)
+                if f.nargs.desc isa Int
+                    if f.metavar isa AbstractString
                         opt_str2 = string(ntuple(i->(nbsps * f.metavar), f.nargs.desc)...)
                     elseif isa(f.metavar, Vector)
                         opt_str2 = string(ntuple(i->(nbsps * f.metavar[i]), f.nargs.desc)...)
@@ -1811,16 +1840,9 @@ function show_version(io::IO, settings::ArgParseSettings; exit_when_done = true)
     return
 end
 
-function has_cmd(settings::ArgParseSettings)
-    for a in settings.args_table.fields
-        is_cmd(a) && return true
-    end
-    return false
-end
-#}}}
+has_cmd(settings::ArgParseSettings) = any(is_cmd, settings.args_table.fields)
 
 # parse_args & friends
-#{{{
 function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
     println(stderr, err.text)
     println(stderr, usage_string(settings))
@@ -1837,39 +1859,43 @@ parse_args(settings::ArgParseSettings; kw...) = parse_args(ARGS, settings; kw...
     parse_args([args,] settings; as_symbols::Bool = false)
 
 This is the central function of the `ArgParse` module. It takes a `Vector` of arguments and an
-[`ArgParseSettings`](@ref) object, and returns a `Dict{String,Any}`. If `args` is not provided,
-the global variable `ARGS` will be used.
+[`ArgParseSettings`](@ref) object, and returns a `Dict{String,Any}`. If `args` is not provided, the
+global variable `ARGS` will be used.
 
-When the keyword argument `as_symbols` is `true`, the function will return a `Dict{Symbol,Any}` instead.
+When the keyword argument `as_symbols` is `true`, the function will return a `Dict{Symbol,Any}`
+instead.
 
-The returned `Dict` keys are defined (possibly implicitly) in `settings`, and their associated values are parsed
-from `args`. Special keys are used for more advanced purposes; at the moment, one such key exists: `%COMMAND%`
-(`_COMMAND_` when using `as_symbols=true`; see the [Commands](@ref) section).
+The returned `Dict` keys are defined (possibly implicitly) in `settings`, and their associated
+values are parsed from `args`. Special keys are used for more advanced purposes; at the moment, one
+such key exists: `%COMMAND%` (`_COMMAND_` when using `as_symbols=true`; see the [Commands](@ref)
+section).
 
-Arguments are parsed in sequence and matched against the argument table in `settings` to determine whether they are
-long options, short options, option arguments or positional arguments:
+Arguments are parsed in sequence and matched against the argument table in `settings` to determine
+whether they are long options, short options, option arguments or positional arguments:
 
-  * long options begin with a double dash `"--"`; if a `'='` character is found, the remainder is the option argument;
-    therefore, `["--opt=arg"]` and `["--opt", "arg"]` are equivalent if `--opt` takes at least one argument.
-    Long options can be abbreviated (e.g. `--opt` instead of `--option`) as long as there is no ambiguity.
-  * short options begin with a single dash `"-"` and their name consists of a single character; they can be grouped
-    together (e.g. `["-x", "-y"]` can become `["-xy"]`), but in that case only the last option in the group can
-    take an argument (which can also be grouped, e.g. `["-a", "-f", "file.txt"]` can be passed as
-    `["-affile.txt"]` if `-a` does not take an argument and `-f` does). The `'='` character can be used to
-    separate option names from option arguments as well (e.g. `-af=file.txt`).
+  * long options begin with a double dash `"--"`; if a `'='` character is found, the remainder is
+    the option argument; therefore, `["--opt=arg"]` and `["--opt", "arg"]` are equivalent if `--opt`
+    takes at least one argument. Long options can be abbreviated (e.g. `--opt` instead of
+    `--option`) as long as there is no ambiguity.
+  * short options begin with a single dash `"-"` and their name consists of a single character; they
+    can be grouped together (e.g. `["-x", "-y"]` can become `["-xy"]`), but in that case only the
+    last option in the group can take an argument (which can also be grouped, e.g.
+    `["-a", "-f", "file.txt"]` can be passed as `["-affile.txt"]` if `-a` does not take an argument
+    and `-f` does). The `'='` character can be used to separate option names from option arguments
+    as well (e.g. `-af=file.txt`).
   * positional arguments are anything else; they can appear anywhere.
 
-The special string `"--"` can be used to signal the end of all options; after that, everything is considered as a
-positional argument (e.g. if `args = ["--opt1", "--", "--opt2"]`, the parser will recognize `--opt1` as a long
-option without argument, and `--opt2` as a positional argument).
+The special string `"--"` can be used to signal the end of all options; after that, everything is
+considered as a positional argument (e.g. if `args = ["--opt1", "--", "--opt2"]`, the parser will
+recognize `--opt1` as a long option without argument, and `--opt2` as a positional argument).
 
 The special string `"-"` is always parsed as a positional argument.
 
-The parsing can stop early if a `:show_help` or `:show_version` action is triggered, or if a parsing error is
-found.
+The parsing can stop early if a `:show_help` or `:show_version` action is triggered, or if a parsing
+error is found.
 
-Some ambiguities can arise in parsing, see the [Parsing details](@ref) section for a detailed description
-of how they're solved.
+Some ambiguities can arise in parsing, see the [Parsing details](@ref) section for a detailed
+description of how they're solved.
 """
 function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::Bool = false)
     as_symbols && check_settings_can_use_symbols(settings)
@@ -1877,7 +1903,7 @@ function parse_args(args_list::Vector, settings::ArgParseSettings; as_symbols::B
     try
         parsed_args = parse_args_unhandled(args_list, settings)
     catch err
-        isa(err, ArgParseError) || rethrow()
+        err isa ArgParseError || rethrow()
         settings.exc_handler(settings, err)
     end
     as_symbols && (parsed_args = convert_to_symbols(parsed_args))
@@ -1899,10 +1925,11 @@ mutable struct ParserState
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
         out_dict = Dict{String,Any}()
         for f in settings.args_table.fields
-            (f.action == :show_help || f.action == :show_version) && continue
+            f.action ∈ (:show_help, :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
-        new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(), nothing, truncated_shopts, false, out_dict)
+        return new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(),
+                   nothing, truncated_shopts, false, out_dict)
     end
 end
 
@@ -1912,9 +1939,10 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     haskey(settings, cmd) || argparse_error("unknown command: $cmd")
     #state.out_dict[cmd] = parse_args(state.args_list, settings[cmd])
     try
-        state.out_dict[cmd] = parse_args_unhandled(state.args_list, settings[cmd], state.truncated_shopts)
+        state.out_dict[cmd] =
+            parse_args_unhandled(state.args_list, settings[cmd], state.truncated_shopts)
     catch err
-        isa(err, ArgParseError) || rethrow(err)
+        err isa ArgParseError || rethrow(err)
         settings[cmd].exc_handler(settings[cmd], err)
     finally
         state.truncated_shopts = false
@@ -1929,7 +1957,8 @@ function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
         arg = args_list[1]
         if state.truncated_shopts
             @assert arg[1] == '-'
-            looks_like_an_option(arg, settings) || argparse_error("illegal short options sequence after command: $arg")
+            looks_like_an_option(arg, settings) ||
+                argparse_error("illegal short options sequence after command: $arg")
             state.truncated_shopts = false
         end
         if arg == "--"
@@ -1939,8 +1968,8 @@ function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
             popfirst!(args_list)
             continue
         elseif startswith(arg, "--")
-            eq = something(findfirst(isequal('='), arg), 0)
-            if eq ≠ 0
+            eq = findfirst(isequal('='), arg)
+            if eq ≢ nothing
                 opt_name = arg[3:prevind(arg,eq)]
                 arg_after_eq = arg[nextind(arg,eq):end]
             else
@@ -1992,8 +2021,10 @@ function read_args_from_files(arg_strings, prefixes)
     return new_arg_strings
 end
 
-function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool=false)
-    any(x->!isa(x,AbstractString), args_list) && error("malformed args_list")
+function parse_args_unhandled(args_list::Vector,
+                              settings::ArgParseSettings,
+                              truncated_shopts::Bool=false)
+    all(x->(x isa AbstractString), args_list) || error("malformed args_list")
     if !isempty(settings.fromfile_prefix_chars)
         args_list = read_args_from_files(args_list, settings.fromfile_prefix_chars)
     end
@@ -2061,8 +2092,8 @@ function parse_args_unhandled(args_list::Vector, settings::ArgParseSettings, tru
 end
 
 # common parse functions
-#{{{
-function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField, has_arg::Bool, opt_name::AbstractString)
+function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
+                     has_arg::Bool, opt_name::AbstractString)
     has_arg && argparse_error("option $opt_name takes no arguments")
     command = nothing
     out_dict = state.out_dict
@@ -2090,7 +2121,8 @@ function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParse
     return
 end
 
-function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField, rest, name::AbstractString)
+function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
+                       rest, name::AbstractString)
     args_list = state.args_list
     arg_delim_found = state.arg_delim_found
     out_dict = state.out_dict
@@ -2099,7 +2131,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     parse_function = f.eval_arg ? parse_item_eval : parse_item_wrapper
     command = nothing
     is_multi_nargs(f.nargs) && (opt_arg = Array{f.arg_type}(undef, 0))
-    if isa(f.nargs.desc, Int)
+    if f.nargs.desc isa Int
         num::Int = f.nargs.desc
         num > 0 || found_a_bug()
         corr = (rest ≡ nothing) ? 0 : 1
@@ -2124,9 +2156,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             opt_arg = a
             arg_consumed = true
         else
-            if isempty(args_list)
-                argparse_error("option $name requires an argument")
-            end
+            isempty(args_list) && argparse_error("option $name requires an argument")
             a = parse_function(f.arg_type, popfirst!(args_list))
             test_range(f.range_tester, a, name)
             opt_arg = a
@@ -2165,7 +2195,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
             arg_found = true
         end
         if f.nargs.desc == :+ && !arg_found
-            argparse_error("option $name requires at least one (not-looking-like-an-option) argument")
+            argparse_error("option $name requires at least one not-option-looking argument")
         end
     elseif f.nargs.desc == :R
         if rest ≢ nothing
@@ -2196,10 +2226,8 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     state.command = command
     return
 end
-#}}}
 
 # parse long opts
-#{{{
 function parse_long_opt(state::ParserState, settings::ArgParseSettings)
     opt_name = state.token
     arg_after_eq = state.token_arg
@@ -2236,10 +2264,8 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
     end
     return
 end
-#}}}
 
 # parse short opts
-#{{{
 function parse_short_opt(state::ParserState, settings::ArgParseSettings)
     shopts_lst = state.token
     rest_as_arg = nothing
@@ -2264,9 +2290,9 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
 
         local f::ArgParseField
         found = false
-        for f_ in settings.args_table.fields
-            found |= any(sn->sn==opt_name, f_.short_opt_name)
-            found && (f = f_; break) # TODO: use outer keyword instead of f_ when 0.6 support is dropped)
+        for outer f in settings.args_table.fields
+            found |= any(sn->sn==opt_name, f.short_opt_name)
+            found && break
         end
         found || argparse_error("unrecognized option -$opt_name")
         if is_flag(f)
@@ -2278,7 +2304,9 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         state.arg_consumed && break
         if found_command(state)
             if rest_as_arg ≢ nothing && !isempty(rest_as_arg)
-                startswith(rest_as_arg, '-') && argparse_error("illegal short options sequence after command $(state.command): $rest_as_arg")
+                startswith(rest_as_arg, '-') &&
+                    argparse_error("illegal short options sequence after command " *
+                                   "$(state.command): $rest_as_arg")
                 pushfirst!(state.args_list, "-" * rest_as_arg)
                 state.truncated_shopts = true
             end
@@ -2287,10 +2315,8 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         sind = next_sind
     end
 end
-#}}}
 
 # parse arg
-#{{{
 function parse_arg(state::ParserState, settings::ArgParseSettings)
     found = false
     local f::ArgParseField
@@ -2309,10 +2335,8 @@ function parse_arg(state::ParserState, settings::ArgParseSettings)
     push!(state.found_args, idstring(f))
     return
 end
-#}}}
 
 # convert_to_symbols
-#{{{
 convert_to_symbols(::Nothing) = nothing
 function convert_to_symbols(parsed_args::Dict{String,Any})
     new_parsed_args = Dict{Symbol,Any}()
@@ -2329,7 +2353,5 @@ function convert_to_symbols(parsed_args::Dict{String,Any})
     end
     return new_parsed_args
 end
-#}}}
-#}}}
 
 end # module ArgParse
