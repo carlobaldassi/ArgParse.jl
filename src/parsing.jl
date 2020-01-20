@@ -280,7 +280,7 @@ end
 
 show_help(settings::ArgParseSettings; kw...) = show_help(stdout, settings; kw...)
 
-function show_help(io::IO, settings::ArgParseSettings; exit_when_done = true)
+function show_help(io::IO, settings::ArgParseSettings; exit_when_done = !isinteractive())
 
     lc_len_limit = 24
     lc_left_indent = 2
@@ -369,7 +369,7 @@ end
 
 show_version(settings::ArgParseSettings; kw...) = show_version(stdout, settings; kw...)
 
-function show_version(io::IO, settings::ArgParseSettings; exit_when_done = true)
+function show_version(io::IO, settings::ArgParseSettings; exit_when_done = !isinteractive())
     println(io, settings.version)
     exit_when_done && exit(0)
     return
@@ -379,6 +379,10 @@ has_cmd(settings::ArgParseSettings) = any(is_cmd, settings.args_table.fields)
 
 # parse_args & friends
 function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
+    isinteractive() ? debug_handler(settings, err) : cmdline_handler(settings, err, err_code)
+end
+
+function cmdline_handler(settings::ArgParseSettings, err, err_code::Int = 1)
     println(stderr, err.text)
     println(stderr, usage_string(settings))
     exit(err_code)
