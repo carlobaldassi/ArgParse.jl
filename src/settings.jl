@@ -171,21 +171,24 @@ This is the list of general settings currently available:
 * `exc_handler` (default = `ArgParse.default_handler`): this is a function which is invoked when an
   error is detected during parsing (e.g. an option is not recognized, a required argument is not
   passed etc.). It takes two arguments: the `settings::ArgParseSettings` object and the
-  `err::ArgParseError` exception. The default handler prints the error text and the usage screen on
-  standard error and exits with error code 1:
+  `err::ArgParseError` exception. The default handler behaves differently depending on whether it's
+  invoked from a script or in an interactive environment (e.g. REPL/IJulia). In non-interactive
+  (script) mode, it calls `ArgParse.cmdline_handler`, which prints the error text and the usage
+  screen on standard error and exits Julia with error code 1:
 
   ```julia
-  function default_handler(settings::ArgParseSettings, err, err_code::Int = 1)
+  function cmdline_handler(settings::ArgParseSettings, err, err_code::Int = 1)
       println(stderr, err.text)
       println(stderr, usage_string(settings))
       exit(err_code)
   end
   ```
-  The module also provides a function `ArgParse.debug_handler` (not exported) which will just
-  rethrow the error.
-* `exit_after_help` (default = `true`): exits Julia (with error code `0`) when the `:show_help` or
-  `:show_version` actions are triggered. If `false`, those actions will just stop the parsing and
-  make `parse_args` return `nothing`.
+
+  In interactive mode instead it calls the function `ArgParse.debug_handler`, which just rethrows
+  the error.
+* `exit_after_help` (default = `!isinteractive()`): exit Julia (with error code `0`) when the
+  `:show_help` or `:show_version` actions are triggered. If `false`, those actions will just stop
+  the parsing and make `parse_args` return `nothing`.
 
 Here is a usage example:
 
@@ -259,7 +262,7 @@ mutable struct ArgParseSettings
                                exc_handler::Function = default_handler,
                                preformatted_description::Bool = false,
                                preformatted_epilog::Bool = false,
-                               exit_after_help::Bool = true
+                               exit_after_help::Bool = !isinteractive()
                                )
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
