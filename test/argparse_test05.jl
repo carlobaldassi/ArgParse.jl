@@ -259,7 +259,7 @@ function ap_settings5b()
             action = :store_true
     end
 
-    import_settings(s, s0)
+    import_settings!(s, s0)
 
     return s
 end

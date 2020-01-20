@@ -1153,7 +1153,7 @@ function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractS
     return
 end
 
-# import_settings & friends
+# import_settings! & friends
 function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
     ids0 = Int[]
     for ia in 1:length(settings.args_table.fields)
@@ -1273,8 +1273,15 @@ function fix_commands_fields(fields::Vector{ArgParseField})
     end
 end
 
+# TODO: remove after minor version bump
+export import_settings
+function import_settings(args...; kw...)
+    @warn "`import_settings` is depreacted, use `import_settings!`"
+    import_settings!(args...; kw...)
+end
+
 """
-    import_settings(settings, other_settings [,args_only])
+    import_settings!(settings, other_settings [,args_only])
 
 Imports `other_settings` into `settings`, where both are [`ArgParseSettings`](@ref) objects. If
 `args_only` is `true` (this is the default), only the argument table will be imported; otherwise,
@@ -1296,9 +1303,9 @@ will not have any effect on `settings`.
 
 This function can be used at any time.
 """
-function import_settings(settings::ArgParseSettings,
-                         other::ArgParseSettings,
-                         args_only::Bool = true)
+function import_settings!(settings::ArgParseSettings,
+                          other::ArgParseSettings,
+                          args_only::Bool = true)
     check_settings_are_compatible(settings, other)
 
     fields = settings.args_table.fields
@@ -1359,7 +1366,7 @@ function import_settings(settings::ArgParseSettings,
         elseif !isempty(cmd_prog_hint)
             settings[subk].prog = "$(settings.prog) $cmd_prog_hint"
         end
-        import_settings(settings[subk], subs, args_only)
+        import_settings!(settings[subk], subs, args_only)
     end
     return settings
 end
