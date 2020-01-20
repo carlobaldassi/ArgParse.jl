@@ -280,8 +280,8 @@ ArgParseSettings(desc::AbstractString; kw...) = ArgParseSettings(; description =
 
 function show(io::IO, s::ArgParseSettings)
     println(io, "ArgParseSettings(")
-    for f in setdiff(fieldnames(ArgParseSettings), )
-        f ∈ [:args_groups, :args_table] && continue
+    for f in fieldnames(ArgParseSettings)
+        f ∈ (:args_groups, :args_table) && continue
         println(io, "  ", f, "=", getfield(s, f))
     end
     println(io, "  >> ", usage_string(s))
