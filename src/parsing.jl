@@ -20,10 +20,35 @@ function test_range(range_tester::Function, arg, name::AbstractString)
     return
 end
 
+function test_exclusive_groups!(exc_groups::Dict{ArgParseGroup,AbstractString},
+                                settings::ArgParseSettings,
+                                f::ArgParseField,
+                                name::AbstractString)
+    arg_group = get_group(f.group, f, settings)
+    if haskey(exc_groups, arg_group)
+        prev_id = exc_groups[arg_group]
+        if isempty(prev_id)
+            exc_groups[arg_group] = idstring(f)
+        elseif prev_id != idstring(f)
+            argparse_error("option $name not allowed with $prev_id")
+        end
+    end
+    return
+end
+
 function test_required_args(settings::ArgParseSettings, found_args::Set{AbstractString})
-    for f in settings.args_table.fields
-        !is_cmd(f) && f.required && (idstring(f) ∉ found_args) &&
+    req_groups = Dict{ArgParseGroup,Bool}(g=>false for g in settings.args_groups if g.required)
+    fields = settings.args_table.fields
+    for f in fields
+        found = idstring(f) ∈ found_args
+        !is_cmd(f) && f.required && !found &&
             argparse_error("required $(idstring(f)) was not provided")
+        found && (req_groups[get_group(f.group, f, settings)] = true)
+    end
+    for (g,found) in req_groups
+        found && continue
+        ids = String[idstring(f) for f in fields if get_group(f.group, f, settings) ≡ g]
+        argparse_error("one of these is required: " * join(ids, ", "))
     end
     return true
 end
@@ -118,7 +143,15 @@ function usage_string(settings::ArgParseSettings)
     cmd_lst = String[]
     pos_lst = String[]
     opt_lst = String[]
+    exc_lst = Dict{String,Tuple{Bool,Vector{String}}}()
     for f in settings.args_table.fields
+        arg_group = get_group(f.group, f, settings)
+        if arg_group.exclusive
+            (is_cmd(f) || is_arg(f)) && found_a_bug()
+            _, tgt_opt_lst = get!(exc_lst, arg_group.name, (arg_group.required, String[]))
+        else
+            tgt_opt_lst = opt_lst
+        end
         if is_cmd(f)
             if !isempty(f.short_opt_name)
                 idstr = "-" * f.short_opt_name[1]
@@ -129,13 +162,7 @@ function usage_string(settings::ArgParseSettings)
             end
             push!(cmd_lst, idstr)
         elseif is_arg(f)
-            if !f.required
-                bra_pre = "["
-                bra_post = "]"
-            else
-                bra_pre = ""
-                bra_post = ""
-            end
+            bra_pre, bra_post = f.required ? ("","") : ("[","]")
             if isa(f.nargs.desc, Int)
                 if f.metavar isa AbstractString
                     arg_str = join(repeat([f.metavar], f.nargs.desc), nbsps)
@@ -153,13 +180,7 @@ function usage_string(settings::ArgParseSettings)
             end
             push!(pos_lst, bra_pre * arg_str * bra_post)
         else
-            if !f.required
-                bra_pre = "["
-                bra_post = "]"
-            else
-                bra_pre = ""
-                bra_post = ""
-            end
+            bra_pre, bra_post = (f.required || arg_group.exclusive) ? ("","") : ("[","]")
             if !isempty(f.short_opt_name)
                 opt_str1 = "-" * f.short_opt_name[1]
             else
@@ -189,8 +210,13 @@ function usage_string(settings::ArgParseSettings)
                 end
             end
             new_opt = bra_pre * opt_str1 * opt_str2 * bra_post
-            push!(opt_lst, new_opt)
+            push!(tgt_opt_lst, new_opt)
         end
+    end
+    excl_str = ""
+    for (req,lst) in values(exc_lst)
+        pre, post = req ? ("{","}") : ("[","]")
+        excl_str *= " " * pre * join(lst, " | ") * post
     end
     if isempty(opt_lst)
         optl_str = ""
@@ -205,19 +231,13 @@ function usage_string(settings::ArgParseSettings)
     if isempty(cmd_lst)
         cmdl_str = ""
     else
-        if !settings.commands_are_required
-            bra_pre = "["
-            bra_post = "]"
-        else
-            bra_pre = "{"
-            bra_post = "}"
-        end
+        bra_pre, bra_post = settings.commands_are_required ? ("{","}") :  ("[","]")
         cmdl_str = " " * bra_pre * join(cmd_lst, "|") * bra_post
     end
 
     usage_len = length(usage_pre) + 1
 
-    str_nonwrapped = usage_pre * optl_str * posl_str * cmdl_str
+    str_nonwrapped = usage_pre * excl_str * optl_str * posl_str * cmdl_str
     str_wrapped = wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
                                        subsequent_indent = min(usage_len, lc_len_limit))
 
@@ -460,15 +480,18 @@ mutable struct ParserState
     command::Union{AbstractString,Nothing}
     truncated_shopts::Bool
     abort::Bool
+    exc_groups::Dict{ArgParseGroup,AbstractString}
     out_dict::Dict{String,Any}
     function ParserState(args_list::Vector, settings::ArgParseSettings, truncated_shopts::Bool)
+        exc_groups = Dict{ArgParseGroup,AbstractString}(
+                g=>"" for g in settings.args_groups if g.exclusive)
         out_dict = Dict{String,Any}()
         for f in settings.args_table.fields
             f.action ∈ (:show_help, :show_version) && continue
             out_dict[f.dest_name] = deepcopy(f.default)
         end
         return new(deepcopy(args_list), false, nothing, nothing, false, 0, Set{AbstractString}(),
-                   nothing, truncated_shopts, false, out_dict)
+                   nothing, truncated_shopts, false, exc_groups, out_dict)
     end
 end
 
@@ -634,6 +657,7 @@ end
 function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
                      has_arg::Bool, opt_name::AbstractString)
     has_arg && argparse_error("option $opt_name takes no arguments")
+    test_exclusive_groups!(state.exc_groups, settings, f, opt_name)
     command = nothing
     out_dict = state.out_dict
     if f.action == :store_true
@@ -665,6 +689,8 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     args_list = state.args_list
     arg_delim_found = state.arg_delim_found
     out_dict = state.out_dict
+
+    test_exclusive_groups!(state.exc_groups, settings, f, name)
 
     arg_consumed = false
     parse_function = f.eval_arg ? parse_item_eval : parse_item_wrapper
@@ -799,8 +825,8 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
         parse1_flag(state, settings, f, arg_after_eq ≢ nothing, "--"*opt_name)
     else
         parse1_optarg(state, settings, f, arg_after_eq, "--"*opt_name)
-        push!(state.found_args, idstring(f))
     end
+    push!(state.found_args, idstring(f))
     return
 end
 
@@ -838,8 +864,8 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
             parse1_flag(state, settings, f, next_is_eq, "-"*opt_name)
         else
             parse1_optarg(state, settings, f, rest_as_arg, "-"*opt_name)
-            push!(state.found_args, idstring(f))
         end
+        push!(state.found_args, idstring(f))
         state.arg_consumed && break
         if found_command(state)
             if rest_as_arg ≢ nothing && !isempty(rest_as_arg)

@@ -43,7 +43,8 @@ function main(args)
     # we add an epilog and provide usage examples, also demonstrating
     # how to have some control on the formatting: we use additional '\n' at
     # the end of lines to force newlines, and '\ua0' to put non-breakable spaces.
-    # Non-breakable spaces ensure will be substituted with spaces in the output.
+    # Non-breakable spaces are not removed and are not used to split lines; they
+    # will be substituted with spaces in the final output.
     s.epilog = """
         examples:\n
         \n

@@ -51,7 +51,15 @@ default_action(nargs::ArgConsumerType) = default_action(nargs.desc)
 mutable struct ArgParseGroup
     name::AbstractString
     desc::AbstractString
-    ArgParseGroup(n::AbstractString, d::AbstractString) = new(n, d)
+    exclusive::Bool
+    required::Bool
+    function ArgParseGroup(name::AbstractString,
+                  desc::AbstractString,
+                  exclusive::Bool = false,
+                  required::Bool = false
+                 )
+        new(name, desc, exclusive, required)
+    end
 end
 
 const cmd_group = ArgParseGroup("commands", "commands")
@@ -163,7 +171,7 @@ This is the list of general settings currently available:
   added to the argument table; if `false`, later entries will silently take precedence. See the
   [Conflicts and overrides](@ref) srction for a detailed description of what conflicts are and what
   is the exact behavior when this setting is `false`.
-* `suppress_warnings` (default = `false`): is `true`, all warnings will be suppressed.
+* `suppress_warnings` (default = `false`): if `true`, all warnings will be suppressed.
 * `allow_ambiguous_opts` (default = `false`): if `true`, ambiguous options such as `-1` will be
   accepted.
 * `commands_are_required` (default = `true`): if `true`, commands will be mandatory. See the
@@ -807,8 +815,6 @@ function get_group(group::AbstractString, arg::ArgParseField, settings::ArgParse
     end
     found_a_bug()
 end
-get_group_name(group::AbstractString, arg::ArgParseField, settings::ArgParseSettings) =
-    get_group(group, arg, settings).name
 
 function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     check_name_format(name)
@@ -884,7 +890,11 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     if :group ∈ supplied_opts && !isempty(group)
         check_group_name(group)
     end
-    new_arg.group = get_group_name(group, new_arg, settings)
+    arg_group = get_group(group, new_arg, settings)
+    new_arg.group = arg_group.name
+    if arg_group.exclusive && (!is_opt || is_command_action(action))
+        error("group $(new_arg.group) is mutually-exclusive, actions and commands are not allowed")
+    end
 
     if action ∈ (:store_const, :append_const) && :constant ∉ supplied_opts
         error("action $action requires the 'constant' field")
@@ -1067,16 +1077,19 @@ end
 
 autogen_group_name(desc::AbstractString) = "#$(hash(desc))"
 
-add_arg_group(settings::ArgParseSettings, desc::AbstractString) =
-    _add_arg_group(settings, desc, autogen_group_name(desc), true)
+add_arg_group(settings::ArgParseSettings, desc::AbstractString;
+              exclusive::Bool = false, required::Bool = false) =
+    _add_arg_group(settings, desc, autogen_group_name(desc), true, exclusive, required)
 
 
 """
-    add_arg_group(settings, description, [name , [set_as_default]])
+    add_arg_group(settings, description, [name , [set_as_default]]; keywords...)
 
 This function adds an argument group to the argument table in `settings`. The `description` is a
 `String` used in the help screen as a title for that group. The `name` is a unique name which can be
 provided to refer to that group at a later time.
+
+Groups can be declared to be mutually exclusive and/or required, see below.
 
 After invoking this function, all subsequent invocations of the [`@add_arg_table`](@ref) macro and
 [`add_arg_table`](@ref) function will use the new group as the default, unless `set_as_default` is
@@ -1109,27 +1122,38 @@ As seen from the example, new groups are always added at the end of existing one
 
 The `name` can also be passed as a `Symbol`. Forbidden names are the standard groups names
 (`"command"`, `"positional"` and `"optional"`) and those beginning with a hash character `'#'`.
+
+In order to declare a group as mutually exclusive, use the keyword `exclusive = true`. Mutually
+exclusive groups can only contain options, not arguments nor commands, and parsing will fail if more
+than one option from the group is provided.
+
+A group can be declared as required using the `required = true` keyword, in which case at least one
+option or positional argument or command from the group must be provided.
 """
 function add_arg_group(settings::ArgParseSettings,
                        desc::AbstractString,
                        tag::Union{AbstractString,Symbol},
-                       set_as_default::Bool = true)
+                       set_as_default::Bool = true;
+                       exclusive::Bool = false,
+                       required::Bool = false
+                      )
     name = string(tag)
     check_group_name(name)
-    _add_arg_group(settings, desc, name, set_as_default)
+    _add_arg_group(settings, desc, name, set_as_default, exclusive, required)
 end
 
 function _add_arg_group(settings::ArgParseSettings,
                         desc::AbstractString,
                         name::AbstractString,
-                        set_as_default::Bool)
+                        set_as_default::Bool,
+                        exclusive::Bool,
+                        required::Bool
+                       )
     already_added = any(ag->ag.name==name, settings.args_groups)
-    already_added || push!(settings.args_groups, ArgParseGroup(name, desc))
+    already_added || push!(settings.args_groups, ArgParseGroup(name, desc, exclusive, required))
     set_as_default && (settings.default_group = name)
     return settings
 end
-
-set_default_arg_group(settings::ArgParseSettings) = set_default_arg_group(settings, "")
 
 """
     set_default_arg_group(settings, [name])
@@ -1143,7 +1167,7 @@ If `name` is not provided or is the empty string `""`, then the default behavior
 arguments will be automatically assigned to the standard groups). The `name` can also be passed as a
 `Symbol`.
 """
-function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol})
+function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol} = "")
     name = string(name)
     startswith(name, '#') && error("invalid group name: $name (begins with #)")
     isempty(name) && (settings.default_group = ""; return)
