@@ -105,8 +105,8 @@ which may break existing code:
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://carlobaldassi.github.io/ArgParse.jl/latest
 
-[travis-img]: https://travis-ci.org/carlobaldassi/ArgParse.jl.svg?branch=master
-[travis-url]: https://travis-ci.org/carlobaldassi/ArgParse.jl
+[travis-img]: https://travis-ci.com/carlobaldassi/ArgParse.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/carlobaldassi/ArgParse.jl
 
 [codecov-img]: https://codecov.io/gh/carlobaldassi/ArgParse.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/ArgParse.jl
