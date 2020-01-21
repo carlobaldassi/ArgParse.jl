@@ -1,8 +1,8 @@
 # ArgParse.jl
 
-| **Documentation**                                                               | **Build Status**                                             |
-|:-------------------------------------------------------------------------------:|:------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url] | [![][travis-img]][travis-url][![][codecov-img]][codecov-url] |
+| **Documentation**                                                         | **Build Status**                                             |
+|:-------------------------------------------------------------------------:|:------------------------------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][travis-img]][travis-url][![][codecov-img]][codecov-url] |
 
 ArgParse.jl is a package for parsing command-line arguments to
 [Julia][julia] programs.
@@ -25,7 +25,7 @@ julia> using ArgParse
 ### Documentation
 
 - [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
-- [**LATEST**][docs-latest-url] &mdash; *in-development version of the documentation.*
+- [**DEV**][docs-dev-url] &mdash; *in-development version of the documentation.*
 
 See also the examples in the [examples directory](examples).
 
@@ -102,8 +102,8 @@ which may break existing code:
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: https://carlobaldassi.github.io/ArgParse.jl/stable
-[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://carlobaldassi.github.io/ArgParse.jl/latest
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://carlobaldassi.github.io/ArgParse.jl/dev
 
 [travis-img]: https://travis-ci.com/carlobaldassi/ArgParse.jl.svg?branch=master
 [travis-url]: https://travis-ci.com/carlobaldassi/ArgParse.jl
