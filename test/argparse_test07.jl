@@ -8,7 +8,7 @@ function ap_settings7()
                          exc_handler = ArgParse.debug_handler)
 
     @add_arg_table s begin
-        "--oxymoronic"
+        "--oxymoronic", "-x"
             required = true
             help = "a required option"
         "--opt"
@@ -39,14 +39,13 @@ let s = ap_settings7()
     ap_test7(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-        usage: $(basename(Base.source_path())) --oxymoronic OXYMORONIC [--opt OPT] [-f]
-                                -o O
+        usage: $(basename(Base.source_path())) -x OXYMORONIC [--opt OPT] [-f] -o O
 
         Test 7 for ArgParse.jl
         Testing oxymoronic options
 
         optional arguments:
-          --oxymoronic OXYMORONIC
+          -x, --oxymoronic OXYMORONIC
                                 a required option
           --opt OPT             a true option
           -f, --flag            a flag
@@ -65,6 +64,9 @@ let s = ap_settings7()
     @test ap_test7(["--oxymoronic=A", "-o=B"]) == Dict{String,Any}("oxymoronic"=>"A", "opt"=>nothing, "o"=>"B", "flag"=>false)
     @ap_test_throws ap_test7(["--oxymoronic=A", "--opt=B"])
     @ap_test_throws ap_test7(["--opt=A, -o=B"])
+    s.suppress_warnings = true
+    add_arg_table(s, "-g", Dict(:action=>:store_true, :required=>true))
+    @test ap_test7(["--oxymoronic=A", "-o=B"]) == Dict{String,Any}("oxymoronic"=>"A", "opt"=>nothing, "o"=>"B", "flag"=>false, "g"=>false)
 end
 
 end

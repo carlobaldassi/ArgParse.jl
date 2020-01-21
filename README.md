@@ -33,6 +33,7 @@ See also the examples in the [examples directory](examples).
 
 * Drop support for Julia versions v0.6/v0.7
 * Parsing does not exit julia by default when in interactive mode now
+* Added mutually-exclusive and/or required argument groups
 * Renamed function `import_settings` → `import_settings!`
 
 ## Changes in release 0.6.2

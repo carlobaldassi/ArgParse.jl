@@ -1,5 +1,5 @@
 # test 10: multiple metavars
-#         function version of add_arg_table
+#          function version of add_arg_table
 
 @testset "test 10" begin
 
