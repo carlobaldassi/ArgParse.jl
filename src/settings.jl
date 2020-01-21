@@ -92,10 +92,9 @@ const cmd_dest_name = "%COMMAND%"
 const scmd_dest_name = :_COMMAND_
 
 function show(io::IO, s::ArgParseField)
-    p(x) = "  $x=$(getfield(s, x))\n"
     println(io, "ArgParseField(")
     for f in fieldnames(ArgParseField)
-        println(io, "  ", x, "=", getfield(s, x))
+        println(io, "  ", f, "=", getfield(s, f))
     end
     print(io, "  )")
 end
