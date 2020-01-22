@@ -82,12 +82,13 @@ mutable struct ArgParseField
     required::Bool
     eval_arg::Bool
     help::AbstractString
-    metavar::Union{AbstractString,Vector}
+    metavar::Union{AbstractString,Vector{<:AbstractString}}
+    cmd_aliases::Vector{AbstractString}
     group::AbstractString
     fake::Bool
     ArgParseField() = new("", AbstractString[], AbstractString[], Any, :store_true,
-                          ArgConsumerType(), nothing, nothing, _->true, false, false, "", "", "",
-                          false)
+                          ArgConsumerType(), nothing, nothing, _->true, false, false, "", "",
+                          AbstractString[], "", false)
 end
 
 is_flag(arg::ArgParseField) = is_flag_action(arg.action)
@@ -307,9 +308,19 @@ setindex!(s::ArgParseSettings, x::ArgParseSettings, c::AbstractString) =
 function check_name_format(name::ArgName)
     isempty(name) && error("empty name")
     name isa Vector || return true
+    allopts = true
+    allargs = true
     for n in name
-        isempty(n)         && error("empty name")
-        startswith(n, '-') || error("only options can have multiple names")
+        isempty(n) && error("empty name")
+        if startswith(n, '-')
+            allargs = false
+        else
+            allopts = false
+        end
+    end
+    !(allargs || allopts) && error("multiple names must be either all options or all non-options")
+    for i1 = 1:length(name), i2 = i1+1:length(name)
+        name[i1] == name[i2] && error("duplicate name $(name[i1])")
     end
     return true
 end
@@ -371,6 +382,14 @@ function check_arg_name(name::AbstractString)
     return true
 end
 
+function check_cmd_name(name::AbstractString)
+    isempty(name) && found_a_bug()
+    startswith(name, '-') && found_a_bug()
+    occursin(r"\s", name) && error("invalid command name: $name (contains whitespace)")
+    occursin(r"^%[A-Z]*%$", name) && error("invalid command name: $name (is reserved)")
+    return true
+end
+
 function check_dest_name(name::AbstractString)
     occursin(r"^%[A-Z]*%$", name) && error("invalid dest_name: $name (is reserved)")
     return true
@@ -403,7 +422,7 @@ end
 function check_conflicts_with_commands(settings::ArgParseSettings,
                                        new_arg::ArgParseField,
                                        allow_future_merge::Bool)
-    for (cmd, ss) in settings.args_table.subsettings
+    for cmd in keys(settings.args_table.subsettings)
         cmd == new_arg.dest_name &&
             error("$(idstring(new_arg)) has the same destination of a command: $cmd")
     end
@@ -416,10 +435,16 @@ function check_conflicts_with_commands(settings::ArgParseSettings,
             for s1 in a.short_opt_name, s2 in new_arg.short_opt_name
                 s1 == s2 && error("short opt name -$(s1) already in use by command $(a.constant)")
             end
-        elseif is_cmd(a) && is_cmd(new_arg) && a.constant == new_arg.constant
-            allow_future_merge || error("command $(a.constant) already in use")
-            ((is_arg(a) && !is_arg(new_arg)) || (!is_arg(a) && is_arg(new_arg))) &&
-                error("$(idstring(a)) and $(idstring(new_arg)) are incompatible")
+        elseif is_cmd(a) && is_cmd(new_arg)
+            if a.constant == new_arg.constant
+                allow_future_merge || error("command $(a.constant) already in use")
+                is_arg(a) ≠ is_arg(new_arg) &&
+                    error("$(idstring(a)) and $(idstring(new_arg)) are incompatible")
+            else
+                for al in new_arg.cmd_aliases
+                    al == a.constant && error("invalid alias $al, command already in use")
+                end
+            end
         end
     end
     return true
@@ -443,6 +468,19 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
         end
         if is_arg(a) && is_arg(new_arg) && a.metavar == new_arg.metavar
             error("two arguments have the same metavar: $(a.metavar)")
+        end
+        if is_cmd(a) && is_cmd(new_arg)
+            for al1 in a.cmd_aliases, al2 in new_arg.cmd_aliases
+                al1 == al2 && error("both commands $(a.constant) and $(new_arg.constant) use the " *
+                                    "same alias $al1")
+            end
+            for al1 in a.cmd_aliases
+                al1 == new_arg.constant && error("$al1 already in use as an alias command " *
+                                                 "$(a.constant)")
+            end
+            for al2 in new_arg.cmd_aliases
+                al2 == a.constant && error("invalid alias $al2, command already in use")
+            end
         end
         if a.dest_name == new_arg.dest_name
             a.arg_type == new_arg.arg_type ||
@@ -564,8 +602,9 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
     pos_arg = ""
     long_opts = AbstractString[]
     short_opts = AbstractString[]
+    aliases = AbstractString[]
     r(n) = settings.autofix_names ? replace(n, '_' => '-') : n
-    function do_one(n; args_allowed = false)
+    function do_one(n, cmd_check = true)
         if startswith(n, "--")
             n == "--" && error("illegal option name: --")
             long_opt_name = r(n[3:end])
@@ -577,18 +616,25 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
             check_short_opt_name(short_opt_name, settings)
             push!(short_opts, short_opt_name)
         else
-            args_allowed || found_a_bug()
-            check_arg_name(n)
-            pos_arg = n
+            if cmd_check
+                check_cmd_name(n)
+            else
+                check_arg_name(n)
+            end
+            if isempty(pos_arg)
+                pos_arg = n
+            else
+                push!(aliases, n)
+            end
         end
     end
 
     if name isa Vector
         foreach(do_one, name)
     else
-        do_one(name, args_allowed = true)
+        do_one(name, false)
     end
-    return pos_arg, long_opts, short_opts
+    return pos_arg, long_opts, short_opts, aliases
 end
 
 function auto_dest_name(pos_arg::AbstractString,
@@ -670,7 +716,8 @@ The `table` is a list in which each element can be either `String`, or a tuple o
 `String`, or an assigmment expression, or a block:
 
 * a `String`, a tuple or a vector introduces a new positional argument or option. Tuples and vectors
-  are only allowed for options and provide alternative names (e.g. `["--opt", "-o"]`)
+  are only allowed for options or commands, and provide alternative names (e.g. `["--opt", "-o"]` or
+  `["checkout", "co"]`)
 * assignment expressions (i.e. expressions using `=`, `:=` or `=>`) describe the previous argument
   behavior (e.g.  `help = "an option"` or `required => false`).  See the
   [Argument entry settings](@ref) section for a complete description
@@ -855,7 +902,9 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
     nargs isa ArgConsumerType || (nargs = ArgConsumerType(nargs))
     action isa Symbol || (action = Symbol(action))
 
-    is_opt = name isa Vector || startswith(name, '-')
+    is_opt = name isa Vector ?
+        startswith(first(name), '-') :
+        startswith(name, '-')
 
     check_action_is_valid(action)
 
@@ -873,12 +922,17 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
         metavar isa Vector && error("multiple metavars only supported for optional arguments")
     end
 
-    pos_arg, long_opts, short_opts = name_to_fieldnames(name, settings)
+    pos_arg, long_opts, short_opts, cmd_aliases = name_to_fieldnames(name, settings)
+
+    if !isempty(cmd_aliases)
+        is_command_action(action) || error("only command arguments can have multiple names (aliases)")
+    end
 
     new_arg.dest_name = auto_dest_name(pos_arg, long_opts, short_opts, settings.autofix_names)
 
     new_arg.long_opt_name = long_opts
     new_arg.short_opt_name = short_opts
+    new_arg.cmd_aliases = cmd_aliases
     new_arg.nargs = nargs
     new_arg.action = action
 
@@ -1186,8 +1240,7 @@ function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::A
 end
 function override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField)
     ids0 = Int[]
-    for ia in 1:length(args)
-        a = args[ia]
+    for (ia,a) in enumerate(args)
         if (a.dest_name == new_arg.dest_name) &&
             ((a.arg_type ≠ new_arg.arg_type) ||
              (is_multi_action(a.action) && !is_multi_action(new_arg.action)) ||
@@ -1196,10 +1249,28 @@ function override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField
             push!(ids0, ia)
             continue
         end
-        if is_arg(a) && is_arg(new_arg) && a.metavar == new_arg.metavar
+        if is_arg(a) && is_arg(new_arg) && !(is_cmd(a) && is_cmd(new_arg)) &&
+            a.metavar == new_arg.metavar
             # unsolvable conflict, mark for deletion
             push!(ids0, ia)
             continue
+        end
+
+        # delete conflicting command aliases for different commands
+        if is_cmd(a) && is_cmd(new_arg) && a.constant ≠ new_arg.constant
+            ids = Int[]
+            for (ial1, al1) in enumerate(a.cmd_aliases)
+                if al1 == new_arg.constant
+                    push!(ids, ial1)
+                else
+                    for al2 in new_arg.cmd_aliases
+                        al1 == al2 && push!(ids, ial1)
+                    end
+                end
+            end
+            while !isempty(ids)
+                splice!(a.cmd_aliases, pop!(ids))
+            end
         end
 
         if is_arg(a) || is_arg(new_arg)
@@ -1208,7 +1279,7 @@ function override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField
         end
 
         if is_cmd(a) && is_cmd(new_arg) && a.constant == new_arg.constant && !is_arg(a)
-            @assert !is_arg(new_arg) # this is ensured by check_settings_are_compatible
+            is_arg(new_arg) && found_a_bug() # this is ensured by check_settings_are_compatible
             # two command flags with the same command -> should have already been taken care of,
             # by either check_settings_are_compatible or merge_commands
             continue
@@ -1265,13 +1336,16 @@ function merge_commands(fields::Vector{ArgParseField}, ofields::Vector{ArgParseF
     oids = Int[]
     for a in fields, ioa = 1:length(ofields)
         oa = ofields[ioa]
-        if is_cmd(a) && is_cmd(oa) && a.constant == oa.constant && !is_arg(a)
-            @assert !is_arg(oa) # this is ensured by check_settings_are_compatible
+        if is_cmd(a) && is_cmd(oa) && a.constant == oa.constant
+            is_arg(a) ≠ is_arg(oa) && found_a_bug() # ensured by check_settings_are_compatible
             for l in oa.long_opt_name
                 l ∈ a.long_opt_name || push!(a.long_opt_name, l)
             end
             for s in oa.short_opt_name
                 s ∈ a.short_opt_name || push!(a.short_opt_name, s)
+            end
+            for al in oa.cmd_aliases
+                al ∈ a.cmd_aliases || push!(a.cmd_aliases, al)
             end
             a.group = oa.group # note: the group may not be present yet, but it will be
                                #       added later

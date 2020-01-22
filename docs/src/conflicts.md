@@ -8,7 +8,9 @@ Conflicts between arguments, be them options, positional arguments or commands, 
   `:append_arg`)
 * Two positional arguments have the same metavar (and are therefore indistinguishable in the usage and help screens
   and in error messages)
-* An argument and a command, or two commands, have the same destination key.
+* An argument's destination key is the same as a command name
+* Two commands with the same name are given, but one has a long-option form (e.g. `test` and `--test`)
+* A command alias is equal to another command's name or alias
 
 When the general setting `error_on_conflict` is `true`, or any time the specific `force_override` table entry
 setting is `false`, any of the above conditions leads to an error.
@@ -21,6 +23,6 @@ the resolution of most of the conflicts in favor of the newest added entry. The 
 * In case of duplicate destination key and incompatible types or actions, the older argument is deleted
 * In case of duplicate positional arguments metavars, the older argument is deleted
 * A command can override an argument with the same destination key
-* However, an argument can never override a command if they have the same destination key; neither can
-  a command override another command when added with `@add_arg_table` (compatible commands are merged
-  by [`import_settings`](@ref) though)
+* However, an argument can never override a command; neither can a command override another command when added
+  with `@add_arg_table` (compatible commands are merged by [`import_settings`](@ref) though)
+* Conflicting command aliases are removed
