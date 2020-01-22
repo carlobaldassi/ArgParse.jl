@@ -578,8 +578,8 @@ function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
             push!(short_opts, short_opt_name)
         else
             args_allowed || found_a_bug()
-            check_arg_name(name)
-            pos_arg = name
+            check_arg_name(n)
+            pos_arg = n
         end
     end
 
