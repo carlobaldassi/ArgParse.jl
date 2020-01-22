@@ -274,6 +274,7 @@ using ArgParse
 Commands are a special kind of arguments which introduce sub-parsing sessions as soon as they are encountered by `parse_args`
 (and are therefore mutually exclusive).
 The `ArgParse` module allows commands to look both as positional arguments or as options, with minor differences between the two.
+Unlike actual positional arguments, commands that *look* like positional arguments can have extra names (aliases).
 
 Commands are introduced by the `action = :command` setting in the argument table. Suppose we save the following script in
 a file called `cmd_example.jl`:
@@ -285,10 +286,10 @@ function parse_commandline()
     s = ArgParseSettings()
 
     @add_arg_table s begin
-        "cmd1"
+        "cmd1", "C"
             help = "first command"
             action = :command
-        "cmd2"
+        "cmd2", "K"
             help = "second command"
             action = :command
     end
@@ -307,8 +308,8 @@ $ julia cmd_example.jl --help
 usage: cmd_example.jl [-h] {cmd1|cmd2}
 
 commands:
-  cmd1        first command
-  cmd2        second command
+  cmd1        first command (aliases: C)
+  cmd2        second command (aliases: K)
 
 optional arguments:
   -h, --help  show this help message and exit
@@ -324,6 +325,14 @@ Dict("%COMMAND%"=>"cmd1", "cmd1"=>Dict())
 
 This is unless `parse_args` is invoked with `as_symbols=true`, in which case the special key becomes `:_COMMAND_`. (In that case,
 no other argument is allowed to use `_COMMAND_` as its `dest_name`, or an error will be raised.)
+
+Aliases are recognized when parsing, but the returned `Dict` will always use the command's name (the first entry in the
+table):
+
+```text
+$ julia cmd_example.jl C
+Dict("%COMMAND%"=>"cmd1", "cmd1"=>Dict())
+```
 
 Since commands introduce sub-parsing sessions, an additional key will be added for the called command (`"cmd1"` in this case) whose
 associated value is another `Dict{String, Any}` containing the result of the sub-parsing (in the above case it's empty). In fact,
@@ -352,8 +361,8 @@ By default, if commands exist, they are required; this can be avoided by setting
 The only meaningful settings for commands in an argument entry besides `action` are `help`, `force_override`, `group` and
 (for flags only) `dest_name`.
 
-The only differences between positional-arguments-like and option-like commands are in the way they are parsed, the fact that options
-accept a `dest_name` setting, and that options can have multiple names (e.g. a long and short form).
+The only differences between positional-arguments-like and option-like commands are in the way they are parsed, and the fact
+that options accept a `dest_name` setting.
 
 Note that short-form option-like commands will be still be recognized in the middle of a short options group and trigger a sub-parsing
 session: for example, if an option `-c` is associated to a command, then `-xch` will parse option `-x` according to the parent
@@ -381,6 +390,9 @@ parse_args(["--help"], settings)
 ```
 
 It is possible to partition the arguments differently by defining and using customized argument groups.
+Groups of options can also be declared to be mutually exclusive, meaning that no more than one of the
+options in the group can be provided. A group can also be declared to be required, meaning that at least
+one argument in the group needs to be provided.
 
 ```@docs
 add_arg_group

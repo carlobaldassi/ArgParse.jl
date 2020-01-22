@@ -11,7 +11,7 @@ function main(args)
         "run"
             action = :command        # adds a command which will be read from an argument
             help = "start running mode"
-        "jump"
+        "jump", "ju", "J"            # another one, this one has two aliases
             action = :command
             help = "start jumping mode"
     end

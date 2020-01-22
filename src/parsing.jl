@@ -259,6 +259,7 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
     type_str = ""
     default_str = ""
     const_str = ""
+    alias_str = ""
     if !is_command_action(arg.action)
         if arg.arg_type ≠ Any && !(arg.arg_type <: AbstractString)
             type_str = pre * "(type: " * string_compact(arg.arg_type)
@@ -271,9 +272,14 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
             mid = isempty(type_str) && isempty(default_str) ? " (" : ", "
             const_str = mid * "without arg: " * string_compact(arg.constant)
         end
+    else
+        is_arg(arg) || found_a_bug()
+        if !isempty(arg.cmd_aliases)
+            alias_str = pre * "(aliases: " * join(arg.cmd_aliases, ", ")
+        end
     end
-    post = all(isempty, (type_str, default_str, const_str)) ? "" : ")"
-    return arg.help * type_str * default_str * const_str * post
+    post = all(isempty, (type_str, default_str, const_str, alias_str)) ? "" : ")"
+    return arg.help * type_str * default_str * const_str * alias_str * post
 end
 
 function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::Int, lc_len::Int,
@@ -782,6 +788,22 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
     elseif f.action == :append_arg
         push!(out_dict[f.dest_name], opt_arg)
     elseif f.action == :command_arg
+        if !haskey(settings, opt_arg)
+            found = false
+            for f1 in settings.args_table.fields
+                (is_cmd(f1) && is_arg(f1)) || continue
+                for al in f1.cmd_aliases
+                    if opt_arg == al
+                        found = true
+                        opt_arg = f1.constant
+                        break
+                    end
+                end
+                found && break
+            end
+            !found && argparse_error("unknown command: $opt_arg")
+            haskey(settings, opt_arg) || found_a_bug()
+        end
         out_dict[f.dest_name] = opt_arg
         command = opt_arg
     else

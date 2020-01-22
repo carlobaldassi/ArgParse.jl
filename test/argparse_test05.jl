@@ -12,7 +12,7 @@ function ap_settings5()
         "run"
             action = :command
             help = "start running mode"
-        "jump"
+        "jump", "ju", "J"
             action = :command
             help = "start jumping mode"
     end
@@ -68,7 +68,7 @@ let s = ap_settings5()
 
         commands:
           run   start running mode
-          jump  start jumping mode
+          jump  start jumping mode (aliases: ju, J)
 
         """
 
@@ -113,6 +113,8 @@ let s = ap_settings5()
     @noout_test ap_test5(["jump", "--help"]) ≡ nothing
     @test ap_test5(["jump"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>nothing))
     @test ap_test5(["jump", "--higher", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>Dict{String,Any}()))
+    @test ap_test5(["ju", "--higher", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>Dict{String,Any}()))
+    @test ap_test5(["J", "--higher", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>true, "%COMMAND%"=>"clap_feet", "clap_feet"=>Dict{String,Any}()))
     @noout_test ap_test5(["jump", "--higher", "--clap", "--help"]) ≡ nothing
     @noout_test ap_test5(["jump", "--higher", "--clap", "--help"], as_symbols = true) ≡ nothing
     @ap_test_throws ap_test5(["jump", "--clap", "--higher"])
@@ -122,11 +124,14 @@ let s = ap_settings5()
     @test ap_test5(["jump", "-sbt"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>1, "b"=>true)))
     @test ap_test5(["jump", "-s", "-t2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>false)))
     @test ap_test5(["jump", "-sbt2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>true)))
+    @test ap_test5(["ju", "-sbt2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>true)))
+    @test ap_test5(["J", "-sbt2"]) == Dict{String,Any}("%COMMAND%"=>"jump", "jump"=>Dict{String,Any}("higher"=>false, "%COMMAND%"=>"som", "som"=>Dict{String,Any}("t"=>2, "b"=>true)))
     @noout_test ap_test5(["jump", "-sbht2"]) ≡ nothing
     @ap_test_throws ap_test5(["jump", "-st2b"])
     @ap_test_throws ap_test5(["jump", "-stb"])
     @ap_test_throws ap_test5(["jump", "-sb-"])
     @ap_test_throws ap_test5(["jump", "-s-b"])
+    @ap_test_throws ap_test5(["ju", "-s-b"])
 
     @test ap_test5(["run", "--speed", "3"], as_symbols = true) == Dict{Symbol,Any}(:_COMMAND_=>:run, :run=>Dict{Symbol,Any}(:speed=>3.0))
 
@@ -139,6 +144,21 @@ let s = ap_settings5()
     # same dest_name as command
     @ee_test_throws @add_arg_table(s["jump"], "--som")
     @ee_test_throws @add_arg_table(s["jump"], "-s", dest_name = "som")
+    # same name as command alias
+    @ee_test_throws @add_arg_table(s, "ju")
+    @ee_test_throws @add_arg_table(s, "J")
+    # new command with the same name as another one
+    @ee_test_throws @add_arg_table(s, ["run", "R"], action = :command)
+    @ee_test_throws @add_arg_table(s, "jump", action = :command)
+    # new command with the same name as another one's alias
+    @ee_test_throws @add_arg_table(s, "ju", action = :command)
+    @ee_test_throws @add_arg_table(s, "J", action = :command)
+    # new command with an alias which is the same as another command
+    @ee_test_throws @add_arg_table(s, ["fast", "run"], action = :command)
+    @ee_test_throws @add_arg_table(s, ["R", "jump"], action = :command)
+    # new command with an alias which is already in use
+    @ee_test_throws @add_arg_table(s, ["R", "ju"], action = :command)
+    @ee_test_throws @add_arg_table(s, ["R", "S", "J"], action = :command)
 
     # conflict between dest_name and a reserved Symbol
     @add_arg_table(s, "--COMMAND", dest_name="_COMMAND_")
@@ -154,10 +174,10 @@ function ap_settings5b()
                          exit_after_help = false)
 
     @add_arg_table s0 begin
-        "run"
+        "run", "R"
             action = :command
             help = "start running mode"
-        "jump"
+        "jump", "ju"
             action = :command
             help = "start jumping mode"
         "--time"
@@ -208,10 +228,10 @@ function ap_settings5b()
     s0["jump"]["som"].description = "Somersault jump mode"
 
     @add_arg_table s begin
-        "jump"
+        "jump", "run", "J"              # The "run" alias will be overridden
             action = :command
             help = "start jumping mode"
-        "fly"
+        "fly", "R"                      # The "R" alias will be overridden
             action = :command
             help = "start flying mode"
         # next opt will be overridden (same dest_name as s0's --time,
@@ -268,20 +288,20 @@ let s = ap_settings5b()
     ap_test5b(args) = parse_args(args, s)
 
     @test stringhelp(s) == """
-        usage: $(basename(Base.source_path())) [--time T] {fly|run|jump}
+        usage: $(basename(Base.source_path())) [--time T] {jump|fly|run}
 
         commands:
+          jump      start jumping mode (aliases: J, ju)
           fly       start flying mode
-          run       start running mode
-          jump      start jumping mode
+          run       start running mode (aliases: R)
 
         optional arguments:
           --time T  time at which to perform the command (default: "now")
 
         """
 
-    stringhelp(s["jump"]) == """
-        usage: argparse_test5.jl jump [--lower] [--higher] [--help]
+    @test stringhelp(s["jump"]) == """
+        usage: $(basename(Base.source_path())) jump [--lower] [--higher] [--help]
                                 {-c|--somersault}
 
         commands:
@@ -301,10 +321,15 @@ let s = ap_settings5b()
     @test ap_test5b(["fly"]) == Dict{String,Any}("%COMMAND%"=>"fly", "time"=>"now", "fly"=>Dict{String,Any}("glade"=>false))
     @test ap_test5b(["jump", "--lower", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "time"=>"now",
         "jump"=>Dict{String,Any}("%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>Dict{String,Any}("whistle"=>false)))
+    @test ap_test5b(["ju", "--lower", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "time"=>"now",
+        "jump"=>Dict{String,Any}("%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>Dict{String,Any}("whistle"=>false)))
+    @test ap_test5b(["J", "--lower", "--clap"]) == Dict{String,Any}("%COMMAND%"=>"jump", "time"=>"now",
+        "jump"=>Dict{String,Any}("%COMMAND%"=>"clap_feet", "higher"=>false, "clap_feet"=>Dict{String,Any}("whistle"=>false)))
     @noout_test ap_test5b(["jump", "--lower", "--help"]) ≡ nothing
     @noout_test ap_test5b(["jump", "--lower", "--clap", "--version"]) ≡ nothing
     @ap_test_throws ap_test5b(["jump"])
     @test ap_test5b(["run", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
+    @test ap_test5b(["R", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
 end
 
 end
