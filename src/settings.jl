@@ -348,7 +348,6 @@ end
 function check_long_opt_name(name::AbstractString, settings::ArgParseSettings)
     '=' ∈ name            && error("illegal option name: $name (contains '=')")
     occursin(r"\s", name) && error("illegal option name: $name (contains whitespace)")
-    nbspc ∈ name          && error("illegal option name: $name (contains non-breakable-space)")
     settings.add_help     &&
         name == "help"    && error("option --help is reserved in the current settings")
     settings.add_version  &&
@@ -360,7 +359,6 @@ function check_short_opt_name(name::AbstractString, settings::ArgParseSettings)
     length(name) ≠ 1      && error("short options must use a single character")
     name == "="           && error("illegal short option name: $name")
     occursin(r"\s", name) && error("illegal option name: $name (contains whitespace)")
-    nbspc ∈ name          && error("illegal option name: $name (contains non-breakable-space)")
     !settings.allow_ambiguous_opts && occursin(r"[0-9.(]", name) &&
                              error("ambiguous option name: $name (disabled in current settings)")
     settings.add_help && name == "h" &&
@@ -547,8 +545,6 @@ function check_metavar(metavar::AbstractString)
     isempty(metavar)         && error("empty metavar")
     startswith(metavar, '-') && error("metavars cannot begin with -")
     occursin(r"\s", metavar) && error("illegal metavar name: $metavar (contains whitespace)")
-    nbspc ∈ metavar          && error("illegal metavar name: $metavar " *
-                                      "(contains non-breakable-space)")
     return true
 end
 
