@@ -703,6 +703,7 @@ function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,D
             i += 1
         end
     end
+    return settings
 end
 
 """
@@ -750,9 +751,11 @@ macro add_arg_table(s, x...)
     x = Any[x...]
     # escape the ArgParseSettings
     s = esc(s)
+    z = esc(gensym())
     # start building the return expression
     exret = quote
-        $s isa ArgParseSettings ||
+        $z = $s
+        $z isa ArgParseSettings ||
             error("first argument to @add_arg_table must be of type ArgParseSettings")
     end
     # initialize the name and the options expression
@@ -789,7 +792,7 @@ macro add_arg_table(s, x...)
                 opt = Expr(:call, exopt...)
                 kopts = Expr(:parameters, Expr(:(...), opt))
                 # then, call add_arg_field
-                aaf = Expr(:call, :add_arg_field, kopts, s, name)
+                aaf = Expr(:call, :add_arg_field, kopts, z, name)
                 # store it in the output expression
                 exret = quote
                     $exret
@@ -827,7 +830,7 @@ macro add_arg_table(s, x...)
         # same as above
         opt = Expr(:call, exopt...)
         kopts = Expr(:parameters, Expr(:(...), opt))
-        aaf = Expr(:call, :add_arg_field, kopts, s, name)
+        aaf = Expr(:call, :add_arg_field, kopts, z, name)
         exret = quote
             $exret
             $aaf
@@ -838,7 +841,7 @@ macro add_arg_table(s, x...)
     # will be the ArgParseSettings object
     exret = quote
         $exret
-        $s
+        $z
     end
 
     # return the resulting expression
