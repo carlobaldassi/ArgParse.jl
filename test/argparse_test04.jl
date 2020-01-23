@@ -17,6 +17,8 @@ function ap_settings4()
             help = "another parent flag"
         "parent-argument"
             help = "parent argument"
+        "will-be-overridden"
+            metavar = "ARG"
     end
 
     s = ArgParseSettings("Test 4 for ArgParse.jl",
@@ -41,6 +43,9 @@ function ap_settings4()
             action = :show_version               # will show version information
             help = "show version information " *
                    "and exit"
+        "child-argument"            # same metavar as "will-be-overridden"
+            metavar = "ARG"
+            help = "child argument"
     end
 
     return s
@@ -64,6 +69,8 @@ function ap_settings4b()
             help = "another parent flag"
         "parent-argument"
             help = "parent argument"
+        "will-be-overridden"
+            metavar = "ARG"
     end
 
     s = ArgParseSettings("Test 4 for ArgParse.jl",
@@ -85,6 +92,9 @@ function ap_settings4b()
             action = :show_version
             help = "show version information " *
                    "and exit"
+        "child-argument"
+            metavar = "ARG"
+            help = "child argument"
     end
 
     return s
@@ -96,12 +106,13 @@ for s = [ap_settings4(), ap_settings4b()]
 
     @test stringhelp(s) == """
         usage: $(basename(Base.source_path())) [--parent-flag] [-o] [--flag] [-?] [-v]
-                                [parent-argument]
+                                [parent-argument] [ARG]
 
         Test 4 for ArgParse.jl
 
         positional arguments:
           parent-argument      parent argument
+          ARG                  child argument
 
         optional arguments:
           --parent-flag        parent flag
@@ -114,8 +125,8 @@ for s = [ap_settings4(), ap_settings4b()]
 
     @test stringversion(s) == "Version 1.0\n"
 
-    @test ap_test4([]) == Dict{String,Any}("parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing)
-    @test ap_test4(["-o", "X"]) == Dict{String,Any}("parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X")
+    @test ap_test4([]) == Dict{String,Any}("parent-flag"=>false, "o"=>false, "flag"=>false, "parent-argument"=>nothing, "child-argument"=>nothing)
+    @test ap_test4(["-o", "X"]) == Dict{String,Any}("parent-flag"=>false, "o"=>true, "flag"=>false, "parent-argument"=>"X", "child-argument"=>nothing)
     @ap_test_throws ap_test4(["-h"])
 
     # same metavar as another argument

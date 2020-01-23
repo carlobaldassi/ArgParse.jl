@@ -160,6 +160,39 @@ let s = ap_settings5()
     @ee_test_throws @add_arg_table(s, ["R", "ju"], action = :command)
     @ee_test_throws @add_arg_table(s, ["R", "S", "J"], action = :command)
 
+    # alias overriding by a command name
+    @add_arg_table(s, "J", action = :command, force_override = true, help = "the J command")
+    @test stringhelp(s) == """
+        usage: $(basename(Base.source_path())) {run|jump|J}
+
+        Test 5 for ArgParse.jl
+
+        commands:
+          run   start running mode
+          jump  start jumping mode (aliases: ju)
+          J     the J command
+
+        """
+
+    # alias overriding by a command alias
+    @add_arg_table(s, ["S", "ju"], action = :command, force_override = true, help = "the S command")
+    @test stringhelp(s) == """
+        usage: $(basename(Base.source_path())) {run|jump|J|S}
+
+        Test 5 for ArgParse.jl
+
+        commands:
+          run   start running mode
+          jump  start jumping mode
+          J     the J command
+          S     the S command (aliases: ju)
+
+        """
+
+    # cannot override a command name
+    @ee_test_throws @add_arg_table(s, ["J", "R"], action = :command, force_override = true)
+    @ee_test_throws @add_arg_table(s, ["R", "J"], action = :command, force_override = true)
+
     # conflict between dest_name and a reserved Symbol
     @add_arg_table(s, "--COMMAND", dest_name="_COMMAND_")
     @ee_test_throws ap_test5(["run", "--speed", "3"], as_symbols = true)
@@ -330,6 +363,16 @@ let s = ap_settings5b()
     @ap_test_throws ap_test5b(["jump"])
     @test ap_test5b(["run", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
     @test ap_test5b(["R", "--speed=3"]) == Dict{String,Any}("%COMMAND%"=>"run", "time"=>"now", "run"=>Dict{String,Any}("speed"=>3.0))
+end
+
+let
+    s1 = @add_arg_table(ArgParseSettings(), "run", action = :command)
+    s2 = @add_arg_table(ArgParseSettings(), "--run", action = :store_true)
+    @ee_test_throws import_settings!(s1, s2)
+    @ee_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
+    s2 = @add_arg_table(ArgParseSettings(), ["R", "run"], action = :command)
+    @ee_test_throws import_settings!(s1, s2)
+    @ee_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
 end
 
 end
