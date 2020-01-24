@@ -32,7 +32,7 @@ See also the examples in the [examples directory](examples).
 ## Changes in release 1.0.0
 
 * Drop support for Julia versions v0.6/v0.7
-* Renamed a few functions and macros (old versions can be used but produced deprecation warnings):
+* Renamed a few functions and macros (old versions can be used but produce deprecation warnings):
   + `@add_arg_table` → `@add_arg_table!`
   + `add_arg_table` → `add_arg_table!`
   + `add_arg_group` → `add_arg_group!`
