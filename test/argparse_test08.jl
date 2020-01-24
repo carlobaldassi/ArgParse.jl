@@ -6,7 +6,7 @@ function ap_settings8a()
 
     s = ArgParseSettings(fromfile_prefix_chars=['@'])
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"               # an option (will take an argument)
         "--opt2", "-o"         # another option, with short form
         "arg1"                 # a positional argument
@@ -21,7 +21,7 @@ function ap_settings8b()  # unicode
 
     s = ArgParseSettings(fromfile_prefix_chars="@∘")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"               # an option (will take an argument)
         "--opt2", "-o"         # another option, with short form
         "arg1"                 # a positional argument

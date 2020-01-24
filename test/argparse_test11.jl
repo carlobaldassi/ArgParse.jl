@@ -4,12 +4,12 @@
 
     s = ArgParseSettings()
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "say"
             action = :command
     end
 
-    @add_arg_table s["say"] begin
+    @add_arg_table! s["say"] begin
         "what"
             help = "a positional argument"
             required = true

@@ -133,7 +133,7 @@ end
 
 The `ArgParseSettings` object contains all the settings to be used during argument parsing. Settings
 are divided in two groups: general settings and argument-table-related settings.
-While the argument table requires specialized functions such as [`@add_arg_table`](@ref) to be
+While the argument table requires specialized functions such as [`@add_arg_table!`](@ref) to be
 defined and manipulated, general settings are simply object fields (most of them are `Bool` or
 `String`) and can be passed to the constructor as keyword arguments, or directly set at any time.
 
@@ -597,8 +597,8 @@ function check_group_name(name::AbstractString)
     return true
 end
 
-# add_arg_table and related
-function name_to_fieldnames(name::ArgName, settings::ArgParseSettings)
+# add_arg_table! and related
+function name_to_fieldnames!(settings::ArgParseSettings, name::ArgName)
     pos_arg = ""
     long_opts = AbstractString[]
     short_opts = AbstractString[]
@@ -662,7 +662,7 @@ end
 
 
 """
-    add_arg_table(settings, [arg_name [,arg_options]]...)
+    add_arg_table!(settings, [arg_name [,arg_options]]...)
 
 This function is very similar to the macro version [`@add_arg_table`](@ref). Its syntax is stricter:
 tuples and blocks are not allowed and argument options are explicitly specified as `Dict` objects.
@@ -673,7 +673,7 @@ However, since it doesn't involve macros, it offers more flexibility in other re
 Example:
 
 ```julia
-add_arg_table(settings,
+add_arg_table!(settings,
     ["--opt1", "-o"],
     Dict(
         :help => "an option with an argument"
@@ -686,7 +686,7 @@ add_arg_table(settings,
     ))
 ```
 """
-function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,Dict}...)
+function add_arg_table!(settings::ArgParseSettings, table::Union{ArgName,Vector,Dict}...)
     has_name = false
     for i = 1:length(table)
         !has_name && !(table[i] isa ArgName) &&
@@ -696,10 +696,10 @@ function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,D
     i = 1
     while i ≤ length(table)
         if i+1 ≤ length(table) && !(table[i+1] isa ArgName)
-            add_arg_field(settings, table[i]; table[i+1]...)
+            add_arg_field!(settings, table[i]; table[i+1]...)
             i += 2
         else
-            add_arg_field(settings, table[i])
+            add_arg_field!(settings, table[i])
             i += 1
         end
     end
@@ -707,7 +707,7 @@ function add_arg_table(settings::ArgParseSettings, table::Union{ArgName,Vector,D
 end
 
 """
-    @add_arg_table(settings, table...)
+    @add_arg_table!(settings, table...)
 
 This macro adds a table of arguments and options to the given `settings`. It can be invoked multiple
 times. The arguments groups are determined automatically, or the current default group is used if
@@ -730,7 +730,7 @@ These rules allow for a variety usage styles, which are discussed in the
 style:
 
 ```julia
-@add_arg_table settings begin
+@add_arg_table! settings begin
     "--opt1", "-o"
         help = "an option with an argument"
     "--opt2"
@@ -743,9 +743,14 @@ end
 In the above example, the `table` is put in a single `begin...end` block and the line
 `"--opt1", "-o"` is parsed as a tuple; indentation is used to help readability.
 
-See also the function [`add_arg_table`](@ref).
+See also the function [`add_arg_table!`](@ref).
 """
-macro add_arg_table(s, x...)
+macro add_arg_table!(s, x...)
+    _add_arg_table!(s, x...)
+end
+
+# Moved all the code to a function just to make the deprecation work
+function _add_arg_table!(s, x...)
     # transform the tuple into a vector, so that
     # we can manipulate it
     x = Any[x...]
@@ -756,7 +761,7 @@ macro add_arg_table(s, x...)
     exret = quote
         $z = $s
         $z isa ArgParseSettings ||
-            error("first argument to @add_arg_table must be of type ArgParseSettings")
+            error("first argument to @add_arg_table! must be of type ArgParseSettings")
     end
     # initialize the name and the options expression
     name = nothing
@@ -791,8 +796,8 @@ macro add_arg_table(s, x...)
                 # first, concretely build the options
                 opt = Expr(:call, exopt...)
                 kopts = Expr(:parameters, Expr(:(...), opt))
-                # then, call add_arg_field
-                aaf = Expr(:call, :add_arg_field, kopts, z, name)
+                # then, call add_arg_field!
+                aaf = Expr(:call, :add_arg_field!, kopts, z, name)
                 # store it in the output expression
                 exret = quote
                     $exret
@@ -821,7 +826,7 @@ macro add_arg_table(s, x...)
             continue
         else
             # anything else: ignore, but issue a warning
-            @warn "@add_arg_table: ignoring expression $y"
+            @warn "@add_arg_table!: ignoring expression $y"
             i += 1
         end
     end
@@ -830,7 +835,7 @@ macro add_arg_table(s, x...)
         # same as above
         opt = Expr(:call, exopt...)
         kopts = Expr(:parameters, Expr(:(...), opt))
-        aaf = Expr(:call, :add_arg_field, kopts, z, name)
+        aaf = Expr(:call, :add_arg_field!, kopts, z, name)
         exret = quote
             $exret
             $aaf
@@ -857,12 +862,12 @@ function get_group(group::AbstractString, arg::ArgParseField, settings::ArgParse
         for ag in settings.args_groups
             group == ag.name && return ag
         end
-        error("group $group not found, use add_arg_group to add it")
+        error("group $group not found, use add_arg_group! to add it")
     end
     found_a_bug()
 end
 
-function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
+function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
     check_name_format(name)
 
     supplied_opts = keys(desc)
@@ -925,7 +930,7 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
         metavar isa Vector && error("multiple metavars only supported for optional arguments")
     end
 
-    pos_arg, long_opts, short_opts, cmd_aliases = name_to_fieldnames(name, settings)
+    pos_arg, long_opts, short_opts, cmd_aliases = name_to_fieldnames!(settings, name)
 
     if !isempty(cmd_aliases)
         is_command_action(action) || error("only command arguments can have multiple names (aliases)")
@@ -1087,22 +1092,22 @@ function add_arg_field(settings::ArgParseSettings, name::ArgName; desc...)
 
     check_conflicts_with_commands(settings, new_arg, false)
     if force_override
-        override_duplicates(settings.args_table.fields, new_arg)
+        override_duplicates!(settings.args_table.fields, new_arg)
     else
         check_for_duplicates(settings.args_table.fields, new_arg)
     end
     push!(settings.args_table.fields, new_arg)
-    is_command_action(action) && add_command(settings, cmd_name, cmd_prog_hint, force_override)
+    is_command_action(action) && add_command!(settings, cmd_name, cmd_prog_hint, force_override)
     return
 end
 
-function add_command(settings::ArgParseSettings,
-                     command::AbstractString,
-                     prog_hint::AbstractString,
-                     force_override::Bool)
+function add_command!(settings::ArgParseSettings,
+                      command::AbstractString,
+                      prog_hint::AbstractString,
+                      force_override::Bool)
     haskey(settings, command) && error("command $command already added")
     if force_override
-        override_conflicts_with_commands(settings, command)
+        override_conflicts_with_commands!(settings, command)
     else
         check_conflicts_with_commands(settings, command)
     end
@@ -1130,13 +1135,13 @@ end
 
 autogen_group_name(desc::AbstractString) = "#$(hash(desc))"
 
-add_arg_group(settings::ArgParseSettings, desc::AbstractString;
-              exclusive::Bool = false, required::Bool = false) =
-    _add_arg_group(settings, desc, autogen_group_name(desc), true, exclusive, required)
+add_arg_group!(settings::ArgParseSettings, desc::AbstractString;
+               exclusive::Bool = false, required::Bool = false) =
+    _add_arg_group!(settings, desc, autogen_group_name(desc), true, exclusive, required)
 
 
 """
-    add_arg_group(settings, description, [name , [set_as_default]]; keywords...)
+    add_arg_group!(settings, description, [name , [set_as_default]]; keywords...)
 
 This function adds an argument group to the argument table in `settings`. The `description` is a
 `String` used in the help screen as a title for that group. The `name` is a unique name which can be
@@ -1144,8 +1149,8 @@ provided to refer to that group at a later time.
 
 Groups can be declared to be mutually exclusive and/or required, see below.
 
-After invoking this function, all subsequent invocations of the [`@add_arg_table`](@ref) macro and
-[`add_arg_table`](@ref) function will use the new group as the default, unless `set_as_default` is
+After invoking this function, all subsequent invocations of the [`@add_arg_table!`](@ref) macro and
+[`add_arg_table!`](@ref) function will use the new group as the default, unless `set_as_default` is
 set to `false` (the default is `true`, and the option can only be set if providing a `name`).
 Therefore, the most obvious usage pattern is: for each group, add it and populate the argument
 table of that group. Example:
@@ -1153,9 +1158,9 @@ table of that group. Example:
 ```
 julia> settings = ArgParseSettings();
 
-julia> add_arg_group(settings, "custom group");
+julia> add_arg_group!(settings, "custom group");
 
-julia> @add_arg_table settings begin
+julia> @add_arg_table! settings begin
           "--opt"
           "arg"
        end;
@@ -1183,25 +1188,25 @@ than one option from the group is provided.
 A group can be declared as required using the `required = true` keyword, in which case at least one
 option or positional argument or command from the group must be provided.
 """
-function add_arg_group(settings::ArgParseSettings,
-                       desc::AbstractString,
-                       tag::Union{AbstractString,Symbol},
-                       set_as_default::Bool = true;
-                       exclusive::Bool = false,
-                       required::Bool = false
-                      )
+function add_arg_group!(settings::ArgParseSettings,
+                        desc::AbstractString,
+                        tag::Union{AbstractString,Symbol},
+                        set_as_default::Bool = true;
+                        exclusive::Bool = false,
+                        required::Bool = false
+                       )
     name = string(tag)
     check_group_name(name)
-    _add_arg_group(settings, desc, name, set_as_default, exclusive, required)
+    _add_arg_group!(settings, desc, name, set_as_default, exclusive, required)
 end
 
-function _add_arg_group(settings::ArgParseSettings,
-                        desc::AbstractString,
-                        name::AbstractString,
-                        set_as_default::Bool,
-                        exclusive::Bool,
-                        required::Bool
-                       )
+function _add_arg_group!(settings::ArgParseSettings,
+                         desc::AbstractString,
+                         name::AbstractString,
+                         set_as_default::Bool,
+                         exclusive::Bool,
+                         required::Bool
+                        )
     already_added = any(ag->ag.name==name, settings.args_groups)
     already_added || push!(settings.args_groups, ArgParseGroup(name, desc, exclusive, required))
     set_as_default && (settings.default_group = name)
@@ -1209,18 +1214,18 @@ function _add_arg_group(settings::ArgParseSettings,
 end
 
 """
-    set_default_arg_group(settings, [name])
+    set_default_arg_group!(settings, [name])
 
-Set the default group for subsequent invocations of the [`@add_arg_table`](@ref) macro and
-[`add_arg_table`](@ref) function. `name` is a `String`, and must be one of the standard group names
+Set the default group for subsequent invocations of the [`@add_arg_table!`](@ref) macro and
+[`add_arg_table!`](@ref) function. `name` is a `String`, and must be one of the standard group names
 (`"command"`, `"positional"` or `"optional"`) or one of the user-defined names given in
-`add_arg_group` (groups with no assigned name cannot be used with this function).
+`add_arg_group!` (groups with no assigned name cannot be used with this function).
 
 If `name` is not provided or is the empty string `""`, then the default behavior is reset (i.e.
 arguments will be automatically assigned to the standard groups). The `name` can also be passed as a
 `Symbol`.
 """
-function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractString,Symbol} = "")
+function set_default_arg_group!(settings::ArgParseSettings, name::Union{AbstractString,Symbol} = "")
     name = string(name)
     startswith(name, '#') && error("invalid group name: $name (begins with #)")
     isempty(name) && (settings.default_group = ""; return)
@@ -1231,7 +1236,7 @@ function set_default_arg_group(settings::ArgParseSettings, name::Union{AbstractS
 end
 
 # import_settings! & friends
-function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
+function override_conflicts_with_commands!(settings::ArgParseSettings, new_cmd::AbstractString)
     ids0 = Int[]
     for ia in 1:length(settings.args_table.fields)
         a = settings.args_table.fields[ia]
@@ -1241,7 +1246,7 @@ function override_conflicts_with_commands(settings::ArgParseSettings, new_cmd::A
         splice!(settings.args_table.fields, pop!(ids0))
     end
 end
-function override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField)
+function override_duplicates!(args::Vector{ArgParseField}, new_arg::ArgParseField)
     ids0 = Int[]
     for (ia,a) in enumerate(args)
         if (a.dest_name == new_arg.dest_name) &&
@@ -1284,7 +1289,7 @@ function override_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField
         if is_cmd(a) && is_cmd(new_arg) && a.constant == new_arg.constant && !is_arg(a)
             is_arg(new_arg) && found_a_bug() # this is ensured by check_settings_are_compatible
             # two command flags with the same command -> should have already been taken care of,
-            # by either check_settings_are_compatible or merge_commands
+            # by either check_settings_are_compatible or merge_commands!
             continue
         end
 
@@ -1335,7 +1340,7 @@ function check_settings_are_compatible(settings::ArgParseSettings, other::ArgPar
     return true
 end
 
-function merge_commands(fields::Vector{ArgParseField}, ofields::Vector{ArgParseField})
+function merge_commands!(fields::Vector{ArgParseField}, ofields::Vector{ArgParseField})
     oids = Int[]
     for a in fields, ioa = 1:length(ofields)
         oa = ofields[ioa]
@@ -1360,7 +1365,7 @@ function merge_commands(fields::Vector{ArgParseField}, ofields::Vector{ArgParseF
     return oids
 end
 
-function fix_commands_fields(fields::Vector{ArgParseField})
+function fix_commands_fields!(fields::Vector{ArgParseField})
     cmd_found = false
     for a in fields
         if is_arg(a) && is_cmd(a)
@@ -1368,13 +1373,6 @@ function fix_commands_fields(fields::Vector{ArgParseField})
             cmd_found = true
         end
     end
-end
-
-# TODO: remove after minor version bump
-export import_settings
-function import_settings(args...; kw...)
-    @warn "`import_settings` is depreacted, use `import_settings!`"
-    import_settings!(args...; kw...)
 end
 
 """
@@ -1401,19 +1399,19 @@ will not have any effect on `settings`.
 This function can be used at any time.
 """
 function import_settings!(settings::ArgParseSettings,
-                          other::ArgParseSettings,
+                          other::ArgParseSettings;
                           args_only::Bool = true)
     check_settings_are_compatible(settings, other)
 
     fields = settings.args_table.fields
     ofields = deepcopy(other.args_table.fields)
-    merged_oids = merge_commands(fields, ofields)
+    merged_oids = merge_commands!(fields, ofields)
     if !settings.error_on_conflict
         for a in ofields
-            override_duplicates(fields, a)
+            override_duplicates!(fields, a)
         end
         for (subk, subs) in other.args_table.subsettings
-            override_conflicts_with_commands(settings, subk)
+            override_conflicts_with_commands!(settings, subk)
         end
     end
     while !isempty(merged_oids)
@@ -1433,7 +1431,7 @@ function import_settings!(settings::ArgParseSettings,
         push!(settings.args_groups, deepcopy(oag))
     end
 
-    fix_commands_fields(fields)
+    fix_commands_fields!(fields)
 
     if !args_only
         settings.add_help = other.add_help
@@ -1459,11 +1457,11 @@ function import_settings!(settings::ArgParseSettings,
             end
         end
         if !haskey(settings, subk)
-            add_command(settings, subk, cmd_prog_hint, !settings.error_on_conflict)
+            add_command!(settings, subk, cmd_prog_hint, !settings.error_on_conflict)
         elseif !isempty(cmd_prog_hint)
             settings[subk].prog = "$(settings.prog) $cmd_prog_hint"
         end
-        import_settings!(settings[subk], subs, args_only)
+        import_settings!(settings[subk], subs, args_only=args_only)
     end
     return settings
 end

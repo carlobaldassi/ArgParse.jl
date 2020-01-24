@@ -24,5 +24,5 @@ the resolution of most of the conflicts in favor of the newest added entry. The 
 * In case of duplicate positional arguments metavars, the older argument is deleted
 * A command can override an argument with the same destination key
 * However, an argument can never override a command; neither can a command override another command when added
-  with `@add_arg_table` (compatible commands are merged by [`import_settings`](@ref) though)
+  with `@add_arg_table!` (compatible commands are merged by [`import_settings!`](@ref) though)
 * Conflicting command aliases are removed

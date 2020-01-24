@@ -1,5 +1,5 @@
 # test 01: minimal options/arguments, auto-generated help/version;
-#          function version of add_arg_table
+#          function version of add_arg_table!
 
 @testset "test 01" begin
 
@@ -7,7 +7,7 @@ function ap_settings1()
 
     s = ArgParseSettings()
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"               # an option (will take an argument)
         "--opt2", "-o"         # another option, with short form
         "arg1"                 # a positional argument
@@ -22,7 +22,7 @@ function ap_settings1b()
 
     s = ArgParseSettings(exc_handler = ArgParse.debug_handler)
 
-    add_arg_table(s,
+    add_arg_table!(s,
         "--opt1",
         ["--opt2", "-o"],
         "arg1")
@@ -57,20 +57,20 @@ for s = [ap_settings1(), ap_settings1b()]
     @ap_test_throws ap_test1(["-o"])
     @ap_test_throws ap_test1(["--opt1"])
 
-    @ee_test_throws @add_arg_table(s, "--opt1") # long option already added
-    @ee_test_throws @add_arg_table(s, "-o") # short option already added
+    @ee_test_throws @add_arg_table!(s, "--opt1") # long option already added
+    @ee_test_throws @add_arg_table!(s, "-o") # short option already added
 end
 
 # test malformed tables
 function ap_settings1c()
 
-    @ee_test_throws @add_arg_table begin
+    @ee_test_throws @add_arg_table! begin
         "-a"
     end
 
     s = ArgParseSettings(exc_handler = ArgParse.debug_handler)
 
-    @ee_test_throws add_arg_table(s, Dict(:action => :store_true), "-a")
+    @ee_test_throws add_arg_table!(s, Dict(:action => :store_true), "-a")
     @test_addtable_failure s begin
         action = :store_true
         "-a"
@@ -78,8 +78,8 @@ function ap_settings1c()
     @test_addtable_failure s begin
         action => :store_true
     end
-    @ee_test_throws add_arg_table(s, "-a", Dict(:wat => :store_true))
-    @ee_test_throws @add_arg_table s begin
+    @ee_test_throws add_arg_table!(s, "-a", Dict(:wat => :store_true))
+    @ee_test_throws @add_arg_table! s begin
         "-a"
             wat => :store_true
     end

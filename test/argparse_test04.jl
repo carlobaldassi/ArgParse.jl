@@ -8,7 +8,7 @@ function ap_settings4()
                              # which we want to extend
 
     # So we just add a simple table
-    @add_arg_table s0 begin
+    @add_arg_table! s0 begin
         "--parent-flag", "-o"
             action = "store_true"
             help = "parent flag"
@@ -29,7 +29,7 @@ function ap_settings4()
 
     import_settings!(s, s0)        # now s has all of s0 arguments (except help/version)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "-o"                       # this will partially override s0's --parent-flag
             action = :store_true
             help = "child flag"
@@ -60,7 +60,7 @@ function ap_settings4b()
                           exc_handler = ArgParse.debug_handler)
 
     # So we just add a simple table
-    @add_arg_table s0 begin
+    @add_arg_table! s0 begin
         "--parent-flag", "-o"
             action = "store_true"
             help = "parent flag"
@@ -76,9 +76,9 @@ function ap_settings4b()
     s = ArgParseSettings("Test 4 for ArgParse.jl",
                          version = "Version 1.0")
 
-    import_settings!(s, s0, false)  # args_only set to false
+    import_settings!(s, s0, args_only=false)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "-o"
             action = :store_true
             help = "child flag"
@@ -131,7 +131,7 @@ for s = [ap_settings4(), ap_settings4b()]
 
     # same metavar as another argument
     s.error_on_conflict = true
-    @ee_test_throws @add_arg_table(s, "other-arg", metavar="parent-argument")
+    @ee_test_throws @add_arg_table!(s, "other-arg", metavar="parent-argument")
 end
 
 
@@ -142,7 +142,7 @@ function ap_settings4_base()
                          version = "Version 1.0",
                          exc_handler = ArgParse.debug_handler)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "-o"
             action = :store_true
             help = "child flag"
@@ -158,7 +158,7 @@ function ap_settings4_conflict1()
 
     s0 = ArgParseSettings()
 
-    @add_arg_table s0 begin
+    @add_arg_table! s0 begin
         "--parent-flag", "-o"
             action = "store_true"
             help = "parent flag"
@@ -171,7 +171,7 @@ function ap_settings4_conflict2()
 
     s0 = ArgParseSettings()
 
-    @add_arg_table s0 begin
+    @add_arg_table! s0 begin
         "--flag"
             action = "store_true"
             help = "another parent flag"

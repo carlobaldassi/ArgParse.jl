@@ -7,7 +7,7 @@ function main(args)
     s = ArgParseSettings("Example 6 for argparse.jl: " *
                          "commands and their associated sub-tables.")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "run"
             action = :command        # adds a command which will be read from an argument
             help = "start running mode"
@@ -16,7 +16,7 @@ function main(args)
             help = "start jumping mode"
     end
 
-    @add_arg_table s["run"] begin    # add command arg_table: same as usual, but invoked on s["cmd"]
+    @add_arg_table! s["run"] begin    # add command arg_table: same as usual, but invoked on s["cmd"]
         "--speed"
             arg_type = Float64
             default = 10.
@@ -29,7 +29,7 @@ function main(args)
     s["jump"].autofix_names = true                     # this uses dashes in long options, underscores
                                                        # in auto-generated dest_names
 
-    @add_arg_table s["jump"] begin
+    @add_arg_table! s["jump"] begin
         "--higher"
             action = :store_true
             help = "enhance jumping"

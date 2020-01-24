@@ -7,7 +7,7 @@ function ap_settings7()
     s = ArgParseSettings(description = "Test 7 for ArgParse.jl\n\nTesting oxymoronic options",
                          exc_handler = ArgParse.debug_handler)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--oxymoronic", "-x"
             required = true
             help = "a required option"
@@ -65,7 +65,7 @@ let s = ap_settings7()
     @ap_test_throws ap_test7(["--oxymoronic=A", "--opt=B"])
     @ap_test_throws ap_test7(["--opt=A, -o=B"])
     s.suppress_warnings = true
-    add_arg_table(s, "-g", Dict(:action=>:store_true, :required=>true))
+    add_arg_table!(s, "-g", Dict(:action=>:store_true, :required=>true))
     @test ap_test7(["--oxymoronic=A", "-o=B"]) == Dict{String,Any}("oxymoronic"=>"A", "opt"=>nothing, "o"=>"B", "flag"=>false, "g"=>false)
 end
 

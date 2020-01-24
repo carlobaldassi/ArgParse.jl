@@ -21,7 +21,7 @@ end
 
 macro test_addtable_failure(ex...)
     ex = [nothing, ex...]
-    ex = Expr(:call, :macroexpand, @__MODULE__, Expr(:quote, Expr(:macrocall, Symbol("@add_arg_table"), ex...)))
+    ex = Expr(:call, :macroexpand, @__MODULE__, Expr(:quote, Expr(:macrocall, Symbol("@add_arg_table!"), ex...)))
     quote
         @test_throws LoadError $ex
     end

@@ -4,7 +4,5 @@ It may be useful in some cases to import an argument table into the one which is
 specialized versions of a common interface.
 
 ```@docs
-import_settings
+import_settings!
 ```
-
-

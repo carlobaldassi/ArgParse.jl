@@ -7,7 +7,7 @@ function main(args)
     # initialize the settings (the description is for the help screen)
     s = ArgParseSettings(description = "Example 1 for argparse.jl: minimal usage.")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"               # an option (will take an argument)
         "--opt2", "-o"         # another option, with short form
         "arg1"                 # a positional argument

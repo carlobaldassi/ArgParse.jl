@@ -7,8 +7,8 @@ function ap_settings12()
     s = ArgParseSettings("Test 12 for ArgParse.jl",
                          exc_handler = ArgParse.debug_handler)
 
-    add_arg_group(s, "mutually exclusive options", exclusive=true)
-    @add_arg_table s begin
+    add_arg_group!(s, "mutually exclusive options", exclusive=true)
+    @add_arg_table! s begin
         "--maybe", "-M"
             action = :store_true
             help = "maybe..."
@@ -17,15 +17,15 @@ function ap_settings12()
             help = "maybe not..."
     end
 
-    add_arg_group(s, "required mutually exclusive options", "reqexc", exclusive=true, required=true)
-    @add_arg_table s begin
+    add_arg_group!(s, "required mutually exclusive options", "reqexc", exclusive=true, required=true)
+    @add_arg_table! s begin
         "--either", "-E"
             action = :store_true
             help = "choose the `either` option"
     end
 
-    add_arg_group(s, "required arguments", required=true)
-    @add_arg_table s begin
+    add_arg_group!(s, "required arguments", required=true)
+    @add_arg_table! s begin
         "--enhance", "-+"
             action = :store_true
             help = "set the enhancement option"
@@ -35,8 +35,8 @@ function ap_settings12()
                    "entries at once"
     end
 
-    set_default_arg_group(s, "reqexc")
-    @add_arg_table s begin
+    set_default_arg_group!(s, "reqexc")
+    @add_arg_table! s begin
         "--or", "-O"
             action = :store_arg
             arg_type = Int
@@ -44,8 +44,8 @@ function ap_settings12()
             help = "set the `or` option"
     end
 
-    set_default_arg_group(s)
-    @add_arg_table s begin
+    set_default_arg_group!(s)
+    @add_arg_table! s begin
         "-k"
             action = :store_const
             default = 0
@@ -116,9 +116,9 @@ let s = ap_settings12()
     @ap_test_throws ap_test12(["-MO55", "A", "A", "--or-perhaps=?"])
     @ap_test_throws ap_test12(["--enhanced", "-+MkO55", "A", "A", "--or-perhaps=?"])
     # invalid arguments in mutually exclusive groups
-    @ee_test_throws @add_arg_table(s, "arg2", action = :store_arg, group = "reqexc")
-    set_default_arg_group(s, "reqexc")
-    @ee_test_throws @add_arg_table(s, "arg2", action = :store_arg)
+    @ee_test_throws @add_arg_table!(s, "arg2", action = :store_arg, group = "reqexc")
+    set_default_arg_group!(s, "reqexc")
+    @ee_test_throws @add_arg_table!(s, "arg2", action = :store_arg)
 end
 
 end

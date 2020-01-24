@@ -1,5 +1,5 @@
 # test 10: multiple metavars
-#          function version of add_arg_table
+#          function version of add_arg_table!
 
 @testset "test 10" begin
 
@@ -11,7 +11,7 @@ function ap_settings10()
                          add_version = true,
                          exc_handler = ArgParse.debug_handler)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"
             nargs => 2                             # exactly 2 arguments must be specified
             arg_type => Int                        # only Int arguments allowed
@@ -49,7 +49,7 @@ function ap_settings10b()
                          add_version = true,
                          exc_handler = ArgParse.debug_handler)
 
-    add_arg_table(s,
+    add_arg_table!(s,
         "--opt1", Dict(
             :nargs => 2,                       # exactly 2 arguments
             :arg_type => Int,                  # only Int arguments allowed
@@ -89,7 +89,7 @@ function ap_settings10c(in_nargs)
                          add_version = true,
                          exc_handler = ArgParse.debug_handler)
 
-    add_arg_table(s,
+    add_arg_table!(s,
         "--opt1", Dict(
             :nargs => in_nargs,
             :arg_type => Int,
@@ -119,7 +119,7 @@ function ap_settings10d()
                          add_version = true,
                          exc_handler = ArgParse.debug_handler)
 
-    add_arg_table(s,
+    add_arg_table!(s,
         "opt1", Dict(
             :nargs => 2,
             :arg_type => Int,
@@ -167,12 +167,12 @@ for s = [ap_settings10(), ap_settings10b()]
     @ap_test_throws ap_test10(["X", "Y", "--opt1", "1"])
     @ap_test_throws ap_test10(["X", "Y", "--opt1", "a", "b"])
 
-    @ee_test_throws @add_arg_table(s, "required_arg_after_optional_args", required = true)
+    @ee_test_throws @add_arg_table!(s, "required_arg_after_optional_args", required = true)
     # wrong default
-    @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, default = 1.5)
+    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, default = 1.5)
     # wrong range tester
-    @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
-    @ee_test_throws @add_arg_table(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
+    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
+    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
 end
 
 end
