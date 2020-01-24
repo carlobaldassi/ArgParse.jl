@@ -32,10 +32,16 @@ See also the examples in the [examples directory](examples).
 ## Changes in release 1.0.0
 
 * Drop support for Julia versions v0.6/v0.7
+* Renamed a few functions and macros (old versions can be used but produced deprecation warnings):
+  + `@add_arg_table` → `@add_arg_table!`
+  + `add_arg_table` → `add_arg_table!`
+  + `add_arg_group` → `add_arg_group!`
+  + `set_default_arg_group` → `set_default_arg_group!`
+  + `import_settings` → `import_settings!`. The signature of this function has also changed:
+    `args_only` is now a keyword argument
 * Parsing does not exit julia by default when in interactive mode now
 * Added mutually-exclusive and/or required argument groups
 * Added command aliases
-* Renamed function `import_settings` → `import_settings!`
 
 ## Changes in release 0.6.2
 

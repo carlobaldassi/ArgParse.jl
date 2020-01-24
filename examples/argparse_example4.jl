@@ -10,7 +10,7 @@ function main(args)
                          "dest_name, metvar, range_tested, " *
                          "alternative actions.")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"
             action = :append_const   # appends 'constant' to 'dest_name'
             arg_type = String        # the only utility of this is restricting the dest array type

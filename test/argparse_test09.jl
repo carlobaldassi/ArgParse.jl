@@ -16,7 +16,7 @@ function ap_settings9()
                          preformatted_description=true,
                          exc_handler = ArgParse.debug_handler)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt"
             required = true
             help = "a required option"

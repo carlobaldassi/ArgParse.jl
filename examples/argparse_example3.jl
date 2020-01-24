@@ -12,7 +12,7 @@ function main(args)
                          version = "Version 1.0", # version info
                          add_version = true)      # audo-add version option
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"
             nargs = '?'              # '?' means optional argument
             arg_type = Int           # only Int arguments allowed

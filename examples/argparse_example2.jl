@@ -8,7 +8,7 @@ function main(args)
                          "flags, options help, " *
                          "required arguments.")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"
             help = "an option"     # used by the help screen
         "--opt2", "-o"

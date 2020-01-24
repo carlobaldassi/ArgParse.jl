@@ -19,10 +19,10 @@ export
     ArgParseError,
 
 # functions & macros
-    add_arg_table,
-    @add_arg_table,
-    add_arg_group,
-    set_default_arg_group,
+    add_arg_table!,
+    @add_arg_table!,
+    add_arg_group!,
+    set_default_arg_group!,
     import_settings!,
     usage_string,
     parse_args
@@ -34,5 +34,6 @@ import Base: show, getindex, setindex!, haskey
 include("common.jl")
 include("settings.jl")
 include("parsing.jl")
+include("deprecated.jl")
 
 end # module ArgParse

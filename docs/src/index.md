@@ -17,7 +17,7 @@ as well.
 To install the module, use Julia's package manager: start pkg mode by pressing `]` and then enter:
 
 ```
-(v1.0) pkg> add ArgParse
+(v1.3) pkg> add ArgParse
 ```
 
 Dependencies will be installed automatically.
@@ -31,12 +31,12 @@ using ArgParse
 ```
 
 There are two main steps for defining a command-line interface: creating an [`ArgParseSettings`](@ref) object, and
-populating it with allowed arguments and options using either the macro [`@add_arg_table`](@ref) or the
-function [`add_arg_table`](@ref) (see the [Argument table](@ref) section):
+populating it with allowed arguments and options using either the macro [`@add_arg_table!`](@ref) or the
+function [`add_arg_table!`](@ref) (see the [Argument table](@ref) section):
 
 ```
 s = ArgParseSettings()
-@add_arg_table s begin
+@add_arg_table! s begin
     "--opt1"
         help = "an option with an argument"
     "--opt2", "-o"
@@ -85,7 +85,7 @@ using ArgParse
 function parse_commandline()
     s = ArgParseSettings()
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--opt1"
             help = "an option with an argument"
         "--opt2", "-o"
@@ -169,7 +169,7 @@ Parsed args:
 
 From these examples, a number of things can be noticed:
 
-* `opt1` defaults to `nothing`, since no `default` setting was used for it in `@add_arg_table`
+* `opt1` defaults to `nothing`, since no `default` setting was used for it in `@add_arg_table!`
 * `opt1` argument type, begin unspecified, defaults to `Any`, but in practice it's parsed as a
   string (e.g. `"2+2"`)
 * `opt2` instead has `Int` argument type, so `"4"` will be parsed and converted to an integer,

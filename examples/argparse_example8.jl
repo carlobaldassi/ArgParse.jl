@@ -7,8 +7,8 @@ function main(args)
     s = ArgParseSettings("Example 8 for argparse.jl: " *
                          "mutually exclusive and requiredd groups.")
 
-    add_arg_group(s, "Mutually exclusive options", exclusive=true)
-    @add_arg_table s begin
+    add_arg_group!(s, "Mutually exclusive options", exclusive=true)
+    @add_arg_table! s begin
         "--maybe", "-M"
             action = :store_true
             help = "maybe..."
@@ -17,8 +17,8 @@ function main(args)
             help = "maybe not..."
     end
 
-    add_arg_group(s, "Required mutually exclusive options", exclusive=true, required=true)
-    @add_arg_table s begin
+    add_arg_group!(s, "Required mutually exclusive options", exclusive=true, required=true)
+    @add_arg_table! s begin
         "--either", "-E"
             action = :store_true
             help = "choose the `either` option"
@@ -28,8 +28,8 @@ function main(args)
             help = "set the `or` option"
     end
 
-    add_arg_group(s, "Required arguments", required=true)
-    @add_arg_table s begin
+    add_arg_group!(s, "Required arguments", required=true)
+    @add_arg_table! s begin
         "--enhance", "-+"
             action = :store_const
             default = 0

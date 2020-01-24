@@ -7,8 +7,8 @@ function ap_settings6()
     s = ArgParseSettings("Test 6 for ArgParse.jl",
                          exc_handler = ArgParse.debug_handler)
 
-    add_arg_group(s, "stack options")
-    @add_arg_table s begin
+    add_arg_group!(s, "stack options")
+    @add_arg_table! s begin
         "--opt1"
             action = :append_const
             arg_type = String
@@ -23,11 +23,11 @@ function ap_settings6()
             help = "append O2 to the stack"
     end
 
-    add_arg_group(s, "weird options", "weird")
+    add_arg_group!(s, "weird options", "weird")
 
-    set_default_arg_group(s, "weird")
+    set_default_arg_group!(s, "weird")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--awkward-option"
             nargs = '+'
             action = :append_arg
@@ -39,9 +39,9 @@ function ap_settings6()
                    "stored in chunks"
     end
 
-    set_default_arg_group(s)
+    set_default_arg_group!(s)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "-k"
             action = :store_const
             default = 0
@@ -55,9 +55,9 @@ function ap_settings6()
             group = "weird"
     end
 
-    set_default_arg_group(s, "weird")
+    set_default_arg_group!(s, "weird")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--rest"
             nargs = 'R'
             help = "an option which will consume " *
@@ -108,9 +108,9 @@ let s = ap_settings6()
     @ap_test_throws ap_test6(["--şİł", "-1", "-2", "-3", "-4"])
 
     # invalid groups
-    @ee_test_throws add_arg_group(s, "invalid commands", "")
-    @ee_test_throws add_arg_group(s, "invalid commands", "#invalid")
-    @ee_test_throws @add_arg_table(s, "--opt", action = :store_true, group = "none")
+    @ee_test_throws add_arg_group!(s, "invalid commands", "")
+    @ee_test_throws add_arg_group!(s, "invalid commands", "#invalid")
+    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_true, group = "none")
 end
 
 end

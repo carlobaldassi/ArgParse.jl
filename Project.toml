@@ -1,9 +1,10 @@
 name = "ArgParse"
 uuid = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
-version = "1.0.0"
 author = ["Carlo Baldassi <carlobaldassi@gmail.com>"]
+version = "1.0.0"
 
 [deps]
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 
 [compat]

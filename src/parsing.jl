@@ -502,7 +502,7 @@ mutable struct ParserState
 end
 
 found_command(state::ParserState) = state.command ≢ nothing
-function parse_command_args(state::ParserState, settings::ArgParseSettings)
+function parse_command_args!(state::ParserState, settings::ArgParseSettings)
     cmd = state.command
     haskey(settings, cmd) || argparse_error("unknown command: $cmd")
     #state.out_dict[cmd] = parse_args(state.args_list, settings[cmd])
@@ -518,7 +518,7 @@ function parse_command_args(state::ParserState, settings::ArgParseSettings)
     return state.out_dict[cmd]
 end
 
-function preparse(c::Channel, state::ParserState, settings::ArgParseSettings)
+function preparse!(c::Channel, state::ParserState, settings::ArgParseSettings)
     args_list = state.args_list
     while !isempty(args_list)
         state.arg_delim_found && (put!(c, :pos_arg); continue)
@@ -602,7 +602,7 @@ function parse_args_unhandled(args_list::Vector,
 
     if settings.add_version
         settings.add_version = false
-        add_arg_field(settings, "--version",
+        add_arg_field!(settings, "--version",
             action = :show_version,
             help = "show version information and exit",
             group = ""
@@ -611,7 +611,7 @@ function parse_args_unhandled(args_list::Vector,
     end
     if settings.add_help
         settings.add_help = false
-        add_arg_field(settings, ["--help", "-h"],
+        add_arg_field!(settings, ["--help", "-h"],
             action = :show_help,
             help = "show this help message and exit",
             group = ""
@@ -620,16 +620,16 @@ function parse_args_unhandled(args_list::Vector,
     end
 
     state = ParserState(args_list, settings, truncated_shopts)
-    preparser = Channel(c->preparse(c, state, settings))
+    preparser = Channel(c->preparse!(c, state, settings))
 
     try
         for tag in preparser
             if tag == :long_option
-                parse_long_opt(state, settings)
+                parse_long_opt!(state, settings)
             elseif tag == :short_option_list
-                parse_short_opt(state, settings)
+                parse_short_opt!(state, settings)
             elseif tag == :pos_arg
-                parse_arg(state, settings)
+                parse_arg!(state, settings)
             else
                 found_a_bug()
             end
@@ -638,7 +638,7 @@ function parse_args_unhandled(args_list::Vector,
         end
         test_required_args(settings, state.found_args)
         if found_command(state)
-            cmd_dict = parse_command_args(state, settings)
+            cmd_dict = parse_command_args!(state, settings)
             cmd_dict ≡ nothing && return nothing
         elseif settings.commands_are_required && has_cmd(settings)
             argparse_error("no command given")
@@ -660,8 +660,8 @@ function parse_args_unhandled(args_list::Vector,
 end
 
 # common parse functions
-function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
-                     has_arg::Bool, opt_name::AbstractString)
+function parse1_flag!(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
+                      has_arg::Bool, opt_name::AbstractString)
     has_arg && argparse_error("option $opt_name takes no arguments")
     test_exclusive_groups!(state.exc_groups, settings, f, opt_name)
     command = nothing
@@ -690,8 +690,8 @@ function parse1_flag(state::ParserState, settings::ArgParseSettings, f::ArgParse
     return
 end
 
-function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
-                       rest, name::AbstractString)
+function parse1_optarg!(state::ParserState, settings::ArgParseSettings, f::ArgParseField,
+                        rest, name::AbstractString)
     args_list = state.args_list
     arg_delim_found = state.arg_delim_found
     out_dict = state.out_dict
@@ -815,7 +815,7 @@ function parse1_optarg(state::ParserState, settings::ArgParseSettings, f::ArgPar
 end
 
 # parse long opts
-function parse_long_opt(state::ParserState, settings::ArgParseSettings)
+function parse_long_opt!(state::ParserState, settings::ArgParseSettings)
     opt_name = state.token
     arg_after_eq = state.token_arg
     local f::ArgParseField
@@ -844,16 +844,16 @@ function parse_long_opt(state::ParserState, settings::ArgParseSettings)
     opt_name = fln
 
     if is_flag(f)
-        parse1_flag(state, settings, f, arg_after_eq ≢ nothing, "--"*opt_name)
+        parse1_flag!(state, settings, f, arg_after_eq ≢ nothing, "--"*opt_name)
     else
-        parse1_optarg(state, settings, f, arg_after_eq, "--"*opt_name)
+        parse1_optarg!(state, settings, f, arg_after_eq, "--"*opt_name)
     end
     push!(state.found_args, idstring(f))
     return
 end
 
 # parse short opts
-function parse_short_opt(state::ParserState, settings::ArgParseSettings)
+function parse_short_opt!(state::ParserState, settings::ArgParseSettings)
     shopts_lst = state.token
     rest_as_arg = nothing
     sind = firstindex(shopts_lst)
@@ -883,9 +883,9 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
         end
         found || argparse_error("unrecognized option -$opt_name")
         if is_flag(f)
-            parse1_flag(state, settings, f, next_is_eq, "-"*opt_name)
+            parse1_flag!(state, settings, f, next_is_eq, "-"*opt_name)
         else
-            parse1_optarg(state, settings, f, rest_as_arg, "-"*opt_name)
+            parse1_optarg!(state, settings, f, rest_as_arg, "-"*opt_name)
         end
         push!(state.found_args, idstring(f))
         state.arg_consumed && break
@@ -904,7 +904,7 @@ function parse_short_opt(state::ParserState, settings::ArgParseSettings)
 end
 
 # parse arg
-function parse_arg(state::ParserState, settings::ArgParseSettings)
+function parse_arg!(state::ParserState, settings::ArgParseSettings)
     found = false
     local f::ArgParseField
     for new_arg_ind = state.last_arg+1:length(settings.args_table.fields)
@@ -917,7 +917,7 @@ function parse_arg(state::ParserState, settings::ArgParseSettings)
     end
     found || argparse_error("too many arguments")
 
-    parse1_optarg(state, settings, f, nothing, f.dest_name)
+    parse1_optarg!(state, settings, f, nothing, f.dest_name)
 
     push!(state.found_args, idstring(f))
     return

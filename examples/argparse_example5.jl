@@ -8,7 +8,7 @@ function main(args)
                              # which we want to extend
 
     # So we just add a simple table
-    @add_arg_table s0 begin
+    @add_arg_table! s0 begin
         "--parent-flag", "-o"
             action=>"store_true"
             help=>"parent flag"
@@ -25,11 +25,11 @@ function main(args)
                          add_help = false,           # disable auto-add of --help option
                          version = "Version 1.0")    # we set the version info, but --version won't be added
 
-    import_settings(s, s0)       # now s has all of s0 arguments (except help/version)
+    import_settings!(s, s0)      # now s has all of s0 arguments (except help/version)
 
     s.error_on_conflict = false  # do not error-out when trying to override an option
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "-o"                       # this will partially override s0's --parent-flag
             action = :store_true
             help = "child flag"

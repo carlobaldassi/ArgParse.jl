@@ -13,11 +13,11 @@ Each entry of the table consist of an argument name and a list of argument setti
 There are two very similar methods to populate a table:
 
 ```@docs
-@add_arg_table
+@add_arg_table!
 ```
 
 ```@docs
-add_arg_table
+add_arg_table!
 ```
 
 ## Argument names
@@ -139,7 +139,7 @@ using ArgParse
 * `store_arg` (non-flag): store the argument. This is the default unless `nargs` is `0`. Example:
 
   ```
-  julia> @add_arg_table(settings, "arg", action => :store_arg);
+  julia> @add_arg_table!(settings, "arg", action => :store_arg);
 
   julia> parse_args(["x"], settings)
   Dict{String,Any} with 1 entry:
@@ -149,7 +149,7 @@ using ArgParse
   The result is a vector if `nargs` is a non-zero number, or one of `'*'`, `'+'`, `'R'`:
 
   ```
-  julia> @add_arg_table(settings, "arg", action => :store_arg, nargs => 2);
+  julia> @add_arg_table!(settings, "arg", action => :store_arg, nargs => 2);
 
   julia> parse_args(["x", "y"], settings)
   Dict{String,Any} with 1 entry:
@@ -159,7 +159,7 @@ using ArgParse
 * `store_true` (flag): store `true` if given, otherwise `false`. Example:
 
   ```
-  julia> @add_arg_table(settings, "-v", action => :store_true);
+  julia> @add_arg_table!(settings, "-v", action => :store_true);
 
   julia> parse_args([], settings)
   Dict{String,Any} with 1 entry:
@@ -173,7 +173,7 @@ using ArgParse
 * `store_false` (flag): store `false` if given, otherwise `true`. Example:
 
   ```
-  julia> @add_arg_table(settings, "-v", action => :store_false);
+  julia> @add_arg_table!(settings, "-v", action => :store_false);
 
   julia> parse_args([], settings)
   Dict{String,Any} with 1 entry:
@@ -188,7 +188,7 @@ using ArgParse
   Example:
 
   ```
-  julia> @add_arg_table(settings, "-v", action => :store_const, constant => 1, default => 0);
+  julia> @add_arg_table!(settings, "-v", action => :store_const, constant => 1, default => 0);
 
   julia> parse_args([], settings)
   Dict{String,Any} with 1 entry:
@@ -202,7 +202,7 @@ using ArgParse
 * `append_arg` (non-flag): append the argument to the result. Example:
 
   ```
-  julia> @add_arg_table(settings, "-x", action => :append_arg);
+  julia> @add_arg_table!(settings, "-x", action => :append_arg);
 
   julia> parse_args(["-x", "1", "-x", "2"], settings)
   Dict{String,Any} with 1 entry:
@@ -212,7 +212,7 @@ using ArgParse
   The result will be a `Vector{Vector}` if `nargs` is a non-zero number, or one of `'*'`, `'+'`, `'R'`:
 
   ```
-  julia> @add_arg_table(settings, "-x", action => :append_arg, nargs => '*');
+  julia> @add_arg_table!(settings, "-x", action => :append_arg, nargs => '*');
 
   julia> parse_args(["-x", "1", "2", "-x", "3"], settings)
   Dict{String,Any} with 1 entry:
@@ -222,7 +222,7 @@ using ArgParse
 * `append_const` (flag): append the value passed as `constant` in the entry settings. Example:
 
   ```
-  julia> @add_arg_table(settings, "-x", action => :append_const, constant => 1);
+  julia> @add_arg_table!(settings, "-x", action => :append_const, constant => 1);
 
   julia> parse_args(["-x", "-x", "-x"], settings)
   Dict{String,Any} with 1 entry:
@@ -233,7 +233,7 @@ using ArgParse
   invoked. Example:
 
   ```
-  julia> @add_arg_table(settings, "-x", action => :count_invocations);
+  julia> @add_arg_table!(settings, "-x", action => :count_invocations);
 
   julia> parse_args(["-x", "-x", "-x"], settings)
   Dict{String,Any} with 1 entry:
@@ -244,7 +244,7 @@ using ArgParse
   `false`. Example:
 
   ```
-  julia> @add_arg_table(settings, "-x", action => :show_help);
+  julia> @add_arg_table!(settings, "-x", action => :show_help);
 
   julia> parse_args(["-x"], settings)
   usage: <PROGRAM> [-x]
@@ -259,7 +259,7 @@ using ArgParse
   ```
   julia> settings.version = "1.0";
 
-  julia> @add_arg_table(settings, "-x", action => :show_version);
+  julia> @add_arg_table!(settings, "-x", action => :show_version);
 
   julia> parse_args(["-v"], settings)
   1.0
@@ -285,7 +285,7 @@ using ArgParse
 function parse_commandline()
     s = ArgParseSettings()
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "cmd1", "C"
             help = "first command"
             action = :command
@@ -348,7 +348,7 @@ optional arguments:
 
 The argument settings and tables for commands can be accessed by using a dict-like notation, i.e. `settings["cmd1"]` is an
 `ArgParseSettings` object specific to the `"cmd1"` command. Therefore, to populate a command sub-argument-table, simply
-use `@add_arg_table(settings["cmd1"], table...)` and similar.
+use `@add_arg_table!(settings["cmd1"], table...)` and similar.
 
 These sub-settings are created when a command is added to the argument table, and by default they inherit their parent general
 settings except for the `prog` setting (which is auto-generated, as can be seen in the above example) and the
@@ -376,7 +376,7 @@ arguments, displayed in that order. Example:
 ```@repl args
 settings = ArgParseSettings(exit_after_help = false);
 
-@add_arg_table settings begin
+@add_arg_table! settings begin
    "--opt"
    "arg"
      required = true
@@ -395,44 +395,44 @@ options in the group can be provided. A group can also be declared to be require
 one argument in the group needs to be provided.
 
 ```@docs
-add_arg_group
+add_arg_group!
 ```
 
 ```@docs
-set_default_arg_group
+set_default_arg_group!
 ```
 
-Besides setting a default group with `add_arg_group` and `set_default_group`, it's also possible to assign individual arguments
-to a group by using the `group` setting in the argument table entry, which follows the same rules as `set_default_group`.
+Besides setting a default group with `add_arg_group!` and `set_default_group!`, it's also possible to assign individual arguments
+to a group by using the `group` setting in the argument table entry, which follows the same rules as `set_default_group!`.
 
 Note that if the `add_help` or `add_version` general settings are `true`, the `--help, -h` and `--version` options
 will always be added to the `optional` group.
 
 ## Argument table styles
 
-Here are some examples of styles for the [`@add_arg_table`](@ref) marco and [`add_arg_table`](@ref) function invocation:
+Here are some examples of styles for the [`@add_arg_table!`](@ref) marco and [`add_arg_table!`](@ref) function invocation:
 
 ```julia
-@add_arg_table settings begin
+@add_arg_table! settings begin
     "--opt", "-o"
         help = "an option"
     "arg"
         help = "a positional argument"
 end
 
-@add_arg_table(settings
+@add_arg_table!(settings
     , ["--opt", "-o"]
     ,    help => "an option"
     , "arg"
     ,    help => "a positional argument"
     )
 
-@add_arg_table settings begin
+@add_arg_table! settings begin
     (["--opt", "-o"]; help = an option)
     ("arg"; help = "a positional argument")
 end
 
-@add_arg_table(settings,
+@add_arg_table!(settings,
     ["-opt", "-o"],
     begin
         help = "an option"
@@ -442,7 +442,7 @@ end
         help = "a positional argument"
     end)
 
-add_arg_table(settings,
+add_arg_table!(settings,
     ["-opt", "-o"], Dict(:help => "an option"),
     "arg"         , Dict(:help => "a positional argument")
     )

@@ -8,7 +8,7 @@ function ap_settings5()
                          exc_handler = ArgParse.debug_handler,
                          exit_after_help = false)
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "run"
             action = :command
             help = "start running mode"
@@ -17,7 +17,7 @@ function ap_settings5()
             help = "start jumping mode"
     end
 
-    @add_arg_table s["run"] begin
+    @add_arg_table! s["run"] begin
         "--speed"
             arg_type = Float64
             default = 10.
@@ -28,7 +28,7 @@ function ap_settings5()
     s["jump"].commands_are_required = false
     s["jump"].autofix_names = true
 
-    @add_arg_table s["jump"] begin
+    @add_arg_table! s["jump"] begin
         "--higher"
             action = :store_true
             help = "enhance jumping"
@@ -43,7 +43,7 @@ function ap_settings5()
 
     s["jump"]["som"].description = "Somersault jump mode"
 
-    @add_arg_table s["jump"]["som"] begin
+    @add_arg_table! s["jump"]["som"] begin
         "-t"
             nargs = '?'
             arg_type = Int
@@ -136,32 +136,32 @@ let s = ap_settings5()
     @test ap_test5(["run", "--speed", "3"], as_symbols = true) == Dict{Symbol,Any}(:_COMMAND_=>:run, :run=>Dict{Symbol,Any}(:speed=>3.0))
 
     # argument after command
-    @ee_test_throws @add_arg_table(s, "arg_after_command")
+    @ee_test_throws @add_arg_table!(s, "arg_after_command")
     # same name as command
-    @ee_test_throws @add_arg_table(s, "run")
-    @ee_test_throws @add_arg_table(s["jump"], "-c")
-    @ee_test_throws @add_arg_table(s["jump"], "--somersault")
+    @ee_test_throws @add_arg_table!(s, "run")
+    @ee_test_throws @add_arg_table!(s["jump"], "-c")
+    @ee_test_throws @add_arg_table!(s["jump"], "--somersault")
     # same dest_name as command
-    @ee_test_throws @add_arg_table(s["jump"], "--som")
-    @ee_test_throws @add_arg_table(s["jump"], "-s", dest_name = "som")
+    @ee_test_throws @add_arg_table!(s["jump"], "--som")
+    @ee_test_throws @add_arg_table!(s["jump"], "-s", dest_name = "som")
     # same name as command alias
-    @ee_test_throws @add_arg_table(s, "ju")
-    @ee_test_throws @add_arg_table(s, "J")
+    @ee_test_throws @add_arg_table!(s, "ju")
+    @ee_test_throws @add_arg_table!(s, "J")
     # new command with the same name as another one
-    @ee_test_throws @add_arg_table(s, ["run", "R"], action = :command)
-    @ee_test_throws @add_arg_table(s, "jump", action = :command)
+    @ee_test_throws @add_arg_table!(s, ["run", "R"], action = :command)
+    @ee_test_throws @add_arg_table!(s, "jump", action = :command)
     # new command with the same name as another one's alias
-    @ee_test_throws @add_arg_table(s, "ju", action = :command)
-    @ee_test_throws @add_arg_table(s, "J", action = :command)
+    @ee_test_throws @add_arg_table!(s, "ju", action = :command)
+    @ee_test_throws @add_arg_table!(s, "J", action = :command)
     # new command with an alias which is the same as another command
-    @ee_test_throws @add_arg_table(s, ["fast", "run"], action = :command)
-    @ee_test_throws @add_arg_table(s, ["R", "jump"], action = :command)
+    @ee_test_throws @add_arg_table!(s, ["fast", "run"], action = :command)
+    @ee_test_throws @add_arg_table!(s, ["R", "jump"], action = :command)
     # new command with an alias which is already in use
-    @ee_test_throws @add_arg_table(s, ["R", "ju"], action = :command)
-    @ee_test_throws @add_arg_table(s, ["R", "S", "J"], action = :command)
+    @ee_test_throws @add_arg_table!(s, ["R", "ju"], action = :command)
+    @ee_test_throws @add_arg_table!(s, ["R", "S", "J"], action = :command)
 
     # alias overriding by a command name
-    @add_arg_table(s, "J", action = :command, force_override = true, help = "the J command")
+    @add_arg_table!(s, "J", action = :command, force_override = true, help = "the J command")
     @test stringhelp(s) == """
         usage: $(basename(Base.source_path())) {run|jump|J}
 
@@ -175,7 +175,7 @@ let s = ap_settings5()
         """
 
     # alias overriding by a command alias
-    @add_arg_table(s, ["S", "ju"], action = :command, force_override = true, help = "the S command")
+    @add_arg_table!(s, ["S", "ju"], action = :command, force_override = true, help = "the S command")
     @test stringhelp(s) == """
         usage: $(basename(Base.source_path())) {run|jump|J|S}
 
@@ -190,11 +190,11 @@ let s = ap_settings5()
         """
 
     # cannot override a command name
-    @ee_test_throws @add_arg_table(s, ["J", "R"], action = :command, force_override = true)
-    @ee_test_throws @add_arg_table(s, ["R", "J"], action = :command, force_override = true)
+    @ee_test_throws @add_arg_table!(s, ["J", "R"], action = :command, force_override = true)
+    @ee_test_throws @add_arg_table!(s, ["R", "J"], action = :command, force_override = true)
 
     # conflict between dest_name and a reserved Symbol
-    @add_arg_table(s, "--COMMAND", dest_name="_COMMAND_")
+    @add_arg_table!(s, "--COMMAND", dest_name="_COMMAND_")
     @ee_test_throws ap_test5(["run", "--speed", "3"], as_symbols = true)
 end
 
@@ -206,7 +206,7 @@ function ap_settings5b()
                          exc_handler = ArgParse.debug_handler,
                          exit_after_help = false)
 
-    @add_arg_table s0 begin
+    @add_arg_table! s0 begin
         "run", "R"
             action = :command
             help = "start running mode"
@@ -221,7 +221,7 @@ function ap_settings5b()
                    "perform the command"
     end
 
-    @add_arg_table s0["run"] begin
+    @add_arg_table! s0["run"] begin
         "--speed"
             arg_type = Float64
             default = 10.
@@ -233,10 +233,10 @@ function ap_settings5b()
     s0["jump"].autofix_names = true
     s0["jump"].add_help = false
 
-    add_arg_group(s0["jump"], "modifiers", "modifiers")
-    set_default_arg_group(s0["jump"])
+    add_arg_group!(s0["jump"], "modifiers", "modifiers")
+    set_default_arg_group!(s0["jump"])
 
-    @add_arg_table s0["jump"] begin
+    @add_arg_table! s0["jump"] begin
         "--higher"
             action = :store_true
             help = "enhance jumping"
@@ -250,8 +250,8 @@ function ap_settings5b()
             help = "clap feet jumping mode"
     end
 
-    add_arg_group(s0["jump"], "other")
-    @add_arg_table s0["jump"] begin
+    add_arg_group!(s0["jump"], "other")
+    @add_arg_table! s0["jump"] begin
         "--help"
             action = :show_help
             help = "show this help message " *
@@ -260,7 +260,7 @@ function ap_settings5b()
 
     s0["jump"]["som"].description = "Somersault jump mode"
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "jump", "run", "J"              # The "run" alias will be overridden
             action = :command
             help = "start jumping mode"
@@ -277,17 +277,17 @@ function ap_settings5b()
     s["jump"].autofix_names = true
     s["jump"].add_help = false
 
-    add_arg_group(s["jump"], "modifiers", "modifiers")
-    @add_arg_table s["jump"] begin
+    add_arg_group!(s["jump"], "modifiers", "modifiers")
+    @add_arg_table! s["jump"] begin
         "--lower"
             action = :store_false
             dest_name = "higher"
             help = "reduce jumping"
     end
 
-    set_default_arg_group(s["jump"])
+    set_default_arg_group!(s["jump"])
 
-    @add_arg_table s["jump"] begin
+    @add_arg_table! s["jump"] begin
         "--clap-feet"
             action = :command
             help = "clap feet jumping mode"
@@ -299,7 +299,7 @@ function ap_settings5b()
             help = "overridden"
     end
 
-    @add_arg_table s["fly"] begin
+    @add_arg_table! s["fly"] begin
         "--glade"
             action = :store_true
             help = "glade mode"
@@ -307,7 +307,7 @@ function ap_settings5b()
 
     s["jump"]["clap_feet"].add_version = true
 
-    @add_arg_table s["jump"]["clap_feet"] begin
+    @add_arg_table! s["jump"]["clap_feet"] begin
         "--whistle"
             action = :store_true
     end
@@ -366,11 +366,11 @@ let s = ap_settings5b()
 end
 
 let
-    s1 = @add_arg_table(ArgParseSettings(), "run", action = :command)
-    s2 = @add_arg_table(ArgParseSettings(), "--run", action = :store_true)
+    s1 = @add_arg_table!(ArgParseSettings(), "run", action = :command)
+    s2 = @add_arg_table!(ArgParseSettings(), "--run", action = :store_true)
     @ee_test_throws import_settings!(s1, s2)
     @ee_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
-    s2 = @add_arg_table(ArgParseSettings(), ["R", "run"], action = :command)
+    s2 = @add_arg_table!(ArgParseSettings(), ["R", "run"], action = :command)
     @ee_test_throws import_settings!(s1, s2)
     @ee_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
 end
