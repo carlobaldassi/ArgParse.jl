@@ -8,7 +8,7 @@ Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 
 [compat]
-TextWrap = "≥ 0.1.4"
+TextWrap = "0.1.4, 1"
 julia = "1"
 
 [extras]
