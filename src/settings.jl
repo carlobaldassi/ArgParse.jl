@@ -664,7 +664,7 @@ end
 """
     add_arg_table!(settings, [arg_name [,arg_options]]...)
 
-This function is very similar to the macro version [`@add_arg_table`](@ref). Its syntax is stricter:
+This function is very similar to the macro version [`@add_arg_table!`](@ref). Its syntax is stricter:
 tuples and blocks are not allowed and argument options are explicitly specified as `Dict` objects.
 However, since it doesn't involve macros, it offers more flexibility in other respects, e.g. the
 `arg_name` entries need not be explicit, they can be anything which evaluates to a `String` or a
@@ -1155,7 +1155,7 @@ set to `false` (the default is `true`, and the option can only be set if providi
 Therefore, the most obvious usage pattern is: for each group, add it and populate the argument
 table of that group. Example:
 
-```
+```julia-repl
 julia> settings = ArgParseSettings();
 
 julia> add_arg_group!(settings, "custom group");

@@ -40,7 +40,7 @@ entry, using either the first long option name in the list or the first short op
 For example:
 
 | argument name                | default `dest_name`     |
-|:----------------------------:|:-----------------------:|
+|:-----------------------------|:------------------------|
 | `"--long"`                   | `"long"`                |
 | `"--long", "-s"`             | `"long"`                |
 | `"-s", "--long1", "--long2"` | `"long1"`               |
@@ -88,7 +88,7 @@ This is the list of all available settings:
   be automaticaly formatted; also, `arg_type` and `default` will be automatically appended to it if provided.
 * `metavar` (default = auto-generated): a token which will be used in usage and help screens to describe the argument syntax. For
   positional arguments, it will also be used as an identifier in all other messages (e.g. in reporting errors), therefore it must
-  be unique. For optional arguments, if `nargs > 1` then `metavar` can be a `Vector` of `String`\ s of length `nargs`. The
+  be unique. For optional arguments, if `nargs > 1` then `metavar` can be a `Vector` of `String`s of length `nargs`. The
   auto-generations rules are explained in the [Argument names](@ref) section.
 * `force_override`: if `true`, conflicts are ignored when adding this entry in the argument table (see also the
   [Conflicts and overrides](@ref) section). By default, it follows the general `error_on_conflict` settings.
@@ -132,13 +132,9 @@ are flags (takes no argument).
 
 This is the list of all available actions (in each example, suppose we defined `settings = ArgParseSettings()`):
 
-```@setup args
-using ArgParse
-```
-
 * `store_arg` (non-flag): store the argument. This is the default unless `nargs` is `0`. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "arg", action => :store_arg);
 
   julia> parse_args(["x"], settings)
@@ -148,7 +144,7 @@ using ArgParse
 
   The result is a vector if `nargs` is a non-zero number, or one of `'*'`, `'+'`, `'R'`:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "arg", action => :store_arg, nargs => 2);
 
   julia> parse_args(["x", "y"], settings)
@@ -158,7 +154,7 @@ using ArgParse
 
 * `store_true` (flag): store `true` if given, otherwise `false`. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-v", action => :store_true);
 
   julia> parse_args([], settings)
@@ -172,7 +168,7 @@ using ArgParse
 
 * `store_false` (flag): store `false` if given, otherwise `true`. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-v", action => :store_false);
 
   julia> parse_args([], settings)
@@ -187,8 +183,10 @@ using ArgParse
 * `store_const` (flag): store the value passed as `constant` in the entry settings if given, otherwise `default`.
   Example:
 
-  ```
-  julia> @add_arg_table!(settings, "-v", action => :store_const, constant => 1, default => 0);
+  ```julia-repl
+  julia> @add_arg_table!(settings, "-v", action => :store_const,
+                                         constant => 1,
+                                         default => 0);
 
   julia> parse_args([], settings)
   Dict{String,Any} with 1 entry:
@@ -201,7 +199,7 @@ using ArgParse
 
 * `append_arg` (non-flag): append the argument to the result. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-x", action => :append_arg);
 
   julia> parse_args(["-x", "1", "-x", "2"], settings)
@@ -211,7 +209,7 @@ using ArgParse
 
   The result will be a `Vector{Vector}` if `nargs` is a non-zero number, or one of `'*'`, `'+'`, `'R'`:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-x", action => :append_arg, nargs => '*');
 
   julia> parse_args(["-x", "1", "2", "-x", "3"], settings)
@@ -221,7 +219,7 @@ using ArgParse
 
 * `append_const` (flag): append the value passed as `constant` in the entry settings. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-x", action => :append_const, constant => 1);
 
   julia> parse_args(["-x", "-x", "-x"], settings)
@@ -232,7 +230,7 @@ using ArgParse
 * `count_invocations` (flag): increase a counter; the final result will be the number of times the option was
   invoked. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-x", action => :count_invocations);
 
   julia> parse_args(["-x", "-x", "-x"], settings)
@@ -243,7 +241,7 @@ using ArgParse
 * `show_help` (flag): show the help screen and exit. This is useful if the `add_help` general setting is
   `false`. Example:
 
-  ```
+  ```julia-repl
   julia> @add_arg_table!(settings, "-x", action => :show_help);
 
   julia> parse_args(["-x"], settings)
@@ -256,7 +254,7 @@ using ArgParse
 * `show_version` (flag): show the version information and exit. This is useful if the `add_version` general
   setting is `false`. Example:
 
-  ```
+  ```julia-repl
   julia> settings.version = "1.0";
 
   julia> @add_arg_table!(settings, "-x", action => :show_version);
@@ -373,8 +371,12 @@ settings, and option `-h` according to the command sub-settings.
 By default, the auto-generated help screen divides arguments into three groups: commands, positional arguments and optional
 arguments, displayed in that order. Example:
 
+```@setup args
+using ArgParse
+```
+
 ```@repl args
-settings = ArgParseSettings(exit_after_help = false);
+settings = ArgParseSettings();
 
 @add_arg_table! settings begin
    "--opt"

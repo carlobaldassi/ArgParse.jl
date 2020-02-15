@@ -34,7 +34,7 @@ There are two main steps for defining a command-line interface: creating an [`Ar
 populating it with allowed arguments and options using either the macro [`@add_arg_table!`](@ref) or the
 function [`add_arg_table!`](@ref) (see the [Argument table](@ref) section):
 
-```
+```julia
 s = ArgParseSettings()
 @add_arg_table! s begin
     "--opt1"
