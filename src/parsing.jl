@@ -76,29 +76,29 @@ function check_settings_can_use_symbols(settings::ArgParseSettings)
 end
 
 # parsing aux functions
-function parse_item_wrapper(it_type::Type, x::AbstractString)
-    local r::it_type
+function parse_item_wrapper(::Type{T}, x::AbstractString) where {T}
+    local r::T
     try
-        r = parse_item(it_type, x)
+        r = parse_item(T, x)
     catch err
         argparse_error("""
-            invalid argument: $x (conversion to type $it_type failed; you may need to overload
+            invalid argument: $x (conversion to type $T failed; you may need to overload
                               ArgParse.parse_item; the error was: $err)""")
     end
     return r
 end
 
-parse_item(it_type::Type{Any}, x::AbstractString) = x
-parse_item(it_type::Type{T}, x::AbstractString) where {T<:Number} = parse(it_type, x)
-parse_item(it_type::Type{T}, x::AbstractString) where {T} = convert(T, x)
+parse_item(::Type{Any}, x::AbstractString) = x
+parse_item(::Type{T}, x::AbstractString) where {T<:Number} = parse(T, x)
+parse_item(::Type{T}, x::AbstractString) where {T} = applicable(convert, T, x) ? convert(T, x) : T(x)
 
-function parse_item_eval(it_type::Type, x::AbstractString)
-    local r::it_type
+function parse_item_eval(::Type{T}, x::AbstractString) where {T}
+    local r::T
     try
-        r = convert(it_type, eval(Meta.parse(x)))
+        r = convert(T, eval(Meta.parse(x)))
     catch err
         argparse_error("""
-            invalid argument: $x (must evaluate or convert to type $it_type;
+            invalid argument: $x (must evaluate or convert to type $T;
                               the error was: $err)""")
     end
     return r
