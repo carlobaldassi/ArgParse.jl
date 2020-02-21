@@ -70,8 +70,8 @@ This is the list of all available settings:
   default is `:store_true`. See the section [Available actions and nargs values](@ref) for a list of all available actions and a
   detailed explanation.
 * `arg_type` (default = `Any`): the type of the argument. Only makes sense with non-flag arguments. Only works out-of-the-box with
-  string and number types, but see the section [Parsing to custom types](@ref) for details on how to make it work for general types
-  (including user-defined ones).
+  string, symbol and number types, but see the section [Parsing to custom types](@ref) for details on how to make it work for
+  general types (including user-defined ones).
 * `default` (default = `nothing`): the default value if the option or positional argument is not parsed. Only makes sense with
   non-flag arguments, or when the action is `:store_const` or `:append_const`. Unless it's `nothing`, it must be consistent with
   `arg_type` and `range_tester`.
