@@ -29,6 +29,10 @@ julia> using ArgParse
 
 See also the examples in the [examples directory](examples).
 
+## Changes in release 1.1.0
+
+* Try using the constructor for types that don't define a `convert` method from `AbstractString`
+
 ## Changes in release 1.0.1
 
 * Small fixes in docs
