@@ -25,7 +25,8 @@ export
     set_default_arg_group!,
     import_settings!,
     usage_string,
-    parse_args
+    parse_args,
+    @extract
 
 import Base: show, getindex, setindex!, haskey
 
@@ -35,5 +36,31 @@ include("common.jl")
 include("settings.jl")
 include("parsing.jl")
 include("deprecated.jl")
+
+"""
+@extract(d, ks...)
+
+Take the parsed args and bring all the keys in name space. If no keys are provided all are brought to namespace.
+
+"""
+macro extract(d)
+    ks = keys(eval(d))
+    ss = Symbol.(ks)
+    quote
+        data = $d
+        ($(esc.(ss)...),) = ($([:(data[$k]) for k in ks]...),)
+        nothing
+    end
+end
+
+macro extract(d, ss...)
+    ks = string.(ss)
+    @assert all(k -> k ∈ keys(eval(d)), ks) "A key was not found in dictionary"
+    quote
+        data = $d
+        ($(esc.(ss)...),) = ($([:(data[$k]) for k in ks]...),)
+        nothing
+    end
+end
 
 end # module ArgParse
