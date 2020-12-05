@@ -930,8 +930,12 @@ function convert_to_symbols(parsed_args::Dict{String,Any})
     cmd = nothing
     if haskey(parsed_args, cmd_dest_name)
         cmd = parsed_args[cmd_dest_name]
-        scmd = Symbol(cmd)
-        new_parsed_args[scmd] = convert_to_symbols(parsed_args[cmd])
+        if cmd ≡ nothing
+            scmd = nothing
+        else
+            scmd = Symbol(cmd)
+            new_parsed_args[scmd] = convert_to_symbols(parsed_args[cmd])
+        end
         new_parsed_args[scmd_dest_name] = scmd
     end
     for (k,v) in parsed_args

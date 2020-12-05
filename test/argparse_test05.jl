@@ -132,7 +132,7 @@ let s = ap_settings5()
     @ap_test_throws ap_test5(["jump", "-sb-"])
     @ap_test_throws ap_test5(["jump", "-s-b"])
     @ap_test_throws ap_test5(["ju", "-s-b"])
-
+    @test ap_test5(["jump", "--higher"], as_symbols = true) == Dict{Symbol,Any}(:_COMMAND_=>:jump, :jump=>Dict{Symbol,Any}(:higher=>true, :_COMMAND_=>nothing))
     @test ap_test5(["run", "--speed", "3"], as_symbols = true) == Dict{Symbol,Any}(:_COMMAND_=>:run, :run=>Dict{Symbol,Any}(:speed=>3.0))
 
     # argument after command
