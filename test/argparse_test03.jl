@@ -79,6 +79,21 @@ end
 let s = ap_settings3()
     ap_test3(args) = parse_args(args, s)
 
+    ## ugly workaround for the change of printing Vectors in julia 1.6,
+    ## from Array{Int,1} to Vector{Int}
+    array_help_lines = if string(Vector{Any}) == "Vector{Any}"
+        """
+          --array ARRAY         create an array (type: Vector{$Int}, default:
+                                $([7, 3, 2]))
+        """
+    else
+        """
+          --array ARRAY         create an array (type: Array{$Int,1},
+                                default: $([7, 3, 2]))
+        """
+    end
+    array_help_lines = array_help_lines[1:end-1] # remove an extra newline
+
     @test stringhelp(s) == """
         usage: $(basename(Base.source_path())) [--opt1] [--opt2] [-k] [-u] [--array ARRAY]
                                 [--custom CUSTOM] [--oddint ODDINT]
@@ -91,8 +106,7 @@ let s = ap_settings3()
           --opt2                append O2
           -k                    provide the answer
           -u                    provide the answer as floating point
-          --array ARRAY         create an array (type: Array{$Int,1},
-                                default: $([7, 3, 2]))
+        $array_help_lines
           --custom CUSTOM       the only accepted argument is "custom" (type:
                                 CustomType, default: CustomType())
           --oddint ODDINT       an odd integer (type: $Int, default: 1)
