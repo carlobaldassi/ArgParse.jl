@@ -13,6 +13,10 @@ module ArgParse
 
 using TextWrap
 
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, Symbol("@compiler_options"))
+    @eval Base.Experimental.@compiler_options compile=min optimize=0 infer=false
+end
+
 export
 # types
     ArgParseSettings,
