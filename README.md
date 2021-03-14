@@ -1,6 +1,6 @@
 # ArgParse.jl
 
-[![DOCS][docs-img]][docs-url] ![CI][CI-url] [![CODECOV][codecov-img]][codecov-url]
+[![DOCS][docs-img]][docs-url] [![CI][CI-img]][CI-url] [![CODECOV][codecov-img]][codecov-url]
 
 ArgParse.jl is a package for parsing command-line arguments to [Julia][julia] programs.
 
@@ -126,7 +126,8 @@ which may break existing code:
 [codecov-img]: https://codecov.io/gh/carlobaldassi/ArgParse.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/ArgParse.jl
 
-[CI-url]: https://github.com/carlobaldassi/ArgParse.jl/workflows/CI/badge.svg
+[CI-img]: https://github.com/carlobaldassi/ArgParse.jl/actions/workflows/ci.yml/badge.svg
+[CI-url]: https://github.com/carlobaldassi/ArgParse.jl/actions/workflows/ci.yml
 
 [PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
 [PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
