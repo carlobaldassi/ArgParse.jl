@@ -12,7 +12,6 @@ To install the module, use Julia's package manager: start pkg mode by pressing `
 (v1.5) pkg> add ArgParse
 ```
 
-Dependencies will be installed automatically.
 The module can then be loaded like any other Julia module:
 
 ```
@@ -21,10 +20,8 @@ julia> using ArgParse
 
 ### Documentation
 
-- [**STABLE**][docs-stable-url] &mdash; **most recently tagged version of the documentation.**
-- [**DEV**][docs-dev-url] &mdash; *in-development version of the documentation.*
-
-See also the examples in the [examples directory](examples).
+- The manual is [HERE][docs-url].
+- See also the examples in the [examples directory](examples).
 
 ## Changes in release 1.1.2
 
