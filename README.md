@@ -12,7 +12,7 @@ ArgParse.jl is a package for parsing command-line arguments to
 To install the module, use Julia's package manager: start pkg mode by pressing `]` and then enter:
 
 ```
-(v1.3) pkg> add ArgParse
+(v1.5) pkg> add ArgParse
 ```
 
 Dependencies will be installed automatically.
@@ -28,6 +28,10 @@ julia> using ArgParse
 - [**DEV**][docs-dev-url] &mdash; *in-development version of the documentation.*
 
 See also the examples in the [examples directory](examples).
+
+## Changes in release 1.1.2
+
+* Faster startup time by disabling optimizations/inference [#104]
 
 ## Changes in release 1.1.1
 
