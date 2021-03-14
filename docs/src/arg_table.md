@@ -388,6 +388,8 @@ settings = ArgParseSettings();
      action = :command
 end;
 
+settings.exit_after_help = false # hide
+
 parse_args(["--help"], settings)
 ```
 

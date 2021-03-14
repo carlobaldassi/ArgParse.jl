@@ -1,10 +1,12 @@
 using Documenter, ArgParse
 
+CIbuild = get(ENV, "CI", nothing) == "true"
+
 makedocs(
     modules  = [ArgParse],
-    format = Documenter.HTML(prettyurls = "--local" ∉ ARGS),
+    format   = Documenter.HTML(prettyurls = CIbuild),
     sitename = "ArgParse.jl",
-    pages    = [
+    pages    = Any[
         "Home" => "index.md",
         "Manual" => [
             "parse_args.md",
