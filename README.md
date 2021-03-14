@@ -1,11 +1,8 @@
 # ArgParse.jl
 
-| **Documentation**                                                         | **Build Status**                                             |
-|:-------------------------------------------------------------------------:|:------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][travis-img]][travis-url][![][codecov-img]][codecov-url] |
+[![DOCS][docs-img]][docs-url] ![CI][CI-url] [![CODECOV][codecov-img]][codecov-url]
 
-ArgParse.jl is a package for parsing command-line arguments to
-[Julia][julia] programs.
+ArgParse.jl is a package for parsing command-line arguments to [Julia][julia] programs.
 
 ### Installation and usage
 
@@ -31,7 +28,7 @@ See also the examples in the [examples directory](examples).
 
 ## Changes in release 1.1.2
 
-* Faster startup time by disabling optimizations/inference [#104]
+* Faster startup time by disabling optimizations/inference (see [#104][PR104])
 
 ## Changes in release 1.1.1
 
@@ -123,17 +120,15 @@ which may break existing code:
 
 [Julia]: http://julialang.org
 
-[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://carlobaldassi.github.io/ArgParse.jl/stable
-[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://carlobaldassi.github.io/ArgParse.jl/dev
-
-[travis-img]: https://travis-ci.com/carlobaldassi/ArgParse.jl.svg?branch=master
-[travis-url]: https://travis-ci.com/carlobaldassi/ArgParse.jl
+[docs-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-url]: https://carlobaldassi.github.io/ArgParse.jl/stable
 
 [codecov-img]: https://codecov.io/gh/carlobaldassi/ArgParse.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/carlobaldassi/ArgParse.jl
 
+[CI-url]: https://github.com/carlobaldassi/ArgParse.jl/workflows/CI/badge.svg
+
 [PR27]: https://github.com/carlobaldassi/ArgParse.jl/pull/27
 [PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
 [PR33]: https://github.com/carlobaldassi/ArgParse.jl/pull/33
+[PR104]: https://github.com/carlobaldassi/ArgParse.jl/pull/104
