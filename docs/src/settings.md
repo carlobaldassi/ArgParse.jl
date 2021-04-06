@@ -2,4 +2,5 @@
 
 ```@docs
 ArgParseSettings
+@project_version
 ```

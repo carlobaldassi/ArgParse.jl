@@ -1,4 +1,4 @@
-# test 08: read args from file
+# test 08: read args from file, read version from project
 
 @testset "test 08" begin
 
@@ -62,5 +62,26 @@ end
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['-'])
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['Å'])
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['8'])
+
+# default project version
+@test stringversion(ArgParseSettings(
+    add_version = true, 
+    version = @project_version
+)) == "1.0.0\n"
+
+# project version from filepath
+@test stringversion(ArgParseSettings(
+    add_version = true, 
+    version = @project_version "Project.toml"
+)) == "1.0.0\n"
+
+# project version from expression that returns a filepath
+@test stringversion(ArgParseSettings(
+    add_version = true, 
+    version = @project_version(joinpath(@__DIR__, "Project.toml"))
+)) == "1.0.0\n"
+
+# throws an error if the file doesn't contain a version
+@test_throws ArgumentError ArgParse.project_version("args-file1")
 
 end
