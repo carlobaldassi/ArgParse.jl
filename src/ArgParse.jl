@@ -29,7 +29,8 @@ export
     set_default_arg_group!,
     import_settings!,
     usage_string,
-    parse_args
+    parse_args,
+    @project_version
 
 import Base: show, getindex, setindex!, haskey
 

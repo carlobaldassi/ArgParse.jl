@@ -1465,3 +1465,40 @@ function import_settings!(settings::ArgParseSettings,
     end
     return settings
 end
+
+"""
+    @project_version
+    @project_version(filename::AbstractString)
+
+Reads the version from the Project.toml file at the given filename, at compile time.
+If no filename is given, defaults to `Base.current_project()`.
+Intended for use with the [`ArgParseSettings`](@ref) constructor,
+to keep the settings version in sync with the project version.
+
+## Example
+
+```jl
+ArgParseSettings(add_version = true, version = @project_version)
+```
+"""
+macro project_version(filename::String=Base.current_project())
+    project_version(filename)
+end
+
+macro project_version(expr::Expr)
+    project_version(eval(expr))
+end
+
+function project_version(filename::AbstractString)::String
+    re = r"^version\s*=\s*\"(.*)\"\s*$"
+    for line in eachline(filename)
+        if startswith(line, "[")
+            break
+        end
+        if !occursin(re, line)
+            continue
+        end
+        return match(re, line)[1]
+    end
+    throw(ArgumentError("Could not find a version in the file at $(filename)"))
+end
