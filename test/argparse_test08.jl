@@ -78,7 +78,7 @@ end
 # project version from expression that returns a filepath
 @test stringversion(ArgParseSettings(
     add_version = true, 
-    version = @project_version(joinpath(@__DIR__, "Project.toml"))
+    version = @project_version(".", "Project.toml")
 )) == "1.0.0\n"
 
 # throws an error if the file doesn't contain a version
