@@ -257,7 +257,7 @@ This is the list of all available actions (in each example, suppose we defined `
   ```julia-repl
   julia> settings.version = "1.0";
 
-  julia> @add_arg_table!(settings, "-x", action => :show_version);
+  julia> @add_arg_table!(settings, "-v", action => :show_version);
 
   julia> parse_args(["-v"], settings)
   1.0
