@@ -79,8 +79,7 @@ This is the list of all available settings:
   and the option argument is not provided.
 * `required` (default = `false`): determines if an argument is required (this setting is ignored by flags, which are always
   optional, and in general should be avoided for options if possible).
-* `range_tester` (default = `x->true`): a function returning a `Bool` value which tests whether an argument is allowed (e.g.
-  you could use `arg_type = Integer` and `range_tester = isodd` to allow only odd integer values)
+* `range_tester` (default = `x->true`): a function returning `true` if an argument is allowed and otherwise returning `false` (e.g. you could use `arg_type = Integer` and `range_tester = isodd` to allow only odd integer values)
 * `dest_name` (default = auto-generated): the key which will be associated with the argument in the `Dict` object returned by
   `parse_args`. The auto-generation rules are explained in the [Argument names](@ref) section. Multiple arguments can share
   the same destination, provided their actions and types are compatible.
