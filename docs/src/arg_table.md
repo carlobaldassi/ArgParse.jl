@@ -73,7 +73,7 @@ This is the list of all available settings:
   string, symbol and number types, but see the section [Parsing to custom types](@ref) for details on how to make it work for
   general types (including user-defined ones).
 * `default` (default = `nothing`): the default value if the option or positional argument is not parsed. Only makes sense with
-  non-flag arguments, or when the action is `:store_const` or `:append_const`. Unless it's `nothing`, it must be consistent with
+  non-flag arguments, or when the action is `:store_arg` or `:append_arg`. Unless it's `nothing`, it must be consistent with
   `arg_type` and `range_tester`.
 * `constant` (default = `nothing`): this value is used by the `:store_const` and `:append_const` actions, or when `nargs = '?'`
   and the option argument is not provided.
