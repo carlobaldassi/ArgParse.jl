@@ -110,8 +110,8 @@ The `nargs` setting can be a number or a character; the possible values are:
 using an explicit `1` because the result is not stored in a `Vector`).
 * `0`: this is the only possibility (besides `'A'`) for flag actions, and it means no extra tokens will be parsed from
   the command line. If `action` is not specified, setting `nargs` to `0` will make `action` default to `:store_true`.
-* a positive integer number `N`: exactly `N` tokens will be parsed from the command-line, and the result stored into a `Vector`
-  of length `N` (even for `N=1`).
+* a positive integer number `N`: exactly `N` tokens will be parsed from the command-line, and stored into a `Vector` of length`N`. 
+  Note that `nargs=1` produces a `Vector` of one item. It is different from the default, in which the given item is produced by itself.
 * `'?'`: optional, i.e. a token will only be parsed if it does not look like an option (see the [Parsing details](@ref) section
   for a discussion of how exactly this is established), otherwise the `constant` argument entry setting will be used instead.
   This only makes sense with options.
