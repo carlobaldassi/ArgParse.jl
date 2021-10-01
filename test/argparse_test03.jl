@@ -14,10 +14,7 @@ end
 Base.show(io::IO, ::Type{CustomType}) = print(io, "CustomType")
 Base.show(io::IO, c::CustomType) = print(io, "CustomType()")
 
-function ap_settings3()
-
-    s = ArgParseSettings("Test 3 for ArgParse.jl",
-                         exc_handler = ArgParse.debug_handler)
+function ap_add_table3!(s::ArgParseSettings)
 
     @add_arg_table! s begin
         "--opt1"
@@ -72,11 +69,30 @@ function ap_settings3()
             help = "either X or Y; all XY's are " *
                    "stored in chunks"
     end
+end
+
+function ap_settings3()
+
+    s = ArgParseSettings("Test 3 for ArgParse.jl",
+                         exc_handler = ArgParse.debug_handler)
+
+    ap_add_table3!(s)
 
     return s
 end
 
-let s = ap_settings3()
+function ap_settings3b()
+
+    s = ArgParseSettings("Test 3 for ArgParse.jl",
+                         exc_handler = ArgParse.debug_handler,
+                         ignore_unrecognized_opts = true)
+
+    ap_add_table3!(s)
+
+    return s
+end
+
+function runtest(s, ignore)
     ap_test3(args) = parse_args(args, s)
 
     ## ugly workaround for the change of printing Vectors in julia 1.6,
@@ -127,9 +143,17 @@ let s = ap_settings3()
     @ap_test_throws ap_test3(["--custom", "default"])
     @ap_test_throws ap_test3(["--oddint", "0"])
     @ap_test_throws ap_test3(["--collect", "0.5"])
-    @ap_test_throws ap_test3(["--foobar"])
-    @ap_test_throws ap_test3(["--foobar", "1"])
-    @ap_test_throws ap_test3(["--foobar", "a b c", "--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--coll", "5", "-u", "--array=[4]", "--custom", "custom", "--collect", "3", "--awkward-option=Y", "X", "--opt1", "--oddint", "-1"])
+    if ignore
+        ap_test3(["--foobar"])
+        @test ap_test3(["--foobar"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"]])
+        @test ap_test3(["--foobar", "1"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"]])
+        @test ap_test3(["--foobar", "a b c", "--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--coll", "5", "-u", "--array=[4]", "--custom", "custom", "--collect", "3", "--awkward-option=Y", "X", "--opt1", "--oddint", "-1"]) ==
+        Dict{String,Any}("O_stack"=>String["O1", "O2", "O2", "O1"], "k"=>42, "u"=>42.0, "array"=>[4], "custom"=>CustomType(), "oddint"=>-1, "collect"=>[5, 3], "awk"=>Any[Any["X"], Any["X", "X"], Any["Y", "X"]])
+    else
+        @ap_test_throws ap_test3(["--foobar"])
+        @ap_test_throws ap_test3(["--foobar", "1"])
+        @ap_test_throws ap_test3(["--foobar", "a b c", "--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--coll", "5", "-u", "--array=[4]", "--custom", "custom", "--collect", "3", "--awkward-option=Y", "X", "--opt1", "--oddint", "-1"])
+    end
 
     # invalid option name
     @ee_test_throws @add_arg_table!(s, "-2", action = :store_true)
@@ -164,6 +188,10 @@ let s = ap_settings3()
     @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
 
+end
+
+for (s, ignore) = [(ap_settings3(), false), (ap_settings3b(), true)]
+    runtest(s, ignore)
 end
 
 end

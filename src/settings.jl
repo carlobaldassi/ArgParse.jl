@@ -184,6 +184,10 @@ This is the list of general settings currently available:
   invoked from a script or in an interactive environment (e.g. REPL/IJulia). In non-interactive
   (script) mode, it calls `ArgParse.cmdline_handler`, which prints the error text and the usage
   screen on standard error and exits Julia with error code 1:
+* `ignore_unrecognized_opts` (default = `false`): if `true`, unrecognized options will be skipped.
+  `ignore_unrecognized_opts=true` cannot be used when there are any positional arguments, because it
+  is potentially ambiguous whether values after the unrecoginized option are supposed to be handled
+  by the option or by the positional argument.
 
   ```julia
   function cmdline_handler(settings::ArgParseSettings, err, err_code::Int = 1)
@@ -252,6 +256,7 @@ mutable struct ArgParseSettings
     preformatted_description::Bool
     preformatted_epilog::Bool
     exit_after_help::Bool
+    ignore_unrecognized_opts::Bool
 
     function ArgParseSettings(;prog::AbstractString = Base.source_path() ≢ nothing ?
                                                           basename(Base.source_path()) :
@@ -271,7 +276,8 @@ mutable struct ArgParseSettings
                                exc_handler::Function = default_handler,
                                preformatted_description::Bool = false,
                                preformatted_epilog::Bool = false,
-                               exit_after_help::Bool = !isinteractive()
+                               exit_after_help::Bool = !isinteractive(),
+                               ignore_unrecognized_opts::Bool = false
                                )
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
@@ -280,7 +286,7 @@ mutable struct ArgParseSettings
             suppress_warnings, allow_ambiguous_opts, commands_are_required,
             copy(std_groups), "", ArgParseTable(), exc_handler,
             preformatted_description, preformatted_epilog,
-            exit_after_help
+            exit_after_help, ignore_unrecognized_opts
             )
     end
 end
@@ -353,6 +359,12 @@ function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
         error("incompatible nargs and action (command action, nargs=$nargs)")
     !is_flag_action(action) && nargs.desc == 0 &&
         error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
+    return true
+end
+
+function check_ignore_unrecognized_opts(settings::ArgParseSettings, is_opt::Bool)
+    !is_opt && settings.ignore_unrecognized_opts &&
+        error("cannot use ignore_unrecognized_opts=true with positional arguments")
     return true
 end
 
@@ -919,6 +931,8 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
     action == :command && (action = is_opt ? :command_flag : :command_arg)
 
     check_nargs_and_action(nargs, action)
+
+    check_ignore_unrecognized_opts(settings, is_opt)
 
     new_arg = ArgParseField()
 

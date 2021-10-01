@@ -814,6 +814,19 @@ function parse1_optarg!(state::ParserState, settings::ArgParseSettings, f::ArgPa
     return
 end
 
+# Ignore arguments until next option is reached
+function skip_to_next_opt!(state::ParserState, settings::ArgParseSettings)
+    while !isempty(state.args_list)
+        if looks_like_an_option(state.args_list[1], settings)
+            break
+        end
+        popfirst!(state.args_list)
+    end
+    state.arg_consumed = true
+    state.command = nothing
+    return
+end
+
 # parse long opts
 function parse_long_opt!(state::ParserState, settings::ArgParseSettings)
     opt_name = state.token
@@ -838,7 +851,15 @@ function parse_long_opt!(state::ParserState, settings::ArgParseSettings)
         end
         exact_match && break
     end
-    nfound == 0 && argparse_error("unrecognized option --$opt_name")
+    if nfound == 0
+        if settings.ignore_unrecognized_opts
+            # Consume and skip any arguments after the option
+            skip_to_next_opt!(state, settings)
+            return
+        else
+            argparse_error("unrecognized option --$opt_name")
+        end
+    end
     nfound > 1 && argparse_error("long option --$opt_name is ambiguous ($nfound partial matches)")
 
     opt_name = fln
@@ -881,7 +902,15 @@ function parse_short_opt!(state::ParserState, settings::ArgParseSettings)
             found |= any(sn->sn==opt_name, f.short_opt_name)
             found && break
         end
-        found || argparse_error("unrecognized option -$opt_name")
+        if !found
+            if settings.ignore_unrecognized_opts
+                # Consume and skip any arguments after the option
+                skip_to_next_opt!(state, settings)
+                break
+            else
+                argparse_error("unrecognized option -$opt_name")
+            end
+        end
         if is_flag(f)
             parse1_flag!(state, settings, f, next_is_eq, "-"*opt_name)
         else
