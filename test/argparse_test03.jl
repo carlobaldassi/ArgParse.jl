@@ -127,6 +127,9 @@ let s = ap_settings3()
     @ap_test_throws ap_test3(["--custom", "default"])
     @ap_test_throws ap_test3(["--oddint", "0"])
     @ap_test_throws ap_test3(["--collect", "0.5"])
+    @ap_test_throws ap_test3(["--foobar"])
+    @ap_test_throws ap_test3(["--foobar", "1"])
+    @ap_test_throws ap_test3(["--foobar", "a b c", "--opt1", "--awk", "X", "X", "--opt2", "--opt2", "-k", "--coll", "5", "-u", "--array=[4]", "--custom", "custom", "--collect", "3", "--awkward-option=Y", "X", "--opt1", "--oddint", "-1"])
 
     # invalid option name
     @ee_test_throws @add_arg_table!(s, "-2", action = :store_true)
