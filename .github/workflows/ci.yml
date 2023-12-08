@@ -13,8 +13,8 @@ jobs:
     strategy:
       matrix:
         version:
-          - '1.0'
-          - '1.5'
+          - '1.0'  # Oldest supported version
+          - '1'    # Latest release
           - 'nightly'
         os:
           - ubuntu-latest
