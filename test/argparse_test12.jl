@@ -80,7 +80,7 @@ let s = ap_settings12()
 
         required mutually exclusive options:
           -E, --either          choose the `either` option
-          -O, --or OR           set the `or` option (type: Int64, default: 0)
+          -O, --or OR           set the `or` option (type: $(Int), default: 0)
           --or-perhaps OR-PERHAPS
                                 set the `or-perhaps` option (default: \"\")
 
