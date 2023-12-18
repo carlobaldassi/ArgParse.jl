@@ -116,9 +116,9 @@ let s = ap_settings12()
     @ap_test_throws ap_test12(["-MO55", "A", "A", "--or-perhaps=?"])
     @ap_test_throws ap_test12(["--enhanced", "-+MkO55", "A", "A", "--or-perhaps=?"])
     # invalid arguments in mutually exclusive groups
-    @ee_test_throws @add_arg_table!(s, "arg2", action = :store_arg, group = "reqexc")
+    @aps_test_throws @add_arg_table!(s, "arg2", action = :store_arg, group = "reqexc")
     set_default_arg_group!(s, "reqexc")
-    @ee_test_throws @add_arg_table!(s, "arg2", action = :store_arg)
+    @aps_test_throws @add_arg_table!(s, "arg2", action = :store_arg)
 end
 
 end

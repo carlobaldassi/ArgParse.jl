@@ -20,7 +20,7 @@ function ap_settings5()
     @add_arg_table! s["run"] begin
         "--speed"
             arg_type = Float64
-            default = 10.
+            default = 10.0
             help = "running speed, in Å/month"
     end
 
@@ -136,29 +136,29 @@ let s = ap_settings5()
     @test ap_test5(["run", "--speed", "3"], as_symbols = true) == Dict{Symbol,Any}(:_COMMAND_=>:run, :run=>Dict{Symbol,Any}(:speed=>3.0))
 
     # argument after command
-    @ee_test_throws @add_arg_table!(s, "arg_after_command")
+    @aps_test_throws @add_arg_table!(s, "arg_after_command")
     # same name as command
-    @ee_test_throws @add_arg_table!(s, "run")
-    @ee_test_throws @add_arg_table!(s["jump"], "-c")
-    @ee_test_throws @add_arg_table!(s["jump"], "--somersault")
+    @aps_test_throws @add_arg_table!(s, "run")
+    @aps_test_throws @add_arg_table!(s["jump"], "-c")
+    @aps_test_throws @add_arg_table!(s["jump"], "--somersault")
     # same dest_name as command
-    @ee_test_throws @add_arg_table!(s["jump"], "--som")
-    @ee_test_throws @add_arg_table!(s["jump"], "-s", dest_name = "som")
+    @aps_test_throws @add_arg_table!(s["jump"], "--som")
+    @aps_test_throws @add_arg_table!(s["jump"], "-s", dest_name = "som")
     # same name as command alias
-    @ee_test_throws @add_arg_table!(s, "ju")
-    @ee_test_throws @add_arg_table!(s, "J")
+    @aps_test_throws @add_arg_table!(s, "ju")
+    @aps_test_throws @add_arg_table!(s, "J")
     # new command with the same name as another one
-    @ee_test_throws @add_arg_table!(s, ["run", "R"], action = :command)
-    @ee_test_throws @add_arg_table!(s, "jump", action = :command)
+    @aps_test_throws @add_arg_table!(s, ["run", "R"], action = :command)
+    @aps_test_throws @add_arg_table!(s, "jump", action = :command)
     # new command with the same name as another one's alias
-    @ee_test_throws @add_arg_table!(s, "ju", action = :command)
-    @ee_test_throws @add_arg_table!(s, "J", action = :command)
+    @aps_test_throws @add_arg_table!(s, "ju", action = :command)
+    @aps_test_throws @add_arg_table!(s, "J", action = :command)
     # new command with an alias which is the same as another command
-    @ee_test_throws @add_arg_table!(s, ["fast", "run"], action = :command)
-    @ee_test_throws @add_arg_table!(s, ["R", "jump"], action = :command)
+    @aps_test_throws @add_arg_table!(s, ["fast", "run"], action = :command)
+    @aps_test_throws @add_arg_table!(s, ["R", "jump"], action = :command)
     # new command with an alias which is already in use
-    @ee_test_throws @add_arg_table!(s, ["R", "ju"], action = :command)
-    @ee_test_throws @add_arg_table!(s, ["R", "S", "J"], action = :command)
+    @aps_test_throws @add_arg_table!(s, ["R", "ju"], action = :command)
+    @aps_test_throws @add_arg_table!(s, ["R", "S", "J"], action = :command)
 
     # alias overriding by a command name
     @add_arg_table!(s, "J", action = :command, force_override = true, help = "the J command")
@@ -190,12 +190,12 @@ let s = ap_settings5()
         """
 
     # cannot override a command name
-    @ee_test_throws @add_arg_table!(s, ["J", "R"], action = :command, force_override = true)
-    @ee_test_throws @add_arg_table!(s, ["R", "J"], action = :command, force_override = true)
+    @aps_test_throws @add_arg_table!(s, ["J", "R"], action = :command, force_override = true)
+    @aps_test_throws @add_arg_table!(s, ["R", "J"], action = :command, force_override = true)
 
     # conflict between dest_name and a reserved Symbol
     @add_arg_table!(s, "--COMMAND", dest_name="_COMMAND_")
-    @ee_test_throws ap_test5(["run", "--speed", "3"], as_symbols = true)
+    @aps_test_throws ap_test5(["run", "--speed", "3"], as_symbols = true)
 end
 
 function ap_settings5b()
@@ -368,11 +368,11 @@ end
 let
     s1 = @add_arg_table!(ArgParseSettings(), "run", action = :command)
     s2 = @add_arg_table!(ArgParseSettings(), "--run", action = :store_true)
-    @ee_test_throws import_settings!(s1, s2)
-    @ee_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
+    @aps_test_throws import_settings!(s1, s2)
+    @aps_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
     s2 = @add_arg_table!(ArgParseSettings(), ["R", "run"], action = :command)
-    @ee_test_throws import_settings!(s1, s2)
-    @ee_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
+    @aps_test_throws import_settings!(s1, s2)
+    @aps_test_throws import_settings!(s2, s1) # this fails since error_on_conflict=true
 end
 
 end

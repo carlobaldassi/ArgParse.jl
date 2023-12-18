@@ -5,8 +5,8 @@ macro ap_test_throws(args)
     :(@test_throws ArgParseError $(esc(args)))
 end
 
-macro ee_test_throws(args)
-    :(@test_throws ErrorException $(esc(args)))
+macro aps_test_throws(args)
+    :(@test_throws ArgParseSettingsError $(esc(args)))
 end
 
 macro noout_test(args)
@@ -22,8 +22,9 @@ end
 macro test_addtable_failure(ex...)
     ex = [nothing, ex...]
     ex = Expr(:call, :macroexpand, @__MODULE__, Expr(:quote, Expr(:macrocall, Symbol("@add_arg_table!"), ex...)))
+    err = @static VERSION ≥ v"1.7.0-DEV.937" ? ArgParseSettingsError : LoadError
     quote
-        @test_throws LoadError $ex
+        @test_throws $err $ex
     end
 end
 

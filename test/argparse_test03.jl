@@ -129,29 +129,29 @@ let s = ap_settings3()
     @ap_test_throws ap_test3(["--collect", "0.5"])
 
     # invalid option name
-    @ee_test_throws @add_arg_table!(s, "-2", action = :store_true)
+    @aps_test_throws @add_arg_table!(s, "-2", action = :store_true)
     # wrong constants
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_const, arg_type = Int, default = 1, constant = 1.5)
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_const, arg_type = Int, constant = 1.5)
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_const, arg_type = Int, default = 1, constant = 1.5)
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_const, arg_type = Int, constant = 1.5)
     # wrong defaults
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, default = Float64[])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, default = Vector{Float64}[])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = [1.5])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = 1)
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->x<=1, default = Int[0, 1, 2])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->x<=1, default = Vector{Int}[[1,1],[0,2]])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->x<=1, default = [1.5])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, default = Float64[])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, default = Vector{Float64}[])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = [1.5])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = 1)
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->x<=1, default = Int[0, 1, 2])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->x<=1, default = Vector{Int}[[1,1],[0,2]])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->x<=1, default = [1.5])
     # no constants
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_const, arg_type = Int, default = 1)
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_const, arg_type = Int)
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_const, arg_type = Int, default = 1)
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_const, arg_type = Int)
     # incompatible action
-    @ee_test_throws @add_arg_table!(s, "--opt3", action = :store_const, arg_type = String, constant = "O3", dest_name = "O_stack", help = "append O3")
+    @aps_test_throws @add_arg_table!(s, "--opt3", action = :store_const, arg_type = String, constant = "O3", dest_name = "O_stack", help = "append O3")
     # wrong range tester
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->string(x), default = Int[0, 1, 2])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->string(x), default = Vector{Int}[[1,1],[0,2]])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->string(x), default = [1.5])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->sqrt(x)<2, default = [-1.5])
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->sqrt(x)<2, default = Vector{Int}[[1,1],[0,-2]])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->string(x), default = Int[0, 1, 2])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->string(x), default = Vector{Int}[[1,1],[0,2]])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->string(x), default = [1.5])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', range_tester = x->sqrt(x)<2, default = [-1.5])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, range_tester=x->sqrt(x)<2, default = Vector{Int}[[1,1],[0,-2]])
 
     # allow ambiguous options
     s.allow_ambiguous_opts = true

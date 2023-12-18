@@ -19,16 +19,23 @@ is_multi_action(a::Symbol) = a ∈ multi_actions
 const command_actions = [:command_arg, :command_flag]
 is_command_action(a::Symbol) = a ∈ command_actions
 
+# ArgParseSettingsError
+struct ArgParseSettingsError <: Exception
+    text::AbstractString
+end
+
+serror(x...) = throw(ArgParseSettingsError(string(x...)))
+
 # ArgConsumerType
 struct ArgConsumerType
     desc::Union{Int,Symbol}
     function ArgConsumerType(n::Integer)
-        n ≥ 0 || throw(ArgumentError("nargs can't be negative"))
+        n ≥ 0 || serror("nargs can't be negative")
         new(n)
     end
     function ArgConsumerType(s::Symbol)
         s ∈ [:A, :?, :*, :+, :R] ||
-            throw(ArgumentError("nargs must be an integer or one of 'A', '?', '*', '+', 'R'"))
+            serror("nargs must be an integer or one of 'A', '?', '*', '+', 'R'")
         new(s)
     end
 end
@@ -306,32 +313,32 @@ setindex!(s::ArgParseSettings, x::ArgParseSettings, c::AbstractString) =
 
 # fields declarations sanity checks
 function check_name_format(name::ArgName)
-    isempty(name) && error("empty name")
+    isempty(name) && serror("empty name")
     name isa Vector || return true
     allopts = true
     allargs = true
     for n in name
-        isempty(n) && error("empty name")
+        isempty(n) && serror("empty name")
         if startswith(n, '-')
             allargs = false
         else
             allopts = false
         end
     end
-    !(allargs || allopts) && error("multiple names must be either all options or all non-options")
+    !(allargs || allopts) && serror("multiple names must be either all options or all non-options")
     for i1 = 1:length(name), i2 = i1+1:length(name)
-        name[i1] == name[i2] && error("duplicate name $(name[i1])")
+        name[i1] == name[i2] && serror("duplicate name $(name[i1])")
     end
     return true
 end
 
 function check_type(opt, T::Type, message::AbstractString)
-    opt isa T || error(message)
+    opt isa T || serror(message)
     return true
 end
 
 function check_eltype(opt, T::Type, message::AbstractString)
-    eltype(opt) <: T || error(message)
+    eltype(opt) <: T || serror(message)
     return true
 end
 
@@ -343,55 +350,55 @@ function warn_extra_opts(opts, valid_keys::Vector{Symbol})
 end
 
 function check_action_is_valid(action::Symbol)
-    action ∈ all_actions || error("invalid action: $action")
+    action ∈ all_actions || serror("invalid action: $action")
 end
 
 function check_nargs_and_action(nargs::ArgConsumerType, action::Symbol)
     is_flag_action(action) && nargs.desc ≠ 0 && nargs.desc ≠ :A &&
-        error("incompatible nargs and action (flag-action $action, nargs=$nargs)")
+        serror("incompatible nargs and action (flag-action $action, nargs=$nargs)")
     is_command_action(action) && nargs.desc ≠ :A &&
-        error("incompatible nargs and action (command action, nargs=$nargs)")
+        serror("incompatible nargs and action (command action, nargs=$nargs)")
     !is_flag_action(action) && nargs.desc == 0 &&
-        error("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
+        serror("incompatible nargs and action (non-flag-action $action, nargs=$nargs)")
     return true
 end
 
 function check_long_opt_name(name::AbstractString, settings::ArgParseSettings)
-    '=' ∈ name            && error("illegal option name: $name (contains '=')")
-    occursin(r"\s", name) && error("illegal option name: $name (contains whitespace)")
+    '=' ∈ name            && serror("illegal option name: $name (contains '=')")
+    occursin(r"\s", name) && serror("illegal option name: $name (contains whitespace)")
     settings.add_help     &&
-        name == "help"    && error("option --help is reserved in the current settings")
+        name == "help"    && serror("option --help is reserved in the current settings")
     settings.add_version  &&
-        name == "version" && error("option --version is reserved in the current settings")
+        name == "version" && serror("option --version is reserved in the current settings")
     return true
 end
 
 function check_short_opt_name(name::AbstractString, settings::ArgParseSettings)
-    length(name) ≠ 1      && error("short options must use a single character")
-    name == "="           && error("illegal short option name: $name")
-    occursin(r"\s", name) && error("illegal option name: $name (contains whitespace)")
+    length(name) ≠ 1      && serror("short options must use a single character")
+    name == "="           && serror("illegal short option name: $name")
+    occursin(r"\s", name) && serror("illegal option name: $name (contains whitespace)")
     !settings.allow_ambiguous_opts && occursin(r"[0-9.(]", name) &&
-                             error("ambiguous option name: $name (disabled in current settings)")
+                             serror("ambiguous option name: $name (disabled in current settings)")
     settings.add_help && name == "h" &&
-                             error("option -h is reserved for help in the current settings")
+                             serror("option -h is reserved for help in the current settings")
     return true
 end
 
 function check_arg_name(name::AbstractString)
-    occursin(r"^%[A-Z]*%$", name) && error("invalid positional arg name: $name (is reserved)")
+    occursin(r"^%[A-Z]*%$", name) && serror("invalid positional arg name: $name (is reserved)")
     return true
 end
 
 function check_cmd_name(name::AbstractString)
     isempty(name) && found_a_bug()
     startswith(name, '-') && found_a_bug()
-    occursin(r"\s", name) && error("invalid command name: $name (contains whitespace)")
-    occursin(r"^%[A-Z]*%$", name) && error("invalid command name: $name (is reserved)")
+    occursin(r"\s", name) && serror("invalid command name: $name (contains whitespace)")
+    occursin(r"^%[A-Z]*%$", name) && serror("invalid command name: $name (is reserved)")
     return true
 end
 
 function check_dest_name(name::AbstractString)
-    occursin(r"^%[A-Z]*%$", name) && error("invalid dest_name: $name (is reserved)")
+    occursin(r"^%[A-Z]*%$", name) && serror("invalid dest_name: $name (is reserved)")
     return true
 end
 
@@ -412,9 +419,9 @@ function check_arg_makes_sense(settings::ArgParseSettings, arg::ArgParseField)
 
     for f in settings.args_table.fields
         is_arg(f) || continue
-        is_command_action(f.action) && error("non-command $(idstring(arg)) can't follow commands")
+        is_command_action(f.action) && serror("non-command $(idstring(arg)) can't follow commands")
         !f.required && arg.required &&
-            error("required $(idstring(arg)) can't follow non-required arguments")
+            serror("required $(idstring(arg)) can't follow non-required arguments")
     end
     return true
 end
@@ -424,25 +431,25 @@ function check_conflicts_with_commands(settings::ArgParseSettings,
                                        allow_future_merge::Bool)
     for cmd in keys(settings.args_table.subsettings)
         cmd == new_arg.dest_name &&
-            error("$(idstring(new_arg)) has the same destination of a command: $cmd")
+            serror("$(idstring(new_arg)) has the same destination of a command: $cmd")
     end
     for a in settings.args_table.fields
         if is_cmd(a) && !is_cmd(new_arg)
             for l1 in a.long_opt_name, l2 in new_arg.long_opt_name
                 # TODO be less strict here and below, and allow partial override?
-                l1 == l2 && error("long opt name --$(l1) already in use by command $(a.constant)")
+                l1 == l2 && serror("long opt name --$(l1) already in use by command $(a.constant)")
             end
             for s1 in a.short_opt_name, s2 in new_arg.short_opt_name
-                s1 == s2 && error("short opt name -$(s1) already in use by command $(a.constant)")
+                s1 == s2 && serror("short opt name -$(s1) already in use by command $(a.constant)")
             end
         elseif is_cmd(a) && is_cmd(new_arg)
             if a.constant == new_arg.constant
-                allow_future_merge || error("command $(a.constant) already in use")
+                allow_future_merge || serror("command $(a.constant) already in use")
                 is_arg(a) ≠ is_arg(new_arg) &&
-                    error("$(idstring(a)) and $(idstring(new_arg)) are incompatible")
+                    serror("$(idstring(a)) and $(idstring(new_arg)) are incompatible")
             else
                 for al in new_arg.cmd_aliases
-                    al == a.constant && error("invalid alias $al, command already in use")
+                    al == a.constant && serror("invalid alias $al, command already in use")
                 end
             end
         end
@@ -453,7 +460,7 @@ end
 function check_conflicts_with_commands(settings::ArgParseSettings, new_cmd::AbstractString)
     for a in settings.args_table.fields
         new_cmd == a.dest_name &&
-            error("command $new_cmd has the same destination of $(idstring(a))")
+            serror("command $new_cmd has the same destination of $(idstring(a))")
     end
     return true
 end
@@ -461,35 +468,33 @@ end
 function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseField)
     for a in args
         for l1 in a.long_opt_name, l2 in new_arg.long_opt_name
-            l1 == l2 && error("duplicate long opt name $l1")
+            l1 == l2 && serror("duplicate long opt name $l1")
         end
         for s1 in a.short_opt_name, s2 in new_arg.short_opt_name
-            s1 == s2 && error("duplicate short opt name $s1")
+            s1 == s2 && serror("duplicate short opt name $s1")
         end
         if is_arg(a) && is_arg(new_arg) && a.metavar == new_arg.metavar
-            error("two arguments have the same metavar: $(a.metavar)")
+            serror("two arguments have the same metavar: $(a.metavar)")
         end
         if is_cmd(a) && is_cmd(new_arg)
             for al1 in a.cmd_aliases, al2 in new_arg.cmd_aliases
-                al1 == al2 && error("both commands $(a.constant) and $(new_arg.constant) use the " *
-                                    "same alias $al1")
+                al1 == al2 &&
+                    serror("both commands $(a.constant) and $(new_arg.constant) use the same alias $al1")
             end
             for al1 in a.cmd_aliases
-                al1 == new_arg.constant && error("$al1 already in use as an alias command " *
-                                                 "$(a.constant)")
+                al1 == new_arg.constant &&
+                    serror("$al1 already in use as an alias command $(a.constant)")
             end
             for al2 in new_arg.cmd_aliases
-                al2 == a.constant && error("invalid alias $al2, command already in use")
+                al2 == a.constant && serror("invalid alias $al2, command already in use")
             end
         end
         if a.dest_name == new_arg.dest_name
             a.arg_type == new_arg.arg_type ||
-                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination " *
-                      "but different arg types")
+                serror("$(idstring(a)) and $(idstring(new_arg)) have the same destination but different arg types")
             if (is_multi_action(a.action) && !is_multi_action(new_arg.action)) ||
                (!is_multi_action(a.action) && is_multi_action(new_arg.action))
-                error("$(idstring(a)) and $(idstring(new_arg)) have the same destination " *
-                      "but incompatible actions")
+                serror("$(idstring(a)) and $(idstring(new_arg)) have the same destination but incompatible actions")
             end
         end
     end
@@ -498,44 +503,38 @@ end
 
 check_default_type(default::Nothing, arg_type::Type) = true
 function check_default_type(default::D, arg_type::Type) where D
-    D <: arg_type || error("typeof(default)=$D is incompatible with arg_type=$arg_type)")
+    D <: arg_type || serror("typeof(default)=$D is incompatible with arg_type=$arg_type)")
     return true
 end
 
 check_default_type_multi_action(default::Nothing, arg_type::Type) = true
 function check_default_type_multi_action(default::Vector{D}, arg_type::Type) where D
-    arg_type <: D || error("typeof(default)=Vector{$D} can't hold arguments " *
-                           "of type arg_type=$arg_type)")
-    all(x->(x isa arg_type), default) || error("all elements of the default value " *
-                                               "must be of type $arg_type)")
+    arg_type <: D || serror("typeof(default)=Vector{$D} can't hold arguments of type arg_type=$arg_type)")
+    all(x->(x isa arg_type), default) || serror("all elements of the default value must be of type $arg_type)")
     return true
 end
 check_default_type_multi_action(default::D, arg_type::Type) where D =
-    error("typeof(default)=$D is incompatible with the action, it should be a Vector")
+    serror("typeof(default)=$D is incompatible with the action, it should be a Vector")
 
 check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
 function check_default_type_multi_nargs(default::Vector, arg_type::Type)
-    all(x->(x isa arg_type), default) || error("all elements of the default value " *
-                                               "must be of type $arg_type")
+    all(x->(x isa arg_type), default) || serror("all elements of the default value must be of type $arg_type")
     return true
 end
 check_default_type_multi_nargs(default::D, arg_type::Type) where D =
-    error("typeof(default)=$D is incompatible with nargs, it should be a Vector")
+    serror("typeof(default)=$D is incompatible with nargs, it should be a Vector")
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
 function check_default_type_multi2(default::Vector{D}, arg_type::Type) where D
-    Vector{arg_type} <: D || error("typeof(default)=Vector{$D} can't hold Vectors of arguments " *
+    Vector{arg_type} <: D || serror("typeof(default)=Vector{$D} can't hold Vectors of arguments " *
                                    "of type arg_type=$arg_type)")
     all(y->(y isa Vector), default) ||
-        error("the default $(default) is incompatible with the action and nargs, " *
-              "it should be a Vector of Vectors")
-    all(y->all(x->(x isa arg_type), y), default) || error("all elements of the default value " *
-                                                          "must be of type $arg_type")
+        serror("the default $(default) is incompatible with the action and nargs, it should be a Vector of Vectors")
+    all(y->all(x->(x isa arg_type), y), default) || serror("all elements of the default value must be of type $arg_type")
     return true
 end
 check_default_type_multi2(default::D, arg_type::Type) where D =
-    error("the default $(default) is incompatible with the action and nargs, " *
-          "it should be a Vector of Vectors")
+    serror("the default $(default) is incompatible with the action and nargs, it should be a Vector of Vectors")
 
 check_range_default(default::Nothing, range_tester::Function) = true
 function check_range_default(default, range_tester::Function)
@@ -543,9 +542,9 @@ function check_range_default(default, range_tester::Function)
     try
         res = range_tester(default)
     catch err
-        error("the range_tester function must be defined for the default value, and return a Bool")
+        serror("the range_tester function must be defined for the default value, and return a Bool")
     end
-    res || error("the default value must pass the range_tester function")
+    res || serror("the default value must pass the range_tester function")
     return true
 end
 
@@ -556,10 +555,9 @@ function check_range_default_multi(default::Vector, range_tester::Function)
         try
             res = range_tester(d)
         catch err
-            error("the range_tester function must be defined for all the default values, " *
-                  "and return a Bool")
+            serror("the range_tester function must be defined for all the default values, and return a Bool")
         end
-        res || error("all of the default values must pass the range_tester function")
+        res || serror("all of the default values must pass the range_tester function")
     end
     return true
 end
@@ -571,18 +569,17 @@ function check_range_default_multi2(default::Vector, range_tester::Function)
         try
             res = range_tester(d)
         catch err
-            error("the range_tester function must be defined for all the default values, " *
-                  "and return a Bool")
+            serror("the range_tester function must be defined for all the default values, and return a Bool")
         end
-        res || error("all of the default values must pass the range_tester function")
+        res || serror("all of the default values must pass the range_tester function")
     end
     return true
 end
 
 function check_metavar(metavar::AbstractString)
-    isempty(metavar)         && error("empty metavar")
-    startswith(metavar, '-') && error("metavars cannot begin with -")
-    occursin(r"\s", metavar) && error("illegal metavar name: $metavar (contains whitespace)")
+    isempty(metavar)         && serror("empty metavar")
+    startswith(metavar, '-') && serror("metavars cannot begin with -")
+    occursin(r"\s", metavar) && serror("illegal metavar name: $metavar (contains whitespace)")
     return true
 end
 
@@ -592,8 +589,8 @@ function check_metavar(metavar::Vector{<:AbstractString})
 end
 
 function check_group_name(name::AbstractString)
-    isempty(name)         && error("empty group name")
-    startswith(name, '#') && error("invalid group name (starts with #)")
+    isempty(name)         && serror("empty group name")
+    startswith(name, '#') && serror("invalid group name (starts with #)")
     return true
 end
 
@@ -606,12 +603,12 @@ function name_to_fieldnames!(settings::ArgParseSettings, name::ArgName)
     r(n) = settings.autofix_names ? replace(n, '_' => '-') : n
     function do_one(n, cmd_check = true)
         if startswith(n, "--")
-            n == "--" && error("illegal option name: --")
+            n == "--" && serror("illegal option name: --")
             long_opt_name = r(n[3:end])
             check_long_opt_name(long_opt_name, settings)
             push!(long_opts, long_opt_name)
         elseif startswith(n, '-')
-            n == "-" && error("illegal option name: -")
+            n == "-" && serror("illegal option name: -")
             short_opt_name = n[2:end]
             check_short_opt_name(short_opt_name, settings)
             push!(short_opts, short_opt_name)
@@ -690,7 +687,7 @@ function add_arg_table!(settings::ArgParseSettings, table::Union{ArgName,Vector,
     has_name = false
     for i = 1:length(table)
         !has_name && !(table[i] isa ArgName) &&
-            error("option field must be preceded by the arg name")
+            serror("option field must be preceded by the arg name")
         has_name = true
     end
     i = 1
@@ -761,7 +758,7 @@ function _add_arg_table!(s, x...)
     exret = quote
         $z = $s
         $z isa ArgParseSettings ||
-            error("first argument to @add_arg_table! must be of type ArgParseSettings")
+            serror("first argument to @add_arg_table! must be of type ArgParseSettings")
     end
     # initialize the name and the options expression
     name = nothing
@@ -811,13 +808,13 @@ function _add_arg_table!(s, x...)
         elseif Meta.isexpr(y, (:(=), :(:=), :kw))
             # found an assignment: add it to the current options expression
             name ≢ nothing ||
-                error("malformed table: description fields must be preceded by the arg name")
+                serror("malformed table: description fields must be preceded by the arg name")
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[1]), esc(y.args[2])))
             i += 1
         elseif Meta.isexpr(y, :call) && y.args[1] == :(=>)
             # found an assignment: add it to the current options expression
             name ≢ nothing ||
-                error("malformed table: description fields must be preceded by the arg name")
+                serror("malformed table: description fields must be preceded by the arg name")
             push!(exopt, Expr(:call, :(=>), Expr(:quote, y.args[2]), esc(y.args[3])))
             i += 1
         elseif (y isa LineNumberNode) || Meta.isexpr(y, :line)
@@ -862,7 +859,7 @@ function get_group(group::AbstractString, arg::ArgParseField, settings::ArgParse
         for ag in settings.args_groups
             group == ag.name && return ag
         end
-        error("group $group not found, use add_arg_group! to add it")
+        serror("group $group not found, use add_arg_group! to add it")
     end
     found_a_bug()
 end
@@ -902,7 +899,7 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
         check_type(metavar, Vector, metavar_error)
         check_eltype(metavar, AbstractString, metavar_error)
         check_type(nargs, Integer, "nargs must be an integer for multiple metavars")
-        length(metavar) == nargs || error("metavar array must have length of nargs")
+        length(metavar) == nargs || serror("metavar array must have length of nargs")
     end
     check_type(force_override, Bool, "force_override must be a Bool")
     check_type(group, Union{AbstractString,Symbol}, "group must be an AbstractString or a Symbol")
@@ -925,15 +922,15 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
     is_flag = is_flag_action(action)
 
     if !is_opt
-        is_flag && error("invalid action for positional argument: $action")
-        nargs.desc == :? && error("invalid 'nargs' for positional argument: '?'")
-        metavar isa Vector && error("multiple metavars only supported for optional arguments")
+        is_flag && serror("invalid action for positional argument: $action")
+        nargs.desc == :? && serror("invalid 'nargs' for positional argument: '?'")
+        metavar isa Vector && serror("multiple metavars only supported for optional arguments")
     end
 
     pos_arg, long_opts, short_opts, cmd_aliases = name_to_fieldnames!(settings, name)
 
     if !isempty(cmd_aliases)
-        is_command_action(action) || error("only command arguments can have multiple names (aliases)")
+        is_command_action(action) || serror("only command arguments can have multiple names (aliases)")
     end
 
     new_arg.dest_name = auto_dest_name(pos_arg, long_opts, short_opts, settings.autofix_names)
@@ -951,11 +948,11 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
     arg_group = get_group(group, new_arg, settings)
     new_arg.group = arg_group.name
     if arg_group.exclusive && (!is_opt || is_command_action(action))
-        error("group $(new_arg.group) is mutually-exclusive, actions and commands are not allowed")
+        serror("group $(new_arg.group) is mutually-exclusive, actions and commands are not allowed")
     end
 
     if action ∈ (:store_const, :append_const) && :constant ∉ supplied_opts
-        error("action $action requires the 'constant' field")
+        serror("action $action requires the 'constant' field")
     end
 
     valid_keys = [:nargs, :action, :help, :force_override, :group]
@@ -1105,7 +1102,7 @@ function add_command!(settings::ArgParseSettings,
                       command::AbstractString,
                       prog_hint::AbstractString,
                       force_override::Bool)
-    haskey(settings, command) && error("command $command already added")
+    haskey(settings, command) && serror("command $command already added")
     if force_override
         override_conflicts_with_commands!(settings, command)
     else
@@ -1227,10 +1224,10 @@ arguments will be automatically assigned to the standard groups). The `name` can
 """
 function set_default_arg_group!(settings::ArgParseSettings, name::Union{AbstractString,Symbol} = "")
     name = string(name)
-    startswith(name, '#') && error("invalid group name: $name (begins with #)")
+    startswith(name, '#') && serror("invalid group name: $name (begins with #)")
     isempty(name) && (settings.default_group = ""; return)
     found = any(ag->ag.name==name, settings.args_groups)
-    found || error("group $name not found")
+    found || serror("group $name not found")
     settings.default_group = name
     return
 end

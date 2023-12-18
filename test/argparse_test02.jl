@@ -263,13 +263,13 @@ for s = [ap_settings2(), ap_settings2b(), ap_settings2c(), ap_settings2d(), ap_s
     @ap_test_throws ap_test2(["--opt", "", "X", "Y"])
     @ap_test_throws ap_test2(["--opt", "1e-2", "X", "Y"])
 
-    @ee_test_throws @add_arg_table!(s, "required_arg_after_optional_args", required = true)
+    @aps_test_throws @add_arg_table!(s, "required_arg_after_optional_args", required = true)
     # wrong default
-    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, default = 1.5)
-    @ee_test_throws @add_arg_table!(s, "--opt3", arg_type = Symbol, default = "string")
+    @aps_test_throws @add_arg_table!(s, "--opt", arg_type = Int, default = 1.5)
+    @aps_test_throws @add_arg_table!(s, "--opt3", arg_type = Symbol, default = "string")
     # wrong range tester
-    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
-    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
+    @aps_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
+    @aps_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
 end
 
 end

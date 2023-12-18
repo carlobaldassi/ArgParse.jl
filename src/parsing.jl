@@ -58,7 +58,7 @@ function check_settings_can_use_symbols(settings::ArgParseSettings)
     if !isempty(args_table.subsettings)
         for f in args_table.fields
             if f.dest_name == string(scmd_dest_name)
-                error("the dest_name $scmd_dest_name cannot be used with the as_symbols option")
+                serror("the dest_name $scmd_dest_name cannot be used with the as_symbols option")
             end
         end
         for subs in values(args_table.subsettings)
@@ -68,8 +68,7 @@ function check_settings_can_use_symbols(settings::ArgParseSettings)
     settings.suppress_warnings && return true
     for f in args_table.fields
         if '-' in f.dest_name
-            @warn "dest_name=$(f.dest_name) contains a hyphen; " *
-                  "use the autofix_names=true setting to have it converted to an underscore"
+            @warn "dest_name=$(f.dest_name) contains a hyphen; use the autofix_names=true setting to have it converted to an underscore"
         end
     end
     return true

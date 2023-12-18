@@ -101,14 +101,14 @@ function ap_settings10c(in_nargs)
 end
 
 @test ap_settings10c(2)
-@ee_test_throws ap_settings10c(1)
-@ee_test_throws ap_settings10c(3)
-@ee_test_throws ap_settings10c('*')
-@ee_test_throws ap_settings10c('?')
-@ee_test_throws ap_settings10c('+')
-@ee_test_throws ap_settings10c('A')
-@ee_test_throws ap_settings10c('R')
-@ee_test_throws ap_settings10c('0')
+@aps_test_throws ap_settings10c(1)
+@aps_test_throws ap_settings10c(3)
+@aps_test_throws ap_settings10c('*')
+@aps_test_throws ap_settings10c('?')
+@aps_test_throws ap_settings10c('+')
+@aps_test_throws ap_settings10c('A')
+@aps_test_throws ap_settings10c('R')
+@aps_test_throws ap_settings10c('0')
 
 # Test to ensure multiple metavars cannot be used on positional args
 
@@ -129,7 +129,7 @@ function ap_settings10d()
     return true
 end
 
-@ee_test_throws ap_settings10d()
+@aps_test_throws ap_settings10d()
 
 for s = [ap_settings10(), ap_settings10b()]
     ap_test10(args) = parse_args(args, s)
@@ -167,12 +167,12 @@ for s = [ap_settings10(), ap_settings10b()]
     @ap_test_throws ap_test10(["X", "Y", "--opt1", "1"])
     @ap_test_throws ap_test10(["X", "Y", "--opt1", "a", "b"])
 
-    @ee_test_throws @add_arg_table!(s, "required_arg_after_optional_args", required = true)
+    @aps_test_throws @add_arg_table!(s, "required_arg_after_optional_args", required = true)
     # wrong default
-    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, default = 1.5)
+    @aps_test_throws @add_arg_table!(s, "--opt", arg_type = Int, default = 1.5)
     # wrong range tester
-    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
-    @ee_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
+    @aps_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->string(x), default = 1)
+    @aps_test_throws @add_arg_table!(s, "--opt", arg_type = Int, range_tester = x->sqrt(x)<1, default = -1)
 end
 
 end

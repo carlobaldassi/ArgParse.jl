@@ -108,9 +108,9 @@ let s = ap_settings6()
     @ap_test_throws ap_test6(["--şİł", "-1", "-2", "-3", "-4"])
 
     # invalid groups
-    @ee_test_throws add_arg_group!(s, "invalid commands", "")
-    @ee_test_throws add_arg_group!(s, "invalid commands", "#invalid")
-    @ee_test_throws @add_arg_table!(s, "--opt", action = :store_true, group = "none")
+    @aps_test_throws add_arg_group!(s, "invalid commands", "")
+    @aps_test_throws add_arg_group!(s, "invalid commands", "#invalid")
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :store_true, group = "none")
 end
 
 end

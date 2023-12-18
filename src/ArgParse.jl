@@ -20,6 +20,7 @@ end
 export
 # types
     ArgParseSettings,
+    ArgParseSettingsError,
     ArgParseError,
 
 # functions & macros
