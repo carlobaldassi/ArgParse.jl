@@ -7,7 +7,7 @@ on:
   pull_request:
   schedule:
     # Run CI against `master` every Sunday
-    - cron: '* * * * 0'
+    - cron: '0 0 * * 0'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
