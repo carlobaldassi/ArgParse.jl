@@ -238,7 +238,7 @@ function usage_string(settings::ArgParseSettings)
     usage_len = length(usage_pre) + 1
 
     str_nonwrapped = usage_pre * excl_str * optl_str * posl_str * cmdl_str
-    str_wrapped = wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
+    str_wrapped = TextWrap.wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
                                        subsequent_indent = min(usage_len, lc_len_limit))
 
 
@@ -291,13 +291,13 @@ function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::I
         if l1len ≤ lc_usable_len
             rfill = " "^(lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
-            ll_wrapped = wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
-                              initial_indent = lmargin, subsequent_indent = sindent)
+            ll_wrapped = TextWrap.wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
+                                       initial_indent = lmargin, subsequent_indent = sindent)
             println_unnbsp(io, ll_wrapped)
         else
             println_unnbsp(io, lmargin, l[1])
-            l2_wrapped = wrap(l[2], break_long_words = false, break_on_hyphens = false,
-                                    initial_indent = sindent, subsequent_indent = sindent)
+            l2_wrapped = TextWrap.wrap(l[2], break_long_words = false, break_on_hyphens = false,
+                                       initial_indent = sindent, subsequent_indent = sindent)
             println_unnbsp(io, l2_wrapped)
         end
     end
@@ -385,7 +385,7 @@ function show_message(io::IO, message::AbstractString, preformatted::Bool)
             print(io, message)
         else
             for l in split(message, "\n\n")
-                message_wrapped = wrap(l, break_long_words = false, break_on_hyphens = false)
+                message_wrapped = TextWrap.wrap(l, break_long_words = false, break_on_hyphens = false)
                 println_unnbsp(io, message_wrapped)
             end
         end
