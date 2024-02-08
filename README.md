@@ -23,6 +23,20 @@ julia> using ArgParse
 - The manual is [HERE][docs-url].
 - See also the examples in the [examples directory](examples).
 
+## Changes in release 1.1.5
+
+* Fix ambiguity with julia 1.11 new `wrap` function (see [#128][PR128])
+* Throw a new `ArgParseSettingError` for all settings-related errors
+* Fixed some tests
+
+## Changes in release 1.1.4
+
+* Fix in @project_version macro (see [#107][PR107])
+
+## Changes in release 1.1.3
+
+* Added a @project_version macro (see [#106][PR106])
+
 ## Changes in release 1.1.2
 
 * Faster startup time by disabling optimizations/inference (see [#104][PR104])
