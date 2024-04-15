@@ -262,6 +262,10 @@ for s = [ap_settings2(), ap_settings2b(), ap_settings2c(), ap_settings2d(), ap_s
     @ap_test_throws ap_test2(["--opt="])
     @ap_test_throws ap_test2(["--opt", "", "X", "Y"])
     @ap_test_throws ap_test2(["--opt", "1e-2", "X", "Y"])
+    @ap_test_throws ap_test2(["X", "Y", "-z"])
+    @ap_test_throws ap_test2(["X", "Y", "-z", "a b c"])
+    @ap_test_throws ap_test2(["X", "Y", "--zzz"])
+    @ap_test_throws ap_test2(["X", "Y", "--zzz", "a b c"])
 
     @aps_test_throws @add_arg_table!(s, "required_arg_after_optional_args", required = true)
     # wrong default
