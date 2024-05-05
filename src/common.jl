@@ -7,7 +7,6 @@ const nbsps = "$nbspc"
 println_unnbsp(io::IO, args...) = println(io, map(s->replace(s, nbspc => ' '), args)...)
 
 macro defaults(opts, ex)
-    println(opts)
     @assert ex.head == :block
     lines = filter(x->!(x isa LineNumberNode), ex.args)
     @assert all(x->Meta.isexpr(x, :(=)), lines)
