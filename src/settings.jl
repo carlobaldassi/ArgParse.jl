@@ -512,40 +512,54 @@ function check_for_duplicates(args::Vector{ArgParseField}, new_arg::ArgParseFiel
     return true
 end
 
+function typecompatible(default::D, arg_type::Type) where D
+    D <: arg_type && return true
+    try
+        applicable(convert, arg_type, default) ? convert(arg_type, default) : arg_type(default)
+        return true
+    catch
+    end
+    return false
+end
+
 check_default_type(default::Nothing, arg_type::Type) = true
 function check_default_type(default::D, arg_type::Type) where D
-    D <: arg_type || serror("typeof(default)=$D is incompatible with arg_type=$arg_type)")
+    typecompatible(default, arg_type) || serror("typeof(default)=$D is incompatible with arg_type=$arg_type)")
     return true
 end
 
-check_default_type_multi_action(default::Nothing, arg_type::Type) = true
-function check_default_type_multi_action(default::Vector{D}, arg_type::Type) where D
-    arg_type <: D || serror("typeof(default)=Vector{$D} can't hold arguments of type arg_type=$arg_type)")
-    all(x->(x isa arg_type), default) || serror("all elements of the default value must be of type $arg_type)")
+check_default_type_multi(default::Nothing, arg_type::Type) = true
+function check_default_type_multi(default::Vector, arg_type::Type)
+    all(x->typecompatible(x, arg_type), default) || serror("all elements of the default value must be of type $arg_type or convertible to it")
     return true
 end
-check_default_type_multi_action(default::D, arg_type::Type) where D =
-    serror("typeof(default)=$D is incompatible with the action, it should be a Vector")
-
-check_default_type_multi_nargs(default::Nothing, arg_type::Type) = true
-function check_default_type_multi_nargs(default::Vector, arg_type::Type)
-    all(x->(x isa arg_type), default) || serror("all elements of the default value must be of type $arg_type")
-    return true
-end
-check_default_type_multi_nargs(default::D, arg_type::Type) where D =
+check_default_type_multi(default::D, arg_type::Type) where D =
     serror("typeof(default)=$D is incompatible with nargs, it should be a Vector")
 
 check_default_type_multi2(default::Nothing, arg_type::Type) = true
 function check_default_type_multi2(default::Vector{D}, arg_type::Type) where D
-    Vector{arg_type} <: D || serror("typeof(default)=Vector{$D} can't hold Vectors of arguments " *
-                                   "of type arg_type=$arg_type)")
     all(y->(y isa Vector), default) ||
         serror("the default $(default) is incompatible with the action and nargs, it should be a Vector of Vectors")
-    all(y->all(x->(x isa arg_type), y), default) || serror("all elements of the default value must be of type $arg_type")
+    all(y->all(x->typecompatible(x, arg_type), y), default) || serror("all elements of the default value must be of type $arg_type or convertible to it")
     return true
 end
 check_default_type_multi2(default::D, arg_type::Type) where D =
     serror("the default $(default) is incompatible with the action and nargs, it should be a Vector of Vectors")
+
+function _convert_default(arg_type::Type, default::D) where D
+    D <: arg_type && return default
+    applicable(convert, arg_type, default) ? convert(arg_type, default) : arg_type(default)
+end
+
+convert_default(arg_type::Type, default::Nothing) = nothing
+convert_default(arg_type::Type, default) = _convert_default(arg_type, default)
+
+convert_default_multi(arg_type::Type, default::Nothing) = Array{arg_type}(undef, 0)
+convert_default_multi(arg_type::Type, default::Vector) = arg_type[_convert_default(arg_type, x) for x in default]
+
+convert_default_multi2(arg_type::Type, default::Nothing) = Array{Vector{arg_type}}(undef, 0)
+convert_default_multi2(arg_type::Type, default::Vector) = Vector{arg_type}[arg_type[_convert_default(arg_type, x) for x in y] for y in default]
+
 
 check_range_default(default::Nothing, range_tester::Function) = true
 function check_range_default(default, range_tester::Function)
@@ -1033,20 +1047,17 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
         elseif action == :count_invocations
             new_arg.arg_type = Int
             new_arg.default = 0
-        elseif action ∈ (:store_const, :append_const)
-            if :arg_type ∈ supplied_opts
-                check_default_type(new_arg.default, new_arg.arg_type)
-                check_default_type(new_arg.constant, new_arg.arg_type)
-            else
-                if typeof(new_arg.default) == typeof(new_arg.constant)
-                    new_arg.arg_type = typeof(new_arg.default)
-                else
-                    new_arg.arg_type = Any
-                end
+        elseif action == :store_const
+            check_default_type(new_arg.default, new_arg.arg_type)
+            check_default_type(new_arg.constant, new_arg.arg_type)
+            new_arg.default = convert_default(new_arg.arg_type, new_arg.default)
+        elseif action == :append_const
+            check_default_type(new_arg.constant, new_arg.arg_type)
+            if :arg_type ∉ supplied_opts
+                new_arg.arg_type = typeof(new_arg.constant)
             end
-            if action == :append_const && (new_arg.default ≡ nothing || new_arg.default == [])
-                new_arg.default = Array{new_arg.arg_type}(undef, 0)
-            end
+            check_default_type_multi(new_arg.default, new_arg.arg_type)
+            new_arg.default = convert_default_multi(new_arg.arg_type, new_arg.default)
         elseif action == :command_flag
             # nothing to do
         elseif action == :show_help || action == :show_version
@@ -1062,28 +1073,22 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
         if !is_multi_action(new_arg.action) && !is_multi_nargs(new_arg.nargs)
             check_default_type(default, arg_type)
             check_range_default(default, range_tester)
-        elseif !is_multi_action(new_arg.action)
-            check_default_type_multi_nargs(default, arg_type)
+            new_arg.default = convert_default(arg_type, default)
+        elseif !is_multi_action(new_arg.action) || !is_multi_nargs(new_arg.nargs)
+            check_default_type_multi(default, arg_type)
             check_range_default_multi(default, range_tester)
-        elseif !is_multi_nargs(new_arg.nargs)
-            check_default_type_multi_action(default, arg_type)
-            check_range_default_multi(default, range_tester)
+            new_arg.default = convert_default_multi(arg_type, default)
         else
             check_default_type_multi2(default, arg_type)
             check_range_default_multi2(default, range_tester)
-        end
-        if (is_multi_action(new_arg.action) && is_multi_nargs(new_arg.nargs)) &&
-                (default ≡ nothing || default == [])
-            new_arg.default = Array{Vector{arg_type}}(undef, 0)
-        elseif (is_multi_action(new_arg.action) || is_multi_nargs(new_arg.nargs)) &&
-                (default ≡ nothing || default == [])
-            new_arg.default = Array{arg_type}(undef, 0)
+            new_arg.default = convert_default_multi2(arg_type, default)
         end
 
         if is_opt && nargs.desc == :?
             constant = new_arg.constant
             check_default_type(constant, arg_type)
             check_range_default(constant, range_tester)
+            new_arg.constant = convert_default(arg_type, constant)
         end
     end
 

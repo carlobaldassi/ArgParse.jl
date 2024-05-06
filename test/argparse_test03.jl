@@ -67,7 +67,7 @@ function ap_settings3()
                                                 # called repeatedly
             dest_name = "awk"
             range_tester = (x->x=="X"||x=="Y")  # each argument must be either "X" or "Y"
-            default = Any[Any["X"]]
+            default = [["X"]]
             metavar = "XY"
             help = "either X or Y; all XY's are " *
                    "stored in chunks"
@@ -113,7 +113,7 @@ let s = ap_settings3()
           --collect C           collect things (type: $Int)
           --awkward-option XY [XY...]
                                 either X or Y; all XY's are stored in chunks
-                                (default: Any[Any["X"]])
+                                (default: $(Vector{Any})[["X"]])
 
         """
 
@@ -134,8 +134,8 @@ let s = ap_settings3()
     @aps_test_throws @add_arg_table!(s, "--opt", action = :store_const, arg_type = Int, default = 1, constant = 1.5)
     @aps_test_throws @add_arg_table!(s, "--opt", action = :append_const, arg_type = Int, constant = 1.5)
     # wrong defaults
-    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, default = Float64[])
-    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, default = Vector{Float64}[])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, default = String["hello"])
+    @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, nargs = '+', arg_type = Int, default = Vector{Float64}[[1.5]])
     @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = [1.5])
     @aps_test_throws @add_arg_table!(s, "--opt", action = :store_arg, nargs = '+', arg_type = Int, default = 1)
     @aps_test_throws @add_arg_table!(s, "--opt", action = :append_arg, arg_type = Int, range_tester=x->x<=1, default = Int[0, 1, 2])
@@ -156,9 +156,9 @@ let s = ap_settings3()
     # allow ambiguous options
     s.allow_ambiguous_opts = true
     @add_arg_table!(s, "-2", action = :store_true)
-    @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"]], "2"=>false)
-    @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[["X"]], "2"=>true)
-    @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Any[Any["X"], Any["X"]], "2"=>true)
+    @test ap_test3([]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Vector{Any}[["X"]], "2"=>false)
+    @test ap_test3(["-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Vector{Any}[["X"]], "2"=>true)
+    @test ap_test3(["--awk", "X", "-2"]) == Dict{String,Any}("O_stack"=>String[], "k"=>0, "u"=>0, "array"=>[7, 3, 2], "custom"=>CustomType(), "oddint"=>1, "collect"=>[], "awk"=>Vector{Any}[["X"], ["X"]], "2"=>true)
     @ap_test_throws ap_test3(["--awk", "X", "-3"])
 
 end
