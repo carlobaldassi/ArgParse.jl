@@ -165,6 +165,13 @@ This is the list of general settings currently available:
   action) is added to the argument table.
 * `add_version` (default = `false`): if `true`, a `--version` option (triggering the `:show_version`
   action) is added to the argument table.
+* `help_width` (default = `70`): set the width of the help text. This does not affect the
+  `usage` line if it is provided by the user rather than being auto-generated; it also does not
+  affect the `description/epilog` lines if the `preformatted_description/epilog` options are set to
+  `false`.
+* `help_alignment_width` (default = `24`): set the maximum width of the left column of the help
+  text, where options and arguments names are listed. This also affects the indentation of the usage
+  line when it is auto-generated. It must be ≥ 4 and should be less than `help_width`.
 * `fromfile_prefix_chars` (default = `Set{Char}()`): an argument beginning with one of these
   characters will specify a file from which arguments will be read, one argument read per line.
   Alphanumeric characters and the hyphen-minus (`'-'`) are prohibited.
@@ -246,6 +253,8 @@ mutable struct ArgParseSettings
     version::AbstractString
     add_help::Bool
     add_version::Bool
+    help_width::Int
+    help_alignment_width::Int
     fromfile_prefix_chars::Set{Char}
     autofix_names::Bool
     error_on_conflict::Bool
@@ -269,6 +278,8 @@ mutable struct ArgParseSettings
                                version::AbstractString = "Unspecified version",
                                add_help::Bool = true,
                                add_version::Bool = false,
+                               help_width::Integer = 70,
+                               help_alignment_width::Integer = 24,
                                fromfile_prefix_chars = Set{Char}(),
                                autofix_names::Bool = false,
                                error_on_conflict::Bool = true,
@@ -283,8 +294,8 @@ mutable struct ArgParseSettings
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
             prog, description, epilog, usage, version, add_help, add_version,
-            fromfile_prefix_chars, autofix_names, error_on_conflict,
-            suppress_warnings, allow_ambiguous_opts, commands_are_required,
+            help_width, help_alignment_width, fromfile_prefix_chars, autofix_names,
+            error_on_conflict, suppress_warnings, allow_ambiguous_opts, commands_are_required,
             copy(std_groups), "", ArgParseTable(), exc_handler,
             preformatted_description, preformatted_epilog,
             exit_after_help
