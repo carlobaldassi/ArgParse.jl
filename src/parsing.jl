@@ -137,7 +137,7 @@ function usage_string(settings::ArgParseSettings)
 
     usage_pre = "usage: " * (isempty(settings.prog) ? "<PROGRAM>" : settings.prog)
 
-    lc_len_limit = 24
+    lc_len_limit = settings.help_alignment_width
 
     cmd_lst = String[]
     pos_lst = String[]
@@ -238,7 +238,8 @@ function usage_string(settings::ArgParseSettings)
 
     str_nonwrapped = usage_pre * excl_str * optl_str * posl_str * cmdl_str
     str_wrapped = TextWrap.wrap(str_nonwrapped, break_long_words = false, break_on_hyphens = false,
-                                       subsequent_indent = min(usage_len, lc_len_limit))
+                                subsequent_indent = min(usage_len, lc_len_limit),
+                                width = settings.help_width)
 
 
     out_str = replace(str_wrapped, nbspc => ' ')
@@ -282,7 +283,8 @@ function gen_help_text(arg::ArgParseField, settings::ArgParseSettings)
 end
 
 function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::Int, lc_len::Int,
-                     lmargin::AbstractString, rmargin::AbstractString, sindent::AbstractString)
+                     lmargin::AbstractString, rmargin::AbstractString, sindent::AbstractString,
+                     width::Int)
     isempty(lst) && return
     println(io, desc, ":")
     for l in lst
@@ -291,12 +293,12 @@ function print_group(io::IO, lst::Vector, desc::AbstractString, lc_usable_len::I
             rfill = " "^(lc_len - l1len)
             ll_nonwrapped = l[1] * rfill * rmargin * l[2]
             ll_wrapped = TextWrap.wrap(ll_nonwrapped, break_long_words = false, break_on_hyphens = false,
-                                       initial_indent = lmargin, subsequent_indent = sindent)
+                                       initial_indent = lmargin, subsequent_indent = sindent, width = width)
             println_unnbsp(io, ll_wrapped)
         else
             println_unnbsp(io, lmargin, l[1])
             l2_wrapped = TextWrap.wrap(l[2], break_long_words = false, break_on_hyphens = false,
-                                       initial_indent = sindent, subsequent_indent = sindent)
+                                       initial_indent = sindent, subsequent_indent = sindent, width = width)
             println_unnbsp(io, l2_wrapped)
         end
     end
@@ -307,7 +309,7 @@ show_help(settings::ArgParseSettings; kw...) = show_help(stdout, settings; kw...
 
 function show_help(io::IO, settings::ArgParseSettings; exit_when_done = !isinteractive())
 
-    lc_len_limit = 24
+    lc_len_limit = settings.help_alignment_width
     lc_left_indent = 2
     lc_right_margin = 2
 
@@ -366,25 +368,25 @@ function show_help(io::IO, settings::ArgParseSettings; exit_when_done = !isinter
 
     println(io, usage_str)
     println(io)
-    show_message(io, settings.description, settings.preformatted_description)
+    show_message(io, settings.description, settings.preformatted_description, settings.help_width)
 
     for ag in settings.args_groups
         print_group(io, group_lists[ag.name], ag.desc, lc_usable_len, lc_len,
-                    lmargin, rmargin, sindent)
+                    lmargin, rmargin, sindent, settings.help_width)
     end
 
-    show_message(io, settings.epilog, settings.preformatted_epilog)
+    show_message(io, settings.epilog, settings.preformatted_epilog, settings.help_width)
     exit_when_done && exit(0)
     return
 end
 
-function show_message(io::IO, message::AbstractString, preformatted::Bool)
+function show_message(io::IO, message::AbstractString, preformatted::Bool, width::Int)
     if !isempty(message)
         if preformatted
             print(io, message)
         else
             for l in split(message, "\n\n")
-                message_wrapped = TextWrap.wrap(l, break_long_words = false, break_on_hyphens = false)
+                message_wrapped = TextWrap.wrap(l, break_long_words = false, break_on_hyphens = false, width = width)
                 println_unnbsp(io, message_wrapped)
             end
         end
