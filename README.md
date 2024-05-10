@@ -23,6 +23,11 @@ julia> using ArgParse
 - The manual is [HERE][docs-url].
 - See also the examples in the [examples directory](examples).
 
+## Changes in release 1.2.0
+
+* Add options to control the help text formatting ([#132][PR132])
+* Allow defaults that can be converted into the target argument type ([#133][PR133])
+
 ## Changes in release 1.1.5
 
 * Fix ambiguity with julia 1.11 new `wrap` function (see [#128][PR128])
@@ -144,3 +149,8 @@ which may break existing code:
 [PR28]: https://github.com/carlobaldassi/ArgParse.jl/pull/28
 [PR33]: https://github.com/carlobaldassi/ArgParse.jl/pull/33
 [PR104]: https://github.com/carlobaldassi/ArgParse.jl/pull/104
+[PR106]: https://github.com/carlobaldassi/ArgParse.jl/pull/106
+[PR107]: https://github.com/carlobaldassi/ArgParse.jl/pull/107
+[PR128]: https://github.com/carlobaldassi/ArgParse.jl/pull/128
+[PR132]: https://github.com/carlobaldassi/ArgParse.jl/pull/132
+[PR133]: https://github.com/carlobaldassi/ArgParse.jl/pull/133
