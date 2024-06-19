@@ -916,7 +916,10 @@ function add_arg_field!(settings::ArgParseSettings, name::ArgName; desc...)
     check_type(required, Bool, "required must be a Bool")
     check_type(range_tester, Function, "range_tester must be a Function")
     check_type(dest_name, AbstractString, "dest_name must be an AbstractString")
-    check_type(help, AbstractString, "help must be an AbstractString")
+    check_type(help, Union{AbstractString,Markdown.MD}, "help must be an AbstractString or Markdown.MD")
+    if help isa Markdown.MD
+        help = lstrip(repr("text/plain", help, context=:color=>true))
+    end
     # Check metavar's type to be either an AbstractString or a
     # Vector{T<:AbstractString}
     metavar_error = "metavar must be an AbstractString or a Vector{<:AbstractString}"
