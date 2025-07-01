@@ -31,7 +31,8 @@ export
     import_settings!,
     usage_string,
     parse_args,
-    @project_version
+    @project_version,
+    project_version
 
 import Base: show, getindex, setindex!, haskey
 
