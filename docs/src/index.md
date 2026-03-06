@@ -17,7 +17,7 @@ as well.
 To install the module, use Julia's package manager: start pkg mode by pressing `]` and then enter:
 
 ```
-(v1.5) pkg> add ArgParse
+pkg> add ArgParse
 ```
 
 Dependencies will be installed automatically.
