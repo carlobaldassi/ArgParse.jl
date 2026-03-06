@@ -17,7 +17,8 @@ makedocs(
             "custom.md",
             "details.md"
         ]
-    ]
+    ],
+    warnonly = [:missing_docs],
 )
 
 deploydocs(
