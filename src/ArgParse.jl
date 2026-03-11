@@ -11,7 +11,7 @@ differences as well.
 """
 module ArgParse
 
-import TextWrap
+import TextWrap, Markdown
 
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, Symbol("@compiler_options"))
     @eval Base.Experimental.@compiler_options compile=min optimize=0 infer=false
