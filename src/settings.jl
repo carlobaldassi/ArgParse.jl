@@ -1481,25 +1481,47 @@ end
 
 """
     @project_version
-    @project_version(filename::String...)
+    @project_version(filepath::String...)
 
-Reads the version from the Project.toml file at the given filename, at compile time.
-If no filename is given, defaults to `Base.current_project()`.
-If multiple strings are given, they will be joined with `joinpath`.
-Intended for use with the [`ArgParseSettings`](@ref) constructor,
-to keep the settings version in sync with the project version.
+Return the version string from a `Project.toml` file (read at runtime).
 
-## Example
+The argument may be either a `Project.toml` file or a directory. If it is
+a directory, the project file is located using `Base.current_project`,
+searching that directory and its parents.
+
+If no path is given, the directory of the file containing the macro call
+is used (determined at macro expansion time).
+
+If multiple strings are given, they are joined with `joinpath`.
+
+Intended for use with the [`ArgParseSettings`](@ref) constructor to keep
+the settings version in sync with the project version.
+
+# Example
 
 ```julia
 ArgParseSettings(add_version = true, version = @project_version)
 ```
 """
-macro project_version(filename::Vararg{String})
-    project_version(isempty(filename) ? Base.current_project() : joinpath(filename...))
+macro project_version(filepath::String...)
+    filename = isempty(filepath) ? "" : joinpath(filepath...)  # joinpath works for 1+ parts
+    if isempty(filename)
+        sfsym = __source__.file
+        sfsym isa Symbol || throw(ArgumentError("@project_version cannot determine its calling location or project"))
+        sfname = String(sfsym)
+        filename = isfile(sfname) ? abspath(dirname(sfname)) : pwd()
+    end
+    return :(project_version($filename))
 end
 
-function project_version(filename::AbstractString)::String
+function project_version(filename::AbstractString; check_name::Bool = true)::String
+    if isdir(filename)
+        projname = Base.current_project(filename)
+        projname ≡ nothing && throw(ArgumentError("Could not determine the current project in $(filename)"))
+        filename = projname
+    end
+    isfile(filename) || throw(ArgumentError("File not found: $filename"))
+    check_name && (basename(filename) ∈ Base.project_names || @warn "File is not a Julia project file: $filename")
     re = r"^version\s*=\s*\"(.*)\"\s*$"
     for line in eachline(filename)
         if startswith(line, "[")
