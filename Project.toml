@@ -5,6 +5,7 @@ version = "1.2.0"
 
 [deps]
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 
 [compat]
