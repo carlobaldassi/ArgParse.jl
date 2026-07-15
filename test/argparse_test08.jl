@@ -63,22 +63,25 @@ end
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['Å'])
 @ap_test_throws ArgParseSettings(fromfile_prefix_chars=['8'])
 
-# default project version
+# Project file found in the same directory as this file (or in a
+# parent directory).
 @test stringversion(ArgParseSettings(
     add_version = true, 
-    version = @project_version
+    version = ArgParse.project_version(@__DIR__)
 )) == "1.0.0\n"
 
-# project version from filepath
-@test stringversion(ArgParseSettings(
-    add_version = true, 
-    version = @project_version "Project.toml"
-)) == "1.0.0\n"
+@static if VERSION >= v"1.9"
+    # A `VersionNumber` found in package.
+    @test stringversion(ArgParseSettings(
+        add_version = true,
+        version = pkgversion(ArgParse)
+    )) == string(pkgversion(ArgParse)) * "\n"
+end
 
-# project version from expression that returns a filepath
+# Full path to project file.
 @test stringversion(ArgParseSettings(
     add_version = true, 
-    version = @project_version(".", "Project.toml")
+    version = ArgParse.project_version(joinpath(@__DIR__, "Project.toml"))
 )) == "1.0.0\n"
 
 # throws an error if the file doesn't contain a version

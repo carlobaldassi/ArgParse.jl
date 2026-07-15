@@ -250,7 +250,7 @@ mutable struct ArgParseSettings
     description::AbstractString
     epilog::AbstractString
     usage::AbstractString
-    version::AbstractString
+    version::String
     add_help::Bool
     add_version::Bool
     help_width::Int
@@ -275,7 +275,7 @@ mutable struct ArgParseSettings
                                description::AbstractString = "",
                                epilog::AbstractString = "",
                                usage::AbstractString = "",
-                               version::AbstractString = "Unspecified version",
+                               version::Union{AbstractString, VersionNumber} = "Unspecified version",
                                add_help::Bool = true,
                                add_version::Bool = false,
                                help_width::Integer = 70,
@@ -293,7 +293,7 @@ mutable struct ArgParseSettings
                                )
         fromfile_prefix_chars = check_prefix_chars(fromfile_prefix_chars)
         return new(
-            prog, description, epilog, usage, version, add_help, add_version,
+            prog, description, epilog, usage, string(version), add_help, add_version,
             help_width, help_alignment_width, fromfile_prefix_chars, autofix_names,
             error_on_conflict, suppress_warnings, allow_ambiguous_opts, commands_are_required,
             copy(std_groups), "", ArgParseTable(), exc_handler,
@@ -1483,23 +1483,43 @@ end
     @project_version
     @project_version(filename::String...)
 
-Reads the version from the Project.toml file at the given filename, at compile time.
-If no filename is given, defaults to `Base.current_project()`.
-If multiple strings are given, they will be joined with `joinpath`.
+!!! warning
+    This macro is deprecated since it only gives the correct result if
+    the user's current directory is inside the package/project using
+    `ArgParse` or if a literal absolute path has been given as
+    argument.
+
+    Recommended replacements are either of
+    ```julia
+    ArgParseSettings(add_version = true, version = project_version(@__DIR__))
+    ArgParseSettings(add_version = true, version = pkgversion(@__MODULE__))
+    ```
+    where the latter option can be used with Julia 1.9 and later inside a package.
+"""
+macro project_version(filename::Vararg{String})
+    project_version(isempty(filename) ? Base.current_project() : joinpath(filename...))
+end
+
+"""
+    project_version(filename)
+
+Reads the version from the `Project.toml` file at the given
+`filename`. If `filename` is a directory, searches for `Project.toml` in
+that directory or in a parent directory.
+
 Intended for use with the [`ArgParseSettings`](@ref) constructor,
 to keep the settings version in sync with the project version.
 
 ## Example
 
 ```julia
-ArgParseSettings(add_version = true, version = @project_version)
+ArgParseSettings(add_version = true, version = project_version(@__DIR__))
 ```
 """
-macro project_version(filename::Vararg{String})
-    project_version(isempty(filename) ? Base.current_project() : joinpath(filename...))
-end
-
 function project_version(filename::AbstractString)::String
+    if isdir(filename)
+        filename = Base.current_project(filename)
+    end
     re = r"^version\s*=\s*\"(.*)\"\s*$"
     for line in eachline(filename)
         if startswith(line, "[")
